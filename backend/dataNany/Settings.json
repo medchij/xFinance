@@ -1,0 +1,73 @@
+[
+  {
+    "id": "1",
+    "tab": "Үндсэн тохиргоо",
+    "name": "khanbank_username",
+    "value": "1002582421",
+    "creade_date": "2023-10-01T00:00:00.000Z",
+    "update_date": "2025-06-29T05:21:18.931Z"
+  },
+  {
+    "id": "2",
+    "tab": "Үндсэн тохиргоо",
+    "name": "khanbank_password",
+    "value": "TmFtdXVqaW43NyQ=",
+    "creade_date": "2023-10-01T00:00:00.000Z",
+    "update_date": "2025-06-29T05:21:26.941Z"
+  },
+  {
+    "id": "3",
+    "tab": "Үндсэн тохиргоо",
+    "name": "access_token",
+    "value": "yGK7upGavSbojSZXbPd779gX56F9",
+    "creade_date": "2023-10-01T00:00:00.000Z",
+    "update_date": "2025-09-04T08:06:29.602Z"
+  },
+  {
+    "id": "4",
+    "tab": "Бусад тохиргоо",
+    "name": "sheetname",
+    "value": "Sales-ebarimt",
+    "creade_date": "2023-10-01T00:00:00.000Z",
+    "update_date": "2025-09-05T07:26:07.794Z"
+  },
+  {
+    "id": "5",
+    "tab": "Үндсэн тохиргоо",
+    "name": "device_token",
+    "value": "Basic Vm00eHFtV1BaQks3Vm5UYjNRRXJZbjlJZkxoWmF6enI6dElJQkFsU09pVXIwclV5cA==",
+    "create_date": "2025-05-22T06:24:32.662Z",
+    "update_date": "2025-05-26T14:56:05.534Z"
+  },
+  {
+    "id": "6",
+    "name": "refresh_token",
+    "value": "f4kOnXOI60qTZaepfGOU2FZGXrAjc7eJ",
+    "tab": "Үндсэн тохиргоо",
+    "create_date": "2025-05-22T08:29:35.676Z",
+    "update_date": "2025-09-04T08:06:29.610Z"
+  },
+  {
+    "id": "7",
+    "name": "device-id",
+    "value": "2E910D21-DB84-4B50-8A36-41DCF1757151",
+    "tab": "Үндсэн тохиргоо",
+    "create_date": "2025-05-22T09:39:01.271Z"
+  },
+  {
+    "id": "8",
+    "tab": "Үндсэн тохиргоо",
+    "name": "car_token",
+    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTE0MzM5LCJyb2xlIjoidXNlciIsImZpcnN0bmFtZSI6ItCU0K3QnNCn0JjQk9Ch0q7QoNCt0J0iLCJsYXN0bmFtZSI6ItOo0YHTqdGF0LbQsNGA0LPQsNC7IiwiaWF0IjoxNzUxNDY3MzI2LCJleHAiOjE3ODMwMjQ5MjZ9.dkyKOghxijqrAupTJnU81FU2aFE7QNN42asaZNYB_Po",
+    "create_date": "2025-05-25T15:12:23.998Z",
+    "update_date": "2025-07-02T14:42:44.016Z"
+  },
+  {
+    "id": "9",
+    "tab": "Үндсэн тохиргоо",
+    "name": "ф",
+    "value": "фыы",
+    "create_date": "2025-05-26T14:26:54.027Z",
+    "update_date": "2025-05-26T15:17:06.605Z"
+  }
+]

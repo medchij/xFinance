@@ -1,0 +1,88 @@
+[
+  {
+    "id": "1",
+    "tab": "Үндсэн тохиргоо",
+    "name": "khanbank_username",
+    "value": "SoyomboM",
+    "creade_date": "2023-10-01T00:00:00.000Z",
+    "update_date": "2025-06-17T07:53:07.028Z"
+  },
+  {
+    "id": "2",
+    "tab": "Үндсэн тохиргоо",
+    "name": "khanbank_password",
+    "value": "U295b21ibzIz",
+    "creade_date": "2023-10-01T00:00:00.000Z",
+    "update_date": "2025-05-26T14:34:16.029Z"
+  },
+  {
+    "id": "3",
+    "tab": "Үндсэн тохиргоо",
+    "name": "access_token",
+    "value": "bvG28A1bpUGgRIB056FGch6nxomu",
+    "creade_date": "2023-10-01T00:00:00.000Z",
+    "update_date": "2025-09-16T08:59:58.140Z"
+  },
+  {
+    "id": "4",
+    "tab": "Бусад тохиргоо",
+    "name": "TABLEAU EMAIL CODE",
+    "value": "********",
+    "creade_date": "2023-10-01T00:00:00.000Z",
+    "update_date": "2023-10-01T00:00:00.000Z"
+  },
+  {
+    "id": "5",
+    "tab": "Үндсэн тохиргоо",
+    "name": "device_token",
+    "value": "Basic Vm00eHFtV1BaQks3Vm5UYjNRRXJZbjlJZkxoWmF6enI6dElJQkFsU09pVXIwclV5cA==",
+    "create_date": "2025-05-22T06:24:32.662Z",
+    "update_date": "2025-05-26T14:56:05.534Z"
+  },
+  {
+    "id": "6",
+    "name": "refresh_token",
+    "value": "w5ZZtGRJiovTuwR6qkweiuHVQW7f6Y6v",
+    "tab": "Үндсэн тохиргоо",
+    "create_date": "2025-05-22T08:29:35.676Z",
+    "update_date": "2025-09-16T08:59:58.145Z"
+  },
+  {
+    "id": "7",
+    "name": "device-id",
+    "value": "2E910D21-DB84-4B50-8A36-41DCF1757151",
+    "tab": "Үндсэн тохиргоо",
+    "create_date": "2025-05-22T09:39:01.271Z"
+  },
+  {
+    "id": "8",
+    "tab": "Үндсэн тохиргоо",
+    "name": "car_token",
+    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiZ3Vlc3QiLCJpYXQiOjE3NDg1MDM3MTIsImV4cCI6MTc0ODU5MDExMn0.ZAPBzvNGv5Y3OKs-ZBiK7XN5iCKbZBgA8WJ6tU8Q7fg",
+    "create_date": "2025-05-25T15:12:23.998Z",
+    "update_date": "2025-05-29T07:29:52.753Z"
+  },
+  {
+    "id": "9",
+    "tab": "Үндсэн тохиргоо",
+    "name": "ф",
+    "value": "фыы",
+    "create_date": "2025-05-26T14:26:54.027Z",
+    "update_date": "2025-05-26T15:17:06.605Z"
+  },
+  {
+    "id": "10",
+    "tab": "Бусад тохиргоо",
+    "name": "sheetname",
+    "value": "Программ",
+    "create_date": "2025-06-12T08:17:01.672Z",
+    "update_date": "2025-06-26T07:06:16.942Z"
+  },
+  {
+    "id": "11",
+    "tab": "Бусад тохиргоо",
+    "name": "PD_ALL",
+    "value": "11",
+    "create_date": "2025-08-08T04:15:46.555Z"
+  }
+]
