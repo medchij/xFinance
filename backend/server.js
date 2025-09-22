@@ -16,6 +16,7 @@ app.use(cors());
 app.use(express.json());
 
 // ✅ Data directory замыг нэг хувьсагчид хадгалах
+
 const dataDir = path.resolve(config.DATA_DIR || "data");
 console.log("📁 DATA_DIR from config:", config.DATA_DIR);
 console.log("📁 Full resolved path:", dataDir);
