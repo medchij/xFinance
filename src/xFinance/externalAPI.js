@@ -8,7 +8,7 @@ import {
   handleHttpError,
   saveSetting,
 } from "./apiHelpers";
-
+import { BASE_URL } from "../config";
 export async function fetchCurrencyRatesByAPI(setMessage, setLoading) {
   return withLoading(setLoading, setMessage, async () => {
     setMessage("⏳ Ханшийн мэдээлэл татаж байна...");
