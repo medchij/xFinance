@@ -1,15 +1,10 @@
-import {
-  withLoading,
-  loadSettings,
-  getSettingValue,
-  getSettingId,
-  normalizeExcelDate,
-  formatLargeNumber,
-} from "./apiHelpers"; // туслах функц
+import {withLoading} from "./apiHelpers"; // туслах функц
 import { BASE_URL, fetchWithTimeout } from "../config";
 //Үндсэн функцүүд
 export let lastImportedData = null;
-import * as XLSX from "xlsx";
+ async function loadXLSX() {
+  const m = await import("xlsx");
+ return m.default || m; }
 export const handleFileImport = async (
   event,
   {
@@ -37,6 +32,7 @@ export const handleFileImport = async (
     });
 
     const data = new Uint8Array(buffer);
+    const XLSX = await loadXLSX();
     const workbook = XLSX.read(data, { type: "array" });
     const firstSheetName = workbook.SheetNames[0];
     const firstSheet = workbook.Sheets[firstSheetName];
@@ -445,6 +441,8 @@ export async function exportSelectedRangesToXLSX(setMessage) {
         throw new Error("⚠️ CurrentRegion-д утга алга.");
       }
 
+      
+      const XLSX = await loadXLSX();
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet(values);
       XLSX.utils.book_append_sheet(wb, ws, "CurrentRegion");

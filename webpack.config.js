@@ -1,12 +1,13 @@
 /* eslint-disable no-undef */
-
 const devCerts = require("office-addin-dev-certs");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const webpack = require("webpack");
+const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
+const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 
 const urlDev = "https://localhost:3000/";
-const urlProd = "https://x-finance-tau.vercel.app/"; // CHANGE THIS TO YOUR PRODUCTION DEPLOYMENT LOCATION
+const urlProd = "https://x-finance-tau.vercel.app/";
 
 async function getHttpsOptions() {
   const httpsOptions = await devCerts.getHttpsServerOptions();
@@ -15,64 +16,50 @@ async function getHttpsOptions() {
 
 module.exports = async (env, options) => {
   const dev = options.mode === "development";
-  const config = {
+
+  return {
     devtool: "source-map",
     entry: {
-      polyfill: ["core-js/stable", "regenerator-runtime/runtime"],
-      vendor: ["react", "react-dom", "core-js", "@fluentui/react-components", "@fluentui/react-icons"],
-      XFinance: ["./src/XFinance/index.jsx", "./src/XFinance/XFinance.html"], // 🟢 TASKPANE → XFINANCE
+      // polyfill entry устгасан
+      vendor: ["react", "react-dom", "@fluentui/react-components", "@fluentui/react-icons"],
+      XFinance: ["./src/XFinance/index.jsx", "./src/XFinance/XFinance.html"],
       commands: "./src/commands/commands.js",
     },
-    output: {
-      clean: true,
-    },
+    output: { clean: true, filename: "[name].js" },
     resolve: {
       extensions: [".js", ".jsx", ".html"],
+      fallback: {
+        util: require.resolve("util/"),
+        path: require.resolve("path-browserify"),
+        buffer: require.resolve("buffer/"),
+        fs: false,
+      },
     },
     module: {
       rules: [
+        { test: /\.jsx?$/, use: { loader: "babel-loader" }, exclude: /node_modules/ },
+        { test: /\.html$/, exclude: /node_modules/, use: "html-loader" },
         {
-          test: /\.jsx?$/,
-          use: {
-            loader: "babel-loader",
-          },
-          exclude: /node_modules/,
-        },
-        {
-          test: /\.html$/,
-          exclude: /node_modules/,
-          use: "html-loader",
-        },
-        {
-          test: /\.(png|jpg|jpeg|ttf|woff|woff2|gif|ico)$/,
+          test: /\.(png|jpg|jpeg|ttf|woff|woff2|gif|ico|svg)$/,
           type: "asset/resource",
-          generator: {
-            filename: "assets/[name][ext][query]",
-          },
+          generator: { filename: "assets/[name][ext][query]" },
         },
       ],
     },
     plugins: [
       new HtmlWebpackPlugin({
-        filename: "XFinance.html", // 🟢 taskpane.html → XFinance.html
-        template: "./src/XFinance/XFinance.html", // 🟢
-        chunks: ["polyfill", "vendor", "XFinance"], // 🟢
+        filename: "XFinance.html",
+        template: "./src/XFinance/XFinance.html",
+        chunks: ["vendor", "XFinance"], // "polyfill" хассан
       }),
       new CopyWebpackPlugin({
         patterns: [
-          {
-            from: "assets/*",
-            to: "assets/[name][ext][query]",
-          },
+          { from: "assets/*", to: "assets/[name][ext][query]" },
           {
             from: "manifest*.xml",
-            to: "[name]" + "[ext]",
+            to: "[name][ext]",
             transform(content) {
-              if (dev) {
-                return content;
-              } else {
-                return content.toString().replace(new RegExp(urlDev, "g"), urlProd);
-              }
+              return dev ? content : content.toString().replace(new RegExp(urlDev, "g"), urlProd);
             },
           },
         ],
@@ -80,24 +67,44 @@ module.exports = async (env, options) => {
       new HtmlWebpackPlugin({
         filename: "commands.html",
         template: "./src/commands/commands.html",
-        chunks: ["polyfill", "commands"],
+        chunks: ["commands"], // "polyfill" хассан
       }),
       new webpack.ProvidePlugin({
         Promise: ["es6-promise", "Promise"],
+        Buffer: ["buffer", "Buffer"],
+      }),
+      new NodePolyfillPlugin(),
+      new BundleAnalyzerPlugin({
+        analyzerMode: "static",
+        reportFilename: "report.html",
+        openAnalyzer: false,
+        generateStatsFile: true,
+        statsFilename: "stats.json",
+        defaultSizes: "gzip",
       }),
     ],
+    externals: { "@microsoft/office-js": "Office" },
+    optimization: {
+      splitChunks: {
+        chunks: "all",
+        cacheGroups: {
+          xlsx: { test: /[\\/]node_modules[\\/]xlsx[\\/]/, name: "xlsx", priority: 20, reuseExistingChunk: true },
+          fluent: { test: /[\\/]node_modules[\\/]@fluentui[\\/]/, name: "fluent", priority: 15, reuseExistingChunk: true },
+          polyfills: { test: /[\\/]node_modules[\\/]core-js[\\/]/, name: "polyfills", priority: 10, reuseExistingChunk: true },
+        },
+      },
+      runtimeChunk: "single",
+      usedExports: true,
+      sideEffects: true,
+    },
+    performance: { hints: "warning", maxEntrypointSize: 700000, maxAssetSize: 700000 },
     devServer: {
       hot: true,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-      },
-      server: {
-        type: "https",
-        options: env.WEBPACK_BUILD || options.https !== undefined ? options.https : await getHttpsOptions(),
-      },
+      headers: { "Access-Control-Allow-Origin": "*" },
+      server: dev
+        ? { type: "https", options: env.WEBPACK_BUILD || options.https !== undefined ? options.https : await getHttpsOptions() }
+        : "http",
       port: process.env.npm_package_config_dev_server_port || 3000,
     },
   };
-
-  return config;
 };

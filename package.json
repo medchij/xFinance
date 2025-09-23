@@ -34,6 +34,7 @@
     "@fluentui/react-components": "^9.47.2",
     "@fluentui/react-icons": "^2.0.233",
     "@microsoft/office-js": "^1.1.108",
+    "buffer": "^6.0.3",
     "core-js": "^3.36.0",
     "cors": "^2.8.5",
     "debug": "^4.4.1",
@@ -75,6 +76,7 @@
     "html-webpack-plugin": "^5.6.0",
     "less": "^4.2.0",
     "less-loader": "^12.2.0",
+    "node-polyfill-webpack-plugin": "^4.1.0",
     "office-addin-cli": "^1.6.5",
     "office-addin-debugging": "^5.1.6",
     "office-addin-dev-certs": "^1.13.5",
@@ -87,12 +89,14 @@
     "ts-loader": "^9.5.1",
     "typescript": "^5.4.2",
     "webpack": "^5.95.0",
+    "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "5.1.0"
   },
   "prettier": "office-addin-prettier-config",
   "browserslist": [
     "last 2 versions",
-    "ie 11"
+    "not ie <= 11",
+    "not dead"
   ]
 }
