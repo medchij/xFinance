@@ -17,7 +17,7 @@ import {
 import { EditRegular, SaveRegular, CheckmarkCircle24Regular, DismissCircle24Regular } from "@fluentui/react-icons";
 import { useAppContext } from "./AppContext";
 import { withLoading } from "../apiHelpers";
-import { BASE_URL, fetchWithTimeout } from "../../config";
+import { BASE_URL } from "../../config";
 const useStyles = makeStyles({
   container: {
     flexGrow: 1,
@@ -84,7 +84,7 @@ const SettingsPage = ({ isSidebarOpen }) => {
   const { showMessage, setLoading } = useAppContext();
 
   useEffect(() => {
-    fetchWithTimeout(`${BASE_URL}/api/settings`)
+    fetch(`${BASE_URL}/api/settings`)
       .then((res) => res.json())
       .then((data) => {
         setSettings(data);
@@ -109,7 +109,7 @@ const SettingsPage = ({ isSidebarOpen }) => {
       );
       setSettings(updated);
 
-      const response = await  fetchWithTimeout(`${BASE_URL}/api/settings/${id}`, {
+      const response = await  fetch(`${BASE_URL}/api/settings/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ value: editRow.value }),
@@ -130,7 +130,7 @@ const SettingsPage = ({ isSidebarOpen }) => {
     }
 
     return withLoading(setLoading, showMessage, async () => {
-      const response = await fetchWithTimeout(`${BASE_URL}/api/settings`, {
+      const response = await fetch(`${BASE_URL}/api/settings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...newSetting, tab: activeTab }),

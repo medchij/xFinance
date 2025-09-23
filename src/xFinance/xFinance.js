@@ -1,5 +1,5 @@
 import {withLoading} from "./apiHelpers"; // туслах функц
-import { BASE_URL, fetchWithTimeout } from "../config";
+import { BASE_URL } from "../config";
 //Үндсэн функцүүд
 export let lastImportedData = null;
  async function loadXLSX() {
@@ -371,7 +371,7 @@ export async function fetchAccountBalanceData(setMessage, setLoading) {
     setMessage("⏳ Дансны мэдээллийг татаж байна...");
 
     // Backend-ээс дансны жагсаалт татах (timeout-той)
-    const res = await fetchWithTimeout(`${BASE_URL}/api/account`, {}, 20000);
+    const res = await fetch(`${BASE_URL}/api/account`);
     if (!res.ok) throw new Error("Серверээс амжилтгүй хариу ирлээ.");
     const data = await res.json();
 

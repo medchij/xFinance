@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAppContext } from "./AppContext";
-import { BASE_URL, fetchWithTimeout } from "../../config";
+import { BASE_URL } from "../../config";
 const CustomerModal = ({ isOpen, onClose }) => {
   const { showMessage, setLoading } = useAppContext(); // ✅ AppContext-оос авна
   const [name, setName] = useState("");
@@ -15,7 +15,7 @@ const CustomerModal = ({ isOpen, onClose }) => {
     try {
       setLoading(true);
 
-      const res = await fetchWithTimeout(`${BASE_URL}/api/customer`, {}, 20000);
+      const res = await fetch(`${BASE_URL}/api/customer`);
       const allCustomers = await res.json();
 
       const duplicate = allCustomers.find(
@@ -27,7 +27,7 @@ const CustomerModal = ({ isOpen, onClose }) => {
         return;
       }
 
-      const saveRes = await fetchWithTimeout(`${BASE_URL}/api/customer`, {}, 20000 , {
+      const saveRes = await fetch(`${BASE_URL}/api/customer`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

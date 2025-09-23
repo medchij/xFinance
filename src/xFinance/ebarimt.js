@@ -1,5 +1,5 @@
 import {withLoading} from "./apiHelpers";
-import { BASE_URL, fetchWithTimeout } from "../config";
+import { BASE_URL } from "../config";
 export async function getMerchantCategoryById(setMessage, setLoading) {
   return await withLoading(setLoading, setMessage, async () => {
     const id = await Excel.run(async (context) => {

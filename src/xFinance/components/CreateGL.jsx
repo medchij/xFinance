@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BASE_URL, fetchWithTimeout } from "../../config";
+import { BASE_URL} from "../../config";
 const CreateGL = ({ isOpen, onClose }) => {
   const [dansniiNer, setDansniiNer] = useState("");
   const [edDugaar, setEdDugaar] = useState("");
@@ -14,8 +14,8 @@ const CreateGL = ({ isOpen, onClose }) => {
   (async () => {
     try {
       const [catRes, curRes] = await Promise.all([
-        fetchWithTimeout(`${BASE_URL}/api/glcategory`, {}, 20000),
-        fetchWithTimeout(`${BASE_URL}/api/currency`, {}, 20000),
+        fetch(`${BASE_URL}/api/glcategory`),
+        fetch(`${BASE_URL}/api/currency`),
       ]);
 
       if (!catRes.ok || !curRes.ok) {
@@ -47,7 +47,7 @@ useEffect(() => {
 
   (async () => {
     try {
-      const res = await fetchWithTimeout(`${BASE_URL}/api/glaccount`, {}, 20000);
+      const res = await fetch(`${BASE_URL}/api/glaccount`);
       if (!res.ok) throw new Error("GLAccount татахад алдаа гарлаа.");
       const data = await res.json();
 

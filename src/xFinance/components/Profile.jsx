@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { BASE_URL, fetchWithTimeout } from "../../config";
+import { BASE_URL } from "../../config";
 import {
   Dropdown,
   Option,
@@ -38,7 +38,7 @@ const Profile = ({ isSidebarOpen }) => {
     setSaving(true);
 
     try {
-      const res =  await fetchWithTimeout(`${BASE_URL}/api/save-env`, {
+      const res =  await fetch(`${BASE_URL}/api/save-env`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updated),

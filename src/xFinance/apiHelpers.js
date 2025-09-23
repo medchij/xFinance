@@ -1,4 +1,4 @@
-import { BASE_URL, fetchWithTimeout } from "../config";
+import { BASE_URL } from "../config";
 
 export async function withLoading(setLoading, setMessage, fn) {
   try {
@@ -27,7 +27,7 @@ export async function withLoading(setLoading, setMessage, fn) {
 
 // ✅ 2) settings.json ачаалахдаа env URL ашиглах + timeout
 export async function loadSettings() {
-  const res = await fetchWithTimeout(`${BASE_URL}/api/settings`, {}, 20000);
+  const res = await fetch(`${BASE_URL}/api/settings`);
   if (!res.ok) throw new Error("⚠️ Settings.json татаж чадсангүй");
   return await res.json();
 }

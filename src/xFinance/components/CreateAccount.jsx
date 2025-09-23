@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "./AppContext";
-import { BASE_URL, fetchWithTimeout } from "../../config";
+import { BASE_URL } from "../../config";
 
 
 const CreateAccount = ({ isOpen, onClose }) => {
@@ -19,9 +19,9 @@ const CreateAccount = ({ isOpen, onClose }) => {
     const fetchData = async () => {
       try {
         const [currencyRes, branchRes, glRes] = await Promise.all([
-          fetchWithTimeout(`${BASE_URL}/api/currency`),
-          fetchWithTimeout(`${BASE_URL}/api/branch`),
-          fetchWithTimeout(`${BASE_URL}/api/glaccount`),
+          fetch(`${BASE_URL}/api/currency`),
+          fetch(`${BASE_URL}/api/branch`),
+          fetch(`${BASE_URL}/api/glaccount`),
         ]);
 
         setCurrencies(await currencyRes.json());
@@ -85,7 +85,7 @@ const CreateAccount = ({ isOpen, onClose }) => {
     try {
       setLoading(true);
 
-      const res = await fetchWithTimeout(`${BASE_URL}/api/account`);
+      const res = await fetch(`${BASE_URL}/api/account`);
       const allAccounts = await res.json();
       const duplicate = allAccounts.find((acc) => acc["Дансны дугаар"] === dansniiDugaar);
 
@@ -103,7 +103,7 @@ const CreateAccount = ({ isOpen, onClose }) => {
         "Нээсэн огноо": new Date().toLocaleString("en-GB"),
       };
 
-      const saveRes =  await fetchWithTimeout(`${BASE_URL}/api/account`,{
+      const saveRes =  await fetch(`${BASE_URL}/api/account`,{
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newAccount),
@@ -115,7 +115,7 @@ const CreateAccount = ({ isOpen, onClose }) => {
         throw new Error(saveResult.message || "Хадгалах үед алдаа гарлаа");
       }
 
-      const counterRes = await fetchWithTimeout(`${BASE_URL}/api/gl-tooluurchange`, {
+      const counterRes = await fetch(`${BASE_URL}/api/gl-tooluurchange`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ edd }),

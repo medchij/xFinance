@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from "react";
-import {
-  Button,
-  Input,
-  TabList,
-  Tab
-} from "@fluentui/react-components";
+import { Button, Input, TabList, Tab } from "@fluentui/react-components";
 import { Search16Regular } from "@fluentui/react-icons";
 import { setActiveCellValue, getActiveCellFormula, fetchAccountBalanceData } from "../xFinance";
 import { useAppContext } from "./AppContext"; // ✅ AppContext ашиглах
-import { BASE_URL, fetchWithTimeout } from "../../config";
+import { BASE_URL } from "../../config";
 const SearchAccount = ({ isOpen, onClose, onSelect }) => {
   const { setLoading, showMessage } = useAppContext(); // ✅ Context-оос авна
-   const [message, setMessage] = useState("");  
+  const [message, setMessage] = useState("");
   const [activeTab, setActiveTab] = useState("account");
   const [accountData, setAccountData] = useState([]);
   const [cfData, setCfData] = useState([]);
@@ -20,25 +15,25 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
   const [selectedRow, setSelectedRow] = useState(null);
   const [previousValue, setPreviousValue] = useState(null);
-const { dataDir } = useAppContext();
+  const { dataDir } = useAppContext();
+  //  console.log(${BASE_URL});
   useEffect(() => {
-   if (isOpen) {
-     fetchWithTimeout(`${BASE_URL}/api/account`)
-       .then((res) => res.json())
-       .then(setAccountData)
-       .catch((err) => console.error("Account дата уншихад алдаа гарлаа", err));
+    console.log("🔗 BASE_URL =", BASE_URL);
+    if (!isOpen) return;
 
-     fetchWithTimeout(`${BASE_URL}/api/cf`)
-       .then((res) => res.json())
-       .then(setCfData)
-       .catch((err) => console.error("CF дата уншихад алдаа гарлаа", err));
-
-     fetchWithTimeout(`${BASE_URL}/api/customer`)
-       .then((res) => res.json())
-       .then(setCustomerData)
-       .catch((err) => console.error("Customer дата уншихад алдаа гарлаа", err));
-  }
- }, [isOpen, dataDir]);
+    Promise.all([
+      fetch(`${BASE_URL}/api/account`).then((res) => res.json()),
+      fetch(`${BASE_URL}/api/cf`).then((res) => res.json()),
+      fetch(`${BASE_URL}/api/customer`).then((res) => res.json()),
+    ])
+      .then(([accounts, cf, customers]) => {
+        setAccountData(accounts);
+        setCfData(cf);
+        setCustomerData(customers);
+      })
+      .catch((err) => console.error("📌 Дата татахад алдаа гарлаа:", err));
+  }, [isOpen, dataDir]);
+ 
 
   const switchTab = (tab) => {
     setActiveTab(tab);
@@ -46,23 +41,21 @@ const { dataDir } = useAppContext();
     setSelectedRow(null);
   };
 
-const handleRowClick = async (row, valueToInsert) => {
- try {
-    setSelectedRow(row);
-    if (onSelect) {
-      onSelect(row); // 👉 бүхэл row-г дамжуулна
-      onClose();
-    } else {
-      const currentFormula = await getActiveCellFormula(setMessage, setLoading);
-      setPreviousValue(currentFormula);
-      await setActiveCellValue(valueToInsert, setMessage, setLoading);
+  const handleRowClick = async (row, valueToInsert) => {
+    try {
+      setSelectedRow(row);
+      if (onSelect) {
+        onSelect(row); // 👉 бүхэл row-г дамжуулна
+        onClose();
+      } else {
+        const currentFormula = await getActiveCellFormula(setMessage, setLoading);
+        setPreviousValue(currentFormula);
+        await setActiveCellValue(valueToInsert, setMessage, setLoading);
+      }
+    } catch (err) {
+      console.error("❌ Row click error:", err);
     }
-  } catch (err) {
-    console.error("❌ Row click error:", err);
-  }
-};
-
-
+  };
 
   const handleUndoSelection = async () => {
     if (previousValue !== null) {
@@ -103,22 +96,22 @@ const handleRowClick = async (row, valueToInsert) => {
           <Tab value="customer">👤 Харилцагч</Tab>
         </TabList>
 
-      <div style={styles.row}>
-  <Input
-    appearance="outline"
-    contentBefore={<Search16Regular />}
-    type="text"
-    placeholder={
-      activeTab === "account"
-        ? "Дансны нэр эсвэл дугаар хайх..."
-        : activeTab === "cf"
-        ? "CF нэр эсвэл код хайх..."
-        : "Харилцагчийн нэр хайх..."
-    }
-    value={searchText}
-    onChange={(_, data) => setSearchText(data.value)}
-  />
-</div>
+        <div style={styles.row}>
+          <Input
+            appearance="outline"
+            contentBefore={<Search16Regular />}
+            type="text"
+            placeholder={
+              activeTab === "account"
+                ? "Дансны нэр эсвэл дугаар хайх..."
+                : activeTab === "cf"
+                  ? "CF нэр эсвэл код хайх..."
+                  : "Харилцагчийн нэр хайх..."
+            }
+            value={searchText}
+            onChange={(_, data) => setSearchText(data.value)}
+          />
+        </div>
 
         {selectedRow && (
           <div style={styles.selectedAccount}>
@@ -126,8 +119,8 @@ const handleRowClick = async (row, valueToInsert) => {
             {activeTab === "account"
               ? `${selectedRow["Дансны дугаар"]} - ${selectedRow["Дансны нэр"]}`
               : activeTab === "cf"
-              ? `${selectedRow.code} - ${selectedRow.name}`
-              : `${selectedRow["name"]}`}
+                ? `${selectedRow.code} - ${selectedRow.name}`
+                : `${selectedRow["name"]}`}
             <button style={styles.undoButton} onClick={handleUndoSelection}>
               ❌ Буцаах
             </button>
@@ -175,11 +168,7 @@ const handleRowClick = async (row, valueToInsert) => {
                   onDoubleClick={() =>
                     handleRowClick(
                       row,
-                      activeTab === "account"
-                        ? row["Дансны дугаар"]
-                        : activeTab === "cf"
-                        ? row.code
-                        : row["name"]
+                      activeTab === "account" ? row["Дансны дугаар"] : activeTab === "cf" ? row.code : row["name"]
                     )
                   }
                 >
@@ -240,8 +229,6 @@ const handleRowClick = async (row, valueToInsert) => {
     </div>
   );
 };
-
-
 
 const styles = {
   overlay: {
@@ -382,12 +369,12 @@ const styles = {
     borderRadius: "4px",
   },
   fetchButton: {
-  background: "#ccc",
-  border: "none",
-  padding: "10px 15px", // ✅ Хаах товчтой ижил padding
-  cursor: "pointer",
-  borderRadius: "4px",
-},
+    background: "#ccc",
+    border: "none",
+    padding: "10px 15px", // ✅ Хаах товчтой ижил padding
+    cursor: "pointer",
+    borderRadius: "4px",
+  },
 };
 
 export default SearchAccount;
