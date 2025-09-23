@@ -6,6 +6,7 @@ import {
   normalizeExcelDate,
   formatLargeNumber,
 } from "./apiHelpers";
+import { BASE_URL, fetchWithTimeout } from "../config";
 export async function getMerchantCategoryById(setMessage, setLoading) {
   return await withLoading(setLoading, setMessage, async () => {
     const id = await Excel.run(async (context) => {
@@ -17,7 +18,8 @@ export async function getMerchantCategoryById(setMessage, setLoading) {
       return value;
     });
 
-    const url = `http://localhost:4000/api/merchant/${id}`;
+    const url = `${BASE_URL}/api/merchant/${id}`;
+    
 
     let response;
     try {

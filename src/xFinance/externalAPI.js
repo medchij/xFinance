@@ -350,13 +350,13 @@ export async function getKhanbankToken(setMessage, setLoading) {
     //   sheet.getRange("B2").values = [[result.access_token ?? ""]];
     // });
 
-    await fetch(`http://localhost:4000/api/settings/${accessId}`, {
+    await fetch(`${BASE_URL}/api/settings/${accessId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ value: result.access_token }),
     });
 
-    await fetch(`http://localhost:4000/api/settings/${refreshId}`, {
+    await fetch(`${BASE_URL}/api/settings/${refreshId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ value: result.refresh_token }),

@@ -15,7 +15,7 @@
   <SupportUrl DefaultValue="https://www.contoso.com/help"/>
 
   <AppDomains>
-    <AppDomain>https://www.contoso.com</AppDomain>
+     <AppDomain>https://x-finance-tau.vercel.app</AppDomain>
   </AppDomains>
 
   <Hosts>
@@ -23,7 +23,7 @@
   </Hosts>
 
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://localhost:3000/XFinance.html"/>
+     <SourceLocation DefaultValue="https://x-finance-tau.vercel.app/XFinance.html"/>
   </DefaultSettings>
 
   <Permissions>ReadWriteDocument</Permissions>
