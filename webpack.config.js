@@ -1,4 +1,5 @@
 /* eslint-disable no-undef */
+require("dotenv").config({ path: ".env.production" });
 const devCerts = require("office-addin-dev-certs");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
@@ -77,8 +78,9 @@ module.exports = async (env = {}, options = {}) => {
 
   // ⬇️ DefinePlugin нэмсэн хэсэг
   new webpack.DefinePlugin({
-    "process.env.REACT_APP_API_URL": JSON.stringify(process.env.REACT_APP_API_URL || "")
-  }),
+  "process.env.REACT_APP_API_URL": JSON.stringify(process.env.REACT_APP_API_URL || "")
+}),
+
 
   // Analyzer-г зөвхөн ANALYZE=true үед асаана
   ...(useAnalyzer
