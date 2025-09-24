@@ -4,10 +4,10 @@ import path from "path";
 export default function handler(req, res) {
   try {
     const dataDir = process.env.DATA_DIR || "dataNany";
-    const filePath = path.join(process.cwd(), dataDir, "Account.json");
+    const filePath = path.join(process.cwd(), dataDir, "Settings.json");
     const json = JSON.parse(fs.readFileSync(filePath, "utf8"));
     res.status(200).json(json);
   } catch (err) {
-    res.status(500).json({ message: "Account.json уншихад алдаа гарлаа", error: err.message });
+    res.status(500).json({ message: "Settings.json уншихад алдаа гарлаа", error: err.message });
   }
 }
