@@ -1,23 +1,20 @@
-"use strict";
-
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
-const fsp = fs.promises;
 const path = require("path");
-const serverless = require("serverless-http"); // ⬅️ нэмэв
-const fetch = (...args) => import("node-fetch").then(({ default: f }) => f(...args));
+const serverless = require("serverless-http"); // ⬅️ Нэмсэн
 
 const configPath = path.join(__dirname, "config", "current-env.json");
-let config = {};
-try { config = JSON.parse(fs.readFileSync(configPath, "utf8")); } catch (e) {}
+const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-
-const dataDir = path.resolve(process.env.DATA_DIR || config.DATA_DIR || "data");
 app.use(cors());
 app.use(express.json());
+
+const dataDir = path.resolve(config.DATA_DIR || "backend/dataNany"); // ⬅️ Vercel-ийн ажлын лавлахтай нийцүүлэв
+console.log("📁 DATA_DIR from config:", config.DATA_DIR);
+console.log("📁 Full resolved path:", dataDir);
 
 // ---------------- Туслах функц ----------------
 const jsonFile = (name) => path.join(dataDir, name);
@@ -134,58 +131,74 @@ app.get("/api/merchant/:id", async (req, res) => {
 // POST JSON
 app.post(
   "/api/settings",
-  createJsonRecord("Settings.json", (body, records) => ({
-    id: (records.length + 1).toString(),
-    tab: body.tab,
-    name: body.name,
-    value: body.value,
-    create_date: new Date().toISOString(),
-  }), "name")
+  createJsonRecord(
+    "Settings.json",
+    (body, records) => ({
+      id: (records.length + 1).toString(),
+      tab: body.tab,
+      name: body.name,
+      value: body.value,
+      create_date: new Date().toISOString(),
+    }),
+    "name"
+  )
 );
 
 app.post(
   "/api/account",
-  createJsonRecord("Account.json", (body, records) => ({
-    id: (records.length + 1).toString(),
-    "Дансны дугаар": body["Дансны дугаар"],
-    "Дансны нэр": body["Дансны нэр"],
-    "Валют": body["Валют"],
-    "Салбар": body["Салбар"],
-    "Нээсэн огноо": new Date().toLocaleString("en-GB"),
-  }), "Дансны дугаар")
+  createJsonRecord(
+    "Account.json",
+    (body, records) => ({
+      id: (records.length + 1).toString(),
+      "Дансны дугаар": body["Дансны дугаар"],
+      "Дансны нэр": body["Дансны нэр"],
+      Валют: body["Валют"],
+      Салбар: body["Салбар"],
+      "Нээсэн огноо": new Date().toLocaleString("en-GB"),
+    }),
+    "Дансны дугаар"
+  )
 );
 
 app.post(
   "/api/customer",
-  createJsonRecord("Customer.json", (body, records) => ({
-    id: (records.length + 1).toString(),
-    name: body.name,
-    create_date: new Date().toLocaleString("en-GB"),
-    status: body.status,
-  }), "name")
+  createJsonRecord(
+    "Customer.json",
+    (body, records) => ({
+      id: (records.length + 1).toString(),
+      name: body.name,
+      create_date: new Date().toLocaleString("en-GB"),
+      status: body.status,
+    }),
+    "name"
+  )
 );
 
 // PUT JSON
 app.put(
   "/api/settings/:id",
-  updateJsonRecord("Settings.json",
+  updateJsonRecord(
+    "Settings.json",
     (item, req) => item.id === req.params.id,
     (item, req) => {
       if (req.body.name !== undefined) item.name = req.body.name;
       if (req.body.value !== undefined) item.value = req.body.value;
       item.update_date = new Date().toISOString();
       return item;
-    })
+    }
+  )
 );
 
 app.put(
   "/api/gl-tooluurchange",
-  updateJsonRecord("GLAccount.json",
+  updateJsonRecord(
+    "GLAccount.json",
     (item, req) => item["Дансны дугаар"] === req.body.edd,
     (item, req) => {
       item["Тоолуур"] = (parseInt(item["Тоолуур"] || "0") + 1).toString();
       return item;
-    })
+    }
+  )
 );
 
 if (process.env.VERCEL) {
@@ -193,5 +206,5 @@ if (process.env.VERCEL) {
   module.exports = serverless(app);
 } else {
   app.listen(PORT, () => console.log(`✅ Backend http://localhost:${PORT}`));
-
 }
+module.exports = serverless(app);
