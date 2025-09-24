@@ -6,6 +6,7 @@
       "includeFiles": [
         "backend/dataNany/**",
         "backend/dataMall/**",
+        "backend/dataSoyombo/**",
         "backend/config/current-env.json"
       ]
     }
