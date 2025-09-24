@@ -13,11 +13,16 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 
-const dataDir = path.resolve(
-  process.env.DATA_DIR || // Vercel → Dashboard Env
-    config.DATA_DIR || // config/current-env.json
-    "backend/dataNany" // default fallback
-);
+// ---- DATA_DIR тогтвортой resolve ----
+const rawDataDir = process.env.DATA_DIR || config.DATA_DIR || "./dataNany";
+/**
+ * - Хэрэв "./..." бол backend хавтаснаас ( __dirname ) харьцангуй гэж үзнэ
+ * - Бусад тохиолдолд absolute эсвэл root-с resolve хийнэ
+ */
+const dataDir = rawDataDir.startsWith(".")
+  ? path.resolve(__dirname, rawDataDir)         // -> backend/dataNany
+  : path.resolve(process.cwd(), rawDataDir);
+
 
 console.log("📁 DATA_DIR:", dataDir);
 
