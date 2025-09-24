@@ -2,11 +2,7 @@
   "functions": {
     "backend/server.js": {
       "runtime": "nodejs22.x",
-      "includeFiles": [
-        "backend/dataNany/**",
-        "backend/dataMall/**",
-        "backend/config/current-env.json"
-      ]
+      "includeFiles": "backend/**"
     }
   },
   "rewrites": [
