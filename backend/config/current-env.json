@@ -1,3 +1,4 @@
+// backend/config/current-env.json
 {
-  "DATA_DIR": "./dataNany"
+  "DATA_DIR": "backend/dataNany"
 }

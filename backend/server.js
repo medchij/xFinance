@@ -207,9 +207,10 @@ app.put(
   )
 );
 
-if (process.env.VERCEL) {
-  // ⬇️ Vercel-д зориулсан handler
-  module.exports = serverless(app);
-} else {
-  app.listen(PORT, () => console.log(`✅ Backend http://localhost:${PORT}`));
+if (!process.env.VERCEL) {
+  const port = process.env.PORT || 4000;
+  app.listen(port, () => console.log(`✅ Local http://localhost:${port}`));
 }
+
+// Vercel-д зориулсан handler
+module.exports = serverless(app);
