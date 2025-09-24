@@ -108,17 +108,19 @@ module.exports = async (env = {}, options = {}) => {
       maxAssetSize: 700000,
     },
     devServer: {
-      hot: true,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      // Analyzer эсвэл WRITE_TO_DISK=true үед RAM биш диск рүү бичих (түр хэрэглээ)
-      devMiddleware: { writeToDisk: !!process.env.WRITE_TO_DISK || useAnalyzer },
-      server: dev
-        ? {
-            type: "https",
-            options: env.WEBPACK_BUILD || options.https !== undefined ? options.https : await getHttpsOptions(),
-          }
-        : "http",
-      port: process.env.npm_package_config_dev_server_port || 3000,
-    },
+  hot: true,
+  headers: { "Access-Control-Allow-Origin": "*" },
+  // Analyzer эсвэл WRITE_TO_DISK=true үед RAM биш диск рүү бичих (түр хэрэглээ)
+  devMiddleware: { writeToDisk: !!process.env.WRITE_TO_DISK || useAnalyzer },
+  server: dev
+    ? {
+        type: "https",
+        options: env.WEBPACK_BUILD || options.https !== undefined
+          ? options.https
+          : await getHttpsOptions(),
+      }
+    : "http",
+  port: process.env.npm_package_config_dev_server_port || 3000,
+},
   };
 };
