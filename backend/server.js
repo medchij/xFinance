@@ -3,42 +3,65 @@ const cors = require("cors");
 const fs = require("fs");
 const fsp = fs.promises;
 const path = require("path");
-const serverless = require("serverless-http"); // ⬅️ Нэмсэн
+const serverless = require("serverless-http");
 
-const configPath = path.join(__dirname, "config", "current-env.json");
-const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+// ---------------- 🔧 Config ----------------
+const CONFIG_PATH = path.join(__dirname, "config", "current-env.json");
 
+function readConfigSafe() {
+  try {
+    const raw = fs.readFileSync(CONFIG_PATH, "utf8");
+    return raw ? JSON.parse(raw) : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function resolveDataDir() {
+  const cfg = readConfigSafe();
+  const raw = process.env.DATA_DIR || cfg.DATA_DIR || "./dataNany";
+  return raw.startsWith(".")
+    ? path.resolve(__dirname, raw)
+    : path.resolve(process.cwd(), raw);
+}
+
+const jsonFile = (name) => path.join(resolveDataDir(), name);
+
+// ---------------- 🚀 Express ----------------
 const app = express();
-const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 
-// ---- DATA_DIR тогтвортой resolve ----
-const rawDataDir = process.env.DATA_DIR || config.DATA_DIR || "./dataNany";
-/**
- * - Хэрэв "./..." бол backend хавтаснаас ( __dirname ) харьцангуй гэж үзнэ
- * - Бусад тохиолдолд absolute эсвэл root-с resolve хийнэ
- */
-const dataDir = rawDataDir.startsWith(".")
-  ? path.resolve(__dirname, rawDataDir)         // -> backend/dataNany
-  : path.resolve(process.cwd(), rawDataDir);
-
-
-console.log("📁 DATA_DIR:", dataDir);
-
-// ---------------- Туслах функц ----------------
-const jsonFile = (name) => path.join(dataDir, name);
-
+// ---------------- 📁 Serve JSON ----------------
 function serveJson(filename, errorMessage) {
-  return (req, res) => {
-    const filePath = jsonFile(filename);
-    console.log("🔎 Serving JSON:", filePath); // ⬅️ энд log нэмлээ
-    fs.readFile(filePath, "utf8", (err, data) => {
-      if (err) return res.status(500).send(errorMessage);
+  return async (req, res) => {
+    try {
+      const filePath = jsonFile(filename);
+      console.log("📤 Serving:", filePath);
+      const data = await fsp.readFile(filePath, "utf8");
       res.json(JSON.parse(data));
-    });
+    } catch (err) {
+      console.error("❌", err.message);
+      res.status(500).json({ message: errorMessage, error: err.message });
+    }
   };
 }
+
+
+app.post("/api/save-env", (req, res) => {
+  const updatedEnv = req.body; // { DATA_DIR: "./dataMall" }
+  const configPath = path.join(__dirname, "config", "current-env.json");
+
+  fs.writeFile(configPath, JSON.stringify(updatedEnv, null, 2), (err) => {
+    if (err) {
+      console.error("❌ config хадгалахад алдаа:", err);
+      return res.status(500).json({ message: "Алдаа гарлаа" });
+    }
+
+    console.log("📁 DATA_DIR шинэчлэгдлээ:", updatedEnv.DATA_DIR);
+    res.json({ message: "✅ DATA_DIR амжилттай хадгалагдлаа" });
+  });
+});
 
 const createJsonRecord = (fileName, generateRecord, uniqueField) => async (req, res) => {
   try {
@@ -104,19 +127,7 @@ const updateJsonRecord = (fileName, matchFn, updateFn) => async (req, res) => {
   }
 };
 
-// ---------------- API ----------------
-// Env хадгалах (Dev-д л ажиллана)
-app.post("/api/save-env", async (req, res) => {
-  if (process.env.VERCEL) return res.status(405).json({ error: "Prod дээр хадгалалт хаалттай" });
 
-  const updatedEnv = req.body;
-  try {
-    await fsp.writeFile(configPath, JSON.stringify(updatedEnv, null, 2), "utf8");
-    res.json({ message: "✅ DATA_DIR хадгалагдлаа", data: updatedEnv });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 // GET JSON
 app.get("/api/currency", serveJson("Currency.json", "Currency.json уншихад алдаа"));
