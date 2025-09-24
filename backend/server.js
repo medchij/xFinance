@@ -47,6 +47,16 @@ function serveJson(filename, errorMessage) {
   };
 }
 
+app.get("/api/ping", (req, res) => {
+  const dir = resolveDataDir();
+  const files = fs.existsSync(dir) ? fs.readdirSync(dir) : [];
+  res.json({
+    dir,
+    exists: fs.existsSync(dir),
+    files,
+    hasAccount: fs.existsSync(jsonFile("Account.json")),
+  });
+});
 
 app.post("/api/save-env", (req, res) => {
   const updatedEnv = req.body; // { DATA_DIR: "./dataMall" }
