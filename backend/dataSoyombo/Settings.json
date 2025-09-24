@@ -19,9 +19,9 @@
     "id": "3",
     "tab": "Үндсэн тохиргоо",
     "name": "access_token",
-    "value": "u8Je1AyZhjGXADpTwRsth8vAiw3H",
+    "value": "WFl3xfBcJsXd6Lvna0ef5IZV2Cfi",
     "creade_date": "2023-10-01T00:00:00.000Z",
-    "update_date": "2025-09-23T16:05:48.778Z"
+    "update_date": "2025-09-23T16:10:40.318Z"
   },
   {
     "id": "4",
@@ -42,10 +42,10 @@
   {
     "id": "6",
     "name": "refresh_token",
-    "value": "ImbgZAwt1LjbBd3OJ6CVEtuA6mC1pe8E",
+    "value": "ACfUedtGnLKWe7DwfSvq11uFvwNbGMWO",
     "tab": "Үндсэн тохиргоо",
     "create_date": "2025-05-22T08:29:35.676Z",
-    "update_date": "2025-09-23T16:05:48.796Z"
+    "update_date": "2025-09-23T16:10:40.343Z"
   },
   {
     "id": "7",
@@ -74,9 +74,9 @@
     "id": "10",
     "tab": "Бусад тохиргоо",
     "name": "sheetname",
-    "value": "Программ",
+    "value": "Accountbalance",
     "create_date": "2025-06-12T08:17:01.672Z",
-    "update_date": "2025-06-26T07:06:16.942Z"
+    "update_date": "2025-09-23T16:14:08.003Z"
   },
   {
     "id": "11",
