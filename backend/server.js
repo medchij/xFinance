@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
+const fsp = fs.promises;
 const path = require("path");
 const serverless = require("serverless-http"); // ⬅️ Нэмсэн
 
@@ -207,4 +208,3 @@ if (process.env.VERCEL) {
 } else {
   app.listen(PORT, () => console.log(`✅ Backend http://localhost:${PORT}`));
 }
-module.exports = serverless(app);
