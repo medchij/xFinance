@@ -1,20 +1,15 @@
 {
-  "version": 2,
   "functions": {
     "backend/server.js": {
-      "runtime": "nodejs18.x",
+      "runtime": "nodejs22.x",
       "includeFiles": [
         "backend/dataNany/**",
         "backend/dataMall/**",
-        "backend/dataSoyombo/**",
         "backend/config/current-env.json"
       ]
     }
   },
   "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/backend/server.js"
-    }
+    { "source": "/api/(.*)", "destination": "/backend/server.js" }
   ]
 }
