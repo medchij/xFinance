@@ -1,4 +1,3 @@
-// server.js
 "use strict";
 
 const express = require("express");
@@ -6,24 +5,17 @@ const cors = require("cors");
 const fs = require("fs");
 const fsp = fs.promises;
 const path = require("path");
+const serverless = require("serverless-http"); // ⬅️ нэмэв
 const fetch = (...args) => import("node-fetch").then(({ default: f }) => f(...args));
 
-// Config файл
 const configPath = path.join(__dirname, "config", "current-env.json");
 let config = {};
-try {
-  config = JSON.parse(fs.readFileSync(configPath, "utf8"));
-} catch (e) {
-  console.warn("⚠️ config файл уншигдсангүй:", e.message);
-}
+try { config = JSON.parse(fs.readFileSync(configPath, "utf8")); } catch (e) {}
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// Data Dir
 const dataDir = path.resolve(process.env.DATA_DIR || config.DATA_DIR || "data");
-console.log("📁 DATA_DIR:", dataDir);
-
 app.use(cors());
 app.use(express.json());
 
@@ -196,11 +188,10 @@ app.put(
     })
 );
 
-// ---------------- Export/Listen ----------------
 if (process.env.VERCEL) {
-  module.exports = app; // Vercel serverless
+  // ⬇️ Vercel-д зориулсан handler
+  module.exports = serverless(app);
 } else {
-  app.listen(PORT, () => {
-    console.log(`✅ Backend running at http://localhost:${PORT}`);
-  });
+  app.listen(PORT, () => console.log(`✅ Backend http://localhost:${PORT}`));
+
 }
