@@ -1,11 +1,14 @@
 {
   "functions": {
-    "backend/server.js": {
+    "api/server.js": {
       "runtime": "nodejs22.x",
       "includeFiles": "backend/**"
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/backend/server.js" }
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/server"
+    }
   ]
 }
