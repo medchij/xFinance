@@ -13,9 +13,13 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 
-const dataDir = path.resolve(config.DATA_DIR || "backend/dataNany"); // ⬅️ Vercel-ийн ажлын лавлахтай нийцүүлэв
-console.log("📁 DATA_DIR from config:", config.DATA_DIR);
-console.log("📁 Full resolved path:", dataDir);
+const dataDir = path.resolve(
+  process.env.DATA_DIR || // Vercel → Dashboard Env
+    config.DATA_DIR || // config/current-env.json
+    "backend/dataNany" // default fallback
+);
+
+console.log("📁 DATA_DIR:", dataDir);
 
 // ---------------- Туслах функц ----------------
 const jsonFile = (name) => path.join(dataDir, name);
@@ -23,6 +27,7 @@ const jsonFile = (name) => path.join(dataDir, name);
 function serveJson(filename, errorMessage) {
   return (req, res) => {
     const filePath = jsonFile(filename);
+    console.log("🔎 Serving JSON:", filePath); // ⬅️ энд log нэмлээ
     fs.readFile(filePath, "utf8", (err, data) => {
       if (err) return res.status(500).send(errorMessage);
       res.json(JSON.parse(data));
