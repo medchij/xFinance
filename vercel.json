@@ -4,15 +4,16 @@
     "api/server.js": {
       "runtime": "nodejs18.x",
       "includeFiles": [
-        "backend/config/current-env.json",
-        "backend/dataMall/*.json",
         "backend/dataNany/*.json",
-        "backend/dataSoyombo/*.json"
-        "backend/data/*.json"
+        "backend/dataMall/*.json",
+        "backend/config/current-env.json"
       ]
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/server.js" }
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/server.js"
+    }
   ]
 }
