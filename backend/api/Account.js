@@ -1,14 +1,11 @@
-import fs from "fs";
-import path from "path";
-
-export default function handler(req, res) {
+const fs = require("fs");
+const path = require("path");
+module.exports = (req, res) => {
   try {
-    const dataDir = process.env.DATA_DIR || "dataNany";
-    
-    const filePath = path.join(process.cwd(), dataDir, "Account.json");
-    const json = JSON.parse(fs.readFileSync(filePath, "utf8"));
-    res.status(200).json(json);
-  } catch (err) {
-    res.status(500).json({ message: "Account.json уншихад алдаа гарлаа", error: err.message });
+    const dir = process.env.DATA_DIR || "dataNany";
+    const file = path.join(process.cwd(), dir, "Account.json");
+    res.status(200).json(JSON.parse(fs.readFileSync(file, "utf8")));
+  } catch (e) {
+    res.status(500).json({ message: "Account.json уншихад алдаа", error: e.message });
   }
-}
+};

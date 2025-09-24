@@ -3,7 +3,7 @@
   "functions": {
     "backend/api/**/*.js": { "runtime": "nodejs18.x" }
   },
-  "routes": [
-    { "src": "^/api/(.*)$", "dest": "/backend/api/$1.js" }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/backend/api/$1.js" }
   ]
 }
