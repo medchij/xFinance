@@ -3,8 +3,10 @@ import { BASE_URL } from "../config";
 //Үндсэн функцүүд
 export let lastImportedData = null;
  async function loadXLSX() {
-  const m = await import("xlsx");
- return m.default || m; }
+   return window.XLSX;
+}
+
+
 export const handleFileImport = async (
   event,
   {

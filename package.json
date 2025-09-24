@@ -1,11 +1,12 @@
 {
-  "name": "office-addin-taskpane-react-js",
-  "version": "0.0.1",
+  "name": "xfinance",
+  "version": "1.0.0",
+  "license": "MIT",
+  "main": "electron.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/OfficeDev/Office-Addin-TaskPane-React-JS.git"
   },
-  "license": "MIT",
   "config": {
     "app_to_debug": "excel",
     "app_type_to_debug": "desktop",
@@ -27,7 +28,10 @@
     "start:web": "cross-env ANALYZE=false office-addin-debugging start manifest.xml web",
     "stop": "office-addin-debugging stop manifest.xml",
     "validate": "office-addin-manifest validate manifest.xml",
-    "watch": "cross-env ANALYZE=false webpack --mode development --watch"
+    "watch": "cross-env ANALYZE=false webpack --mode development --watch",
+
+    "build:web": "webpack --mode production",
+    "build:desktop": "npm run build:web && electron-builder"
   },
   "dependencies": {
     "@fluentui/react-calendar-compat": "^0.2.7",
@@ -69,6 +73,8 @@
     "concurrently": "^9.1.2",
     "copy-webpack-plugin": "^12.0.2",
     "cross-env": "^10.0.0",
+    "electron": "^38.1.2",
+    "electron-builder": "^26.0.12",
     "eslint-plugin-office-addins": "^3.0.2",
     "eslint-plugin-react": "^7.28.0",
     "file-loader": "^6.2.0",
@@ -100,5 +106,26 @@
     "last 2 versions",
     "not ie <= 11",
     "not dead"
-  ]
+  ],
+  "build": {
+    "appId": "com.xfinance.desktop",
+    "productName": "XFinance",
+    "files": [
+      "dist/**/*",
+      "electron.js"
+    ],
+    "directories": { "output": "release" },
+    "win": {
+      "target": "nsis",
+      "artifactName": "XFinance-Setup-${version}.exe"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "deleteAppDataOnUninstall": false
+    },
+    "mac": { "target": "dmg" },
+    "linux": { "target": "AppImage" }
+  }
 }

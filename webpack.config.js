@@ -76,13 +76,14 @@ module.exports = async (env = {}, options = {}) => {
   }),
   new NodePolyfillPlugin(),
 
-  // ⬇️ DefinePlugin нэмсэн хэсэг
+  // ⬇️ DefinePlugin
   new webpack.DefinePlugin({
-  "process.env.REACT_APP_API_URL": JSON.stringify(process.env.REACT_APP_API_URL || "")
-}),
+    "process.env.REACT_APP_API_URL": JSON.stringify(
+      dev ? "" : (process.env.REACT_APP_API_URL || "")
+    ),
+  }),
 
-
-  // Analyzer-г зөвхөн ANALYZE=true үед асаана
+  // ⬇️ Conditional spread зөв байрлалтай
   ...(useAnalyzer
     ? [
         new BundleAnalyzerPlugin({
@@ -96,6 +97,7 @@ module.exports = async (env = {}, options = {}) => {
       ]
     : []),
 ],
+
     externals: { "@microsoft/office-js": "Office" },
     optimization: {
       splitChunks: {
@@ -110,7 +112,7 @@ module.exports = async (env = {}, options = {}) => {
       usedExports: true,
       sideEffects: true,
     },
-    performance: {
+    performance: dev ? false : {
       hints: "warning",
       maxEntrypointSize: 700000,
       maxAssetSize: 700000,
