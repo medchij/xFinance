@@ -1,5 +1,18 @@
 {
   "version": 2,
-  "functions": { "backend/server.js": { "runtime": "nodejs18.x" } },
-  "rewrites": [ { "source": "/api/(.*)", "destination": "/backend/server.js" } ]
+  "functions": {
+    "api/index.js": {
+      "runtime": "nodejs18.x",
+      "includeFiles": [
+        "backend/dataNany/*.json",
+        "backend/dataMall/*.json",
+        "backend/dataSoyombo/*.json",
+        "backend/config/current-env.json"
+      ]
+    }
+  },
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/index.js" }
+  ]
 }
+
