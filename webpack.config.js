@@ -47,47 +47,53 @@ module.exports = async (env = {}, options = {}) => {
       ],
     },
     plugins: [
-      new HtmlWebpackPlugin({
-        filename: "XFinance.html",
-        template: "./src/XFinance/XFinance.html",
-        chunks: ["vendor", "XFinance"],
-      }),
-      new CopyWebpackPlugin({
-        patterns: [
-          { from: "assets/*", to: "assets/[name][ext][query]" },
-          {
-            from: "manifest*.xml",
-            to: "[name][ext]",
-            transform(content) {
-              return dev ? content : content.toString().replace(new RegExp(urlDev, "g"), urlProd);
-            },
-          },
-        ],
-      }),
-      new HtmlWebpackPlugin({
-        filename: "commands.html",
-        template: "./src/commands/commands.html",
-        chunks: ["commands"],
-      }),
-      new webpack.ProvidePlugin({
-        Promise: ["es6-promise", "Promise"],
-        Buffer: ["buffer", "Buffer"],
-      }),
-      new NodePolyfillPlugin(),
-      // Analyzer-г зөвхөн ANALYZE=true үед асаана
-      ...(useAnalyzer
-        ? [
-            new BundleAnalyzerPlugin({
-              analyzerMode: "static",
-              reportFilename: "report.html",
-              openAnalyzer: false,
-              generateStatsFile: true,
-              statsFilename: "stats.json",
-              defaultSizes: "gzip",
-            }),
-          ]
-        : []),
+  new HtmlWebpackPlugin({
+    filename: "XFinance.html",
+    template: "./src/XFinance/XFinance.html",
+    chunks: ["vendor", "XFinance"],
+  }),
+  new CopyWebpackPlugin({
+    patterns: [
+      { from: "assets/*", to: "assets/[name][ext][query]" },
+      {
+        from: "manifest*.xml",
+        to: "[name][ext]",
+        transform(content) {
+          return dev ? content : content.toString().replace(new RegExp(urlDev, "g"), urlProd);
+        },
+      },
     ],
+  }),
+  new HtmlWebpackPlugin({
+    filename: "commands.html",
+    template: "./src/commands/commands.html",
+    chunks: ["commands"],
+  }),
+  new webpack.ProvidePlugin({
+    Promise: ["es6-promise", "Promise"],
+    Buffer: ["buffer", "Buffer"],
+  }),
+  new NodePolyfillPlugin(),
+
+  // ⬇️ DefinePlugin нэмсэн хэсэг
+  new webpack.DefinePlugin({
+    "process.env.REACT_APP_API_URL": JSON.stringify(process.env.REACT_APP_API_URL || "")
+  }),
+
+  // Analyzer-г зөвхөн ANALYZE=true үед асаана
+  ...(useAnalyzer
+    ? [
+        new BundleAnalyzerPlugin({
+          analyzerMode: "static",
+          reportFilename: "report.html",
+          openAnalyzer: false,
+          generateStatsFile: true,
+          statsFilename: "stats.json",
+          defaultSizes: "gzip",
+        }),
+      ]
+    : []),
+],
     externals: { "@microsoft/office-js": "Office" },
     optimization: {
       splitChunks: {
