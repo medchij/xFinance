@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-const path = require("path");
+
 require("dotenv").config({ path: ".env.production" });
 const devCerts = require("office-addin-dev-certs");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
@@ -27,7 +27,7 @@ module.exports = async (env = {}, options = {}) => {
       XFinance: ["./src/XFinance/index.jsx", "./src/XFinance/XFinance.html"],
       commands: "./src/commands/commands.js",
     },
-    output: { path: path.resolve(__dirname, "dist"), clean: true, filename: "[name].js" },
+    output: { clean: true, filename: "[name].js" },
     resolve: {
       extensions: [".js", ".jsx", ".html"],
       fallback: {
