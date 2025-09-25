@@ -2,7 +2,11 @@
   "name": "xfinance",
   "version": "1.0.0",
   "license": "MIT",
+  
   "main": "electron.js",
+  "engines": {
+    "node": "20.x"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/OfficeDev/Office-Addin-TaskPane-React-JS.git"
