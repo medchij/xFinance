@@ -10,5 +10,12 @@
       "source": "/api/(.*)",
       "destination": "/api/server"
     }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/XFinance.html",
+      "permanent": true
+    }
   ]
 }
