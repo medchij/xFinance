@@ -27,7 +27,8 @@ module.exports = async (env = {}, options = {}) => {
       XFinance: ["./src/XFinance/index.jsx", "./src/XFinance/XFinance.html"],
       commands: "./src/commands/commands.js",
     },
-    output: { clean: true, filename: "[name].js" },
+    const path = require("path");
+    output: { path: path.resolve(__dirname, "dist"), clean: true, filename: "[name].js" },
     resolve: {
       extensions: [".js", ".jsx", ".html"],
       fallback: {
