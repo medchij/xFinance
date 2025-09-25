@@ -1,9 +1,8 @@
 {
-  "version": 2,
+ "version": 2,
   "functions": {
-    "api/server.js": {
-      "runtime": "nodejs20.x",
-      "includeFiles": "backend/**"
+    "api/**/*.js": {
+      "runtime": "vercel/node@20.x"
     }
   },
   "rewrites": [
