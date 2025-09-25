@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "license": "MIT",
   "main": "electron.js",
-  "engines": {
-    "node": "22.x"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/OfficeDev/Office-Addin-TaskPane-React-JS.git"
@@ -34,6 +31,9 @@
     "watch": "cross-env ANALYZE=false webpack --mode development --watch",
     "build:web": "webpack --mode production",
     "build:desktop": "npm run build:web && electron-builder"
+  },
+  "engines": {
+    "node": "22.x"
   },
   "dependencies": {
     "@fluentui/react-calendar-compat": "^0.2.7",
@@ -87,7 +87,7 @@
     "less-loader": "^12.2.0",
     "node-polyfill-webpack-plugin": "^4.1.0",
     "office-addin-cli": "^1.6.5",
-    "office-addin-debugging": "^5.1.6",
+    "office-addin-debugging": "^2.1.12",
     "office-addin-dev-certs": "^1.13.5",
     "office-addin-lint": "^2.3.5",
     "office-addin-manifest": "^1.13.6",
@@ -100,7 +100,7 @@
     "webpack": "^5.95.0",
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "5.1.0"
+    "webpack-dev-server": "^5.2.2"
   },
   "prettier": "office-addin-prettier-config",
   "browserslist": [
