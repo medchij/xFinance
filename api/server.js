@@ -8,6 +8,7 @@ const serverless = require("serverless-http");
 // ---------------- 🔧 Config ----------------
 const CONFIG_PATH = path.join(__dirname, "../backend/config/current-env.json");
 
+
 function readConfigSafe() {
   try {
     const raw = fs.readFileSync(CONFIG_PATH, "utf8");
