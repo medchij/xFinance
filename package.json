@@ -33,8 +33,9 @@
     "build:desktop": "npm run build:web && electron-builder"
   },
   "engines": {
-    "node": "22.x"
-  },
+  "node": "22.x"
+},
+
   "dependencies": {
     "@fluentui/react-calendar-compat": "^0.2.7",
     "@fluentui/react-components": "^9.47.2",
