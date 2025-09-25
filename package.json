@@ -28,7 +28,7 @@
     "start:web": "ANALYZE=false office-addin-debugging start manifest.xml web",
     "stop": "office-addin-debugging stop manifest.xml",
     "validate": "office-addin-manifest validate manifest.xml",
-    "watch": "cross-env ANALYZE=false webpack --mode development --watch",
+    "watch": "ANALYZE=false webpack --mode development --watch",
     "build:web": "webpack --mode production",
     "build:desktop": "npm run build:web && electron-builder"
   },
