@@ -2,7 +2,12 @@
   "version": 2,
   "functions": {
     "api/server.js": {
+<<<<<<< HEAD
+      "runtime": "nodejs22.x",
+      "includeFiles": "backend/dataNany/**"
+=======
       "runtime": "nodejs22.x"
+>>>>>>> 22d83383781fa7eeb7a65ea540a1f938b7668af8
     }
   },
   "rewrites": [
@@ -10,5 +15,15 @@
       "source": "/api/(.*)",
       "destination": "/api/server"
     }
+<<<<<<< HEAD
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/XFinance.html",
+      "permanent": true
+    }
+=======
+>>>>>>> 22d83383781fa7eeb7a65ea540a1f938b7668af8
   ]
 }

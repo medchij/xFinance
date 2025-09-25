@@ -12,10 +12,10 @@
   <Description DefaultValue="A template to get started."/>
   <IconUrl DefaultValue="https://localhost:3000/assets/icon-32.png"/>
   <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/icon-64.png"/>
-  <SupportUrl DefaultValue="https://medchij-xfinance.vercel.app/help"/>
+  <SupportUrl DefaultValue="https://xfinance-esc8.onrender.com/help"/>
 
   <AppDomains>
-     <AppDomain>https://medchij-xfinance.vercel.app</AppDomain>
+     <AppDomain>https://xfinance-esc8.onrender.com</AppDomain>
   </AppDomains>
 
   <Hosts>
@@ -23,7 +23,7 @@
   </Hosts>
 
   <DefaultSettings>
-     <SourceLocation DefaultValue="https://medchij-xfinance.vercel.app/XFinance.html"/>
+     <SourceLocation DefaultValue="https://xfinance-esc8.onrender.com/XFinance.html"/>
   </DefaultSettings>
 
   <Permissions>ReadWriteDocument</Permissions>

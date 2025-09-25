@@ -10,7 +10,7 @@ const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
 const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 
 const urlDev = "https://localhost:3000/";
-const urlProd = "https://medchij-xfinance.vercel.app/";
+const urlProd = "https://xfinance-esc8.onrender.com/";
 
 async function getHttpsOptions() {
   const httpsOptions = await devCerts.getHttpsServerOptions();
