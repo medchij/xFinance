@@ -1,2 +1,0 @@
-(self.webpackChunkxfinance=self.webpackChunkxfinance||[]).push([[217],{9152:function(){Office.onReady((()=>{})),Office.actions.associate("action",(function(e){const n={type:Office.MailboxEnums.ItemNotificationMessageType.InformationalMessage,message:"Performed action.",icon:"Icon.80x80",persistent:!0};Office.context.mailbox.item?.notificationMessages.replaceAsync("ActionPerformanceNotification",n),e.completed()}))}},function(e){e(e.s=9152)}]);
-//# sourceMappingURL=commands.js.map
