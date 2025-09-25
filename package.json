@@ -2,7 +2,6 @@
   "name": "xfinance",
   "version": "1.0.0",
   "license": "MIT",
-  
   "main": "electron.js",
   "engines": {
     "node": "22.x"
@@ -33,7 +32,6 @@
     "stop": "office-addin-debugging stop manifest.xml",
     "validate": "office-addin-manifest validate manifest.xml",
     "watch": "cross-env ANALYZE=false webpack --mode development --watch",
-
     "build:web": "webpack --mode production",
     "build:desktop": "npm run build:web && electron-builder"
   },
@@ -50,7 +48,6 @@
     "es6-promise": "^4.2.8",
     "express": "^4.21.2",
     "node-fetch": "^3.3.2",
-    "punycode": "^2.3.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.5.0",
@@ -118,7 +115,9 @@
       "dist/**/*",
       "electron.js"
     ],
-    "directories": { "output": "release" },
+    "directories": {
+      "output": "release"
+    },
     "win": {
       "target": "nsis",
       "artifactName": "XFinance-Setup-${version}.exe"
@@ -129,7 +128,11 @@
       "allowToChangeInstallationDirectory": false,
       "deleteAppDataOnUninstall": false
     },
-    "mac": { "target": "dmg" },
-    "linux": { "target": "AppImage" }
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
   }
 }
