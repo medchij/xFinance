@@ -37,7 +37,7 @@ function serveJson(filename, errorMessage) {
   return async (req, res) => {
     try {
       const filePath = jsonFile(filename);
-      console.log("📤 Serving:", filePath);
+      //console.log("📤 Serving:", filePath);
       const data = await fsp.readFile(filePath, "utf8");
       res.json(JSON.parse(data));
     } catch (err) {
