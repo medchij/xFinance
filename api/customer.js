@@ -12,10 +12,11 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { rows } = await query(`SELECT * FROM ${company_id}_customer`);
+        // ЗАСВАР: SQL query-г зөв хүснэгт (customers) рүү, company_id-г ашиглан шүүдэг болгов.
+        const { rows } = await query('SELECT * FROM customers WHERE company_id = $1', [company_id]);
         res.status(200).json(rows);
     } catch (error) {
-        console.error(`Error fetching from ${company_id}_customer:`, error);
+        console.error(`Error fetching from customers for company ${company_id}:`, error);
         res.status(500).json({ message: `Failed to fetch customers for company ${company_id}` });
     }
 };

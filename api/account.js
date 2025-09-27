@@ -12,10 +12,11 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { rows } = await query(`SELECT * FROM ${company_id}_account`);
+        // ЗАСВАР: SQL query-г зөв хүснэгт рүү, company_id-г ашиглан шүүдэг болгов.
+        const { rows } = await query('SELECT * FROM accounts WHERE company_id = $1', [company_id]);
         res.status(200).json(rows);
     } catch (error) {
-        console.error(`Error fetching from ${company_id}_account:`, error);
+        console.error(`Error fetching from accounts for company ${company_id}:`, error);
         res.status(500).json({ message: `Failed to fetch accounts for company ${company_id}` });
     }
 };
