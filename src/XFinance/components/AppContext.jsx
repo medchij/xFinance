@@ -7,23 +7,23 @@ export const AppProvider = ({ children }) => {
   const [message, setMessage] = useState("");
   const [type, setType] = useState("info");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [dataDir, setDataDir] = useState("dataNany");
   const [actionLog, setActionLog] = useState([]);
 
-  // ✅ LocalStorage-оос dataDir сэргээх
-  useEffect(() => {
+  // FIX: Initialize state from localStorage synchronously to prevent re-render loops.
+  const [dataDir, setDataDir] = useState(() => {
     const saved = localStorage.getItem("dataDir");
-    if (saved) {
-      console.log("🔁 LocalStorage-оос dataDir сэргээв:", saved);
-      setDataDir(saved);
-    }
-  }, []);
+    // This log will only run once on initial load.
+    console.log(saved ? `🔁 LocalStorage-оос dataDir сэргээв: ${saved}` : "🤔 LocalStorage-д dataDir байхгүй, default-г ашиглая: dataNany");
+    return saved || "dataNany";
+  });
 
-  // ✅ dataDir өөрчлөгдөх бүрт localStorage-д хадгалах
+  // This effect now only *saves* the dataDir to localStorage when it changes.
   useEffect(() => {
     if (dataDir) {
       localStorage.setItem("dataDir", dataDir);
-      console.log("💾 dataDir хадгалагдлаа:", dataDir);
+    } else {
+      // If dataDir becomes null/undefined for some reason, remove it.
+      localStorage.removeItem("dataDir");
     }
   }, [dataDir]);
 
