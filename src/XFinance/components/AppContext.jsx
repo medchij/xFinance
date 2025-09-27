@@ -97,7 +97,7 @@ export const AppProvider = ({ children }) => {
     } finally {
         setLoading(false);
     }
-  }, [selectedCompany, searchData, showMessage]);
+  }, [selectedCompany, showMessage]);
 
   // --- EFFECTS ---
 

@@ -1,25 +1,21 @@
-/**
- * config.js
- * 
- * Аппликэйшний гол тохиргоог агуулна, ялангуяа API-ийн BASE_URL-г.
- */
+// config.js
+const isBrowser = typeof window !== "undefined";
+const hostname = isBrowser ? window.location.hostname : "";
+const isLocalHost = /^localhost$|^127(\.\d+){3}$/.test(hostname);
 
-// --- DEBUGGING: Vercel орчны хувьсагчийг шалгах --- 
-console.log("NODE_ENV:", process.env.NODE_ENV);
-console.log("Raw REACT_APP_API_URL from process.env:", process.env.REACT_APP_API_URL);
-// --- END DEBUGGING ---
-
-// API_URL-г орчны хувьсагч (environment variable) болох REACT_APP_API_URL-аас авахыг оролдоно.
-const apiUrlFromEnv = (typeof process !== "undefined" && process.env?.REACT_APP_API_URL) || "";
-console.log("Parsed apiUrlFromEnv:", apiUrlFromEnv);
-
-// Хэрэв орчны хувьсагч тодорхойлогдоогүй бол локал хөгжүүлэлтийн орчинд ашиглах
-// Express серверийн хаягийг заана.
-const localApiUrl = 'http://localhost:3001';
+const envUrl =
+  (typeof process !== "undefined" && process.env?.REACT_APP_API_URL) || "";
 
 /**
- * BASE_URL нь API хүсэлт явуулах үндсэн хаяг болно.
+ * BASE_URL сонгох логик:
+ *  - Локал орчинд (localhost, 127.0.0.1) → http://localhost:4000
+ *  - Хэрэв window.__XFINANCE_API_URL заагдсан бол тэр
+ *  - Хэрэв envUrl (REACT_APP_API_URL) байвал тэр
+ *  - Эцсийн fallback → window.location.origin (production domain)
  */
-export const BASE_URL = apiUrlFromEnv.replace(/\/+$/, "") || localApiUrl;
-
-console.log("Final BASE_URL:", BASE_URL);
+export const BASE_URL = isLocalHost
+  ? "http://localhost:4000"
+  : (
+      (isBrowser && window.__XFINANCE_API_URL) ||
+      (envUrl ? envUrl.replace(/\/+$/, "") : (isBrowser ? window.location.origin : ""))
+    );
