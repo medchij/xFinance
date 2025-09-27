@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Button,
   Tooltip,
@@ -10,55 +10,70 @@ import {
   TableHeaderCell,
   TableRow,
   makeStyles,
-  tokens,
   TabList,
   Tab,
-  Spinner
 } from "@fluentui/react-components";
-import { EditRegular, SaveRegular, CheckmarkCircle24Regular, DismissCircle24Regular, AddRegular, ArrowClockwise16Regular } from "@fluentui/react-icons";
+import {
+  EditRegular,
+  SaveRegular,
+  CheckmarkCircle24Regular,
+  DismissCircle24Regular,
+  AddRegular,
+  ArrowClockwise16Regular,
+} from "@fluentui/react-icons";
 import { useAppContext } from "./AppContext";
 import { withLoading } from "../apiHelpers";
 import { BASE_URL } from "../../config";
 
 const useStyles = makeStyles({
-    container: {
-        padding: "20px",
-        minHeight: "100vh",
-      },
-      tabList: {
-        marginBottom: "16px",
-      },
-      table: {
-        width: "100%",
-        marginBottom: "16px",
-      },
-      input: {
-        minWidth: "100px",
-      },
-      actionCell: {
-        display: "flex",
-        gap: "8px",
-        justifyContent: "center",
-      },
-      newRow: {
-        display: "flex",
-        gap: "10px",
-        marginTop: "16px",
-        alignItems: "flex-end",
-      },
+  container: {
+    padding: "20px",
+    minHeight: "100vh",
+  },
+  tabList: {
+    marginBottom: "16px",
+  },
+  table: {
+    width: "100%",
+    marginBottom: "16px",
+  },
+  input: {
+    minWidth: "100px",
+  },
+  actionCell: {
+    display: "flex",
+    gap: "8px",
+    justifyContent: "center",
+  },
+  newRow: {
+    display: "flex",
+    gap: "10px",
+    marginTop: "16px",
+    alignItems: "flex-end",
+  },
 });
+
+// Check for sensitive keys to mask them
+const isSensitiveKey = (key) =>
+  [
+    "khanbank_password",
+    "access_token",
+    "device_token",
+    "refresh_token",
+    "car_token",
+  ].includes(key);
 
 const SettingsPage = ({ isSidebarOpen }) => {
   const styles = useStyles();
-  const { 
-    selectedCompany, 
-    showMessage, 
-    setLoading, 
-    settings, 
-    fetchSettings, 
-    loading 
+  const {
+    selectedCompany,
+    showMessage,
+    setLoading,
+    settings,
+    fetchSettings,
+    loading,
   } = useAppContext();
-  
+
   const [tabs, setTabs] = useState([]);
   const [activeTab, setActiveTab] = useState(null);
   const [editId, setEditId] = useState(null);
@@ -68,32 +83,33 @@ const SettingsPage = ({ isSidebarOpen }) => {
 
   useEffect(() => {
     if (selectedCompany) {
-      showMessage(`'${selectedCompany}' компанийн тохиргоог ачааллаж байна...`)
+      showMessage(`'${selectedCompany}' компанийн тохиргоог ачааллаж байна...`);
       fetchSettings(false);
     }
   }, [selectedCompany, fetchSettings]);
 
   useEffect(() => {
     if (settings.length > 0) {
-        const uniqueTabs = [...new Set(settings.map((item) => item.tab))].sort();
-        setTabs(uniqueTabs);
-        if (!activeTab || !uniqueTabs.includes(activeTab)) {
-            setActiveTab(uniqueTabs[0] || null);
-        }
+      const uniqueTabs = [...new Set(settings.map((item) => item.tab))].sort();
+      setTabs(uniqueTabs);
+      if (!activeTab || !uniqueTabs.includes(activeTab)) {
+        setActiveTab(uniqueTabs[0] || null);
+      }
     } else {
-        setTabs([]);
-        setActiveTab(null);
+      setTabs([]);
+      setActiveTab(null);
     }
   }, [settings, activeTab]);
 
   const handleRefresh = () => {
-      showMessage("Тохиргоог дахин ачааллаж байна...")
-      fetchSettings(true);
+    showMessage("Тохиргоог дахин ачааллаж байна...");
+    fetchSettings(true);
   };
 
   const handleEdit = (row) => {
     setEditId(row.id);
-    setEditValue(row.value);
+    // For sensitive keys, don't show the real value in the edit input
+    setEditValue(isSensitiveKey(row.name) ? "" : row.value);
   };
 
   const handleSave = async (id) => {
@@ -105,36 +121,40 @@ const SettingsPage = ({ isSidebarOpen }) => {
         body: JSON.stringify({ value: editValue }),
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Серверийн алдаа");
-      
+      if (!response.ok)
+        throw new Error(result.message || "Серверийн алдаа");
+
       await fetchSettings(true);
       setEditId(null);
       showMessage("✅ Тохиргоо амжилттай хадгалагдлаа");
     });
   };
 
-    const handleAdd = async () => {
-        if (!newSetting.name.trim() || !newSetting.value.trim() || !activeTab) {
-        showMessage("⚠️ Нэр, утга болон идэвхтэй таб шаардлагатай.", "warning");
-        return;
-        }
+  const handleAdd = async () => {
+    if (!newSetting.name.trim() || !newSetting.value.trim() || !activeTab) {
+      showMessage("⚠️ Нэр, утга болон идэвхтэй таб шаардлагатай.", "warning");
+      return;
+    }
 
-        await withLoading(setLoading, showMessage, async () => {
-            const url = `${BASE_URL}/api/settings?company_id=${selectedCompany}`;
-            const response = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...newSetting, tab: activeTab }),
-            });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.message || "Шинэ тохиргоо нэмэхэд алдаа гарлаа.");
-            
-            await fetchSettings(true);
-            setNewSetting({ name: "", value: "" });
-            setShowNewInput(false);
-            showMessage("✅ Шинэ тохиргоо амжилттай нэмэгдлээ.", "success");
-        });
-    };
+    await withLoading(setLoading, showMessage, async () => {
+      const url = `${BASE_URL}/api/settings?company_id=${selectedCompany}`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...newSetting, tab: activeTab }),
+      });
+      const result = await response.json();
+      if (!response.ok)
+        throw new Error(
+          result.message || "Шинэ тохиргоо нэмэхэд алдаа гарлаа."
+        );
+
+      await fetchSettings(true);
+      setNewSetting({ name: "", value: "" });
+      setShowNewInput(false);
+      showMessage("✅ Шинэ тохиргоо амжилттай нэмэгдлээ.", "success");
+    });
+  };
 
   const filteredSettings = settings.filter((item) => item.tab === activeTab);
 
@@ -148,31 +168,47 @@ const SettingsPage = ({ isSidebarOpen }) => {
     >
       {!selectedCompany ? (
         <h2>⚠️ Компани сонгогдоогүй байна. Профайл хуудаснаас сонгоно уу.</h2>
-       ) : (
+      ) : (
         <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <h2>📋 {activeTab ? `${activeTab} тохиргоо` : "Тохиргоо"}</h2>
-            <Button 
-              icon={<ArrowClockwise16Regular />} 
-              appearance="subtle" 
-              onClick={handleRefresh} 
+            <Button
+              icon={<ArrowClockwise16Regular />}
+              appearance="subtle"
+              onClick={handleRefresh}
               aria-label="Сэргээх"
               disabled={loading}
             />
           </div>
-          
+
           {tabs.length > 0 && (
-              <TabList selectedValue={activeTab} onTabSelect={(_, data) => setActiveTab(data.value)} className={styles.tabList}>
-                {tabs.map((tab) => <Tab key={tab} value={tab}>{tab}</Tab>)}
-              </TabList>
+            <TabList
+              selectedValue={activeTab}
+              onTabSelect={(_, data) => setActiveTab(data.value)}
+              className={styles.tabList}
+            >
+              {tabs.map((tab) => (
+                <Tab key={tab} value={tab}>
+                  {tab}
+                </Tab>
+              ))}
+            </TabList>
           )}
 
           <Table className={styles.table}>
             <TableHeader>
               <TableRow>
-                <TableHeaderCell style={{width: '20%'}}>Нэр</TableHeaderCell>
+                <TableHeaderCell style={{ width: "20%" }}>Нэр</TableHeaderCell>
                 <TableHeaderCell>Утга</TableHeaderCell>
-                <TableHeaderCell style={{width: '15%', textAlign: 'center'}}>Үйлдэл</TableHeaderCell>
+                <TableHeaderCell style={{ width: "15%", textAlign: "center" }}>
+                  Үйлдэл
+                </TableHeaderCell>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -181,10 +217,24 @@ const SettingsPage = ({ isSidebarOpen }) => {
                   <TableCell>{row.name}</TableCell>
                   <TableCell>
                     {editId === row.id ? (
-                      <Input fluid value={editValue} onChange={(e, data) => setEditValue(data.value)} />
+                      <Input
+                        fluid
+                        value={editValue}
+                        placeholder={isSensitiveKey(row.name) ? 'Шинэ утга оруулна уу' : ''}
+                        onChange={(e, data) => setEditValue(data.value)}
+                      />
                     ) : (
-                      <span title={row.value} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '400px', display: 'block' }}>
-                          {row.value}
+                      <span
+                        title={isSensitiveKey(row.name) ? "********" : row.value}
+                        style={{
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          maxWidth: "400px",
+                          display: "block",
+                        }}
+                      >
+                        {isSensitiveKey(row.name) ? "********" : row.value}
                       </span>
                     )}
                   </TableCell>
@@ -192,16 +242,25 @@ const SettingsPage = ({ isSidebarOpen }) => {
                     {editId === row.id ? (
                       <>
                         <Tooltip content="Хадгалах" relationship="label">
-                            <Button icon={<CheckmarkCircle24Regular />} onClick={() => handleSave(row.id)} />
+                          <Button
+                            icon={<CheckmarkCircle24Regular />}
+                            onClick={() => handleSave(row.id)}
+                          />
                         </Tooltip>
                         <Tooltip content="Болих" relationship="label">
-                            <Button icon={<DismissCircle24Regular />} onClick={() => setEditId(null)} />
+                          <Button
+                            icon={<DismissCircle24Regular />}
+                            onClick={() => setEditId(null)}
+                          />
                         </Tooltip>
                       </>
                     ) : (
-                        <Tooltip content="Засах" relationship="label">
-                            <Button icon={<EditRegular />} onClick={() => handleEdit(row)} />
-                        </Tooltip>
+                      <Tooltip content="Засах" relationship="label">
+                        <Button
+                          icon={<EditRegular />}
+                          onClick={() => handleEdit(row)}
+                        />
+                      </Tooltip>
                     )}
                   </TableCell>
                 </TableRow>
@@ -209,15 +268,33 @@ const SettingsPage = ({ isSidebarOpen }) => {
             </TableBody>
           </Table>
 
-          <Button appearance="primary" icon={<AddRegular />} onClick={() => setShowNewInput(!showNewInput)}>
+          <Button
+            appearance="primary"
+            icon={<AddRegular />}
+            onClick={() => setShowNewInput(!showNewInput)}
+          >
             {showNewInput ? "Болих" : "Шинэ тохиргоо"}
           </Button>
 
           {showNewInput && (
             <div className={styles.newRow}>
-              <Input placeholder="Нэр" value={newSetting.name} onChange={(e, data) => setNewSetting({ ...newSetting, name: data.value })} />
-              <Input placeholder="Утга" value={newSetting.value} onChange={(e, data) => setNewSetting({ ...newSetting, value: data.value })} />
-              <Button appearance="primary" onClick={handleAdd}>Хадгалах</Button>
+              <Input
+                placeholder="Нэр"
+                value={newSetting.name}
+                onChange={(e, data) =>
+                  setNewSetting({ ...newSetting, name: data.value })
+                }
+              />
+              <Input
+                placeholder="Утга"
+                value={newSetting.value}
+                onChange={(e, data) =>
+                  setNewSetting({ ...newSetting, value: data.value })
+                }
+              />
+              <Button appearance="primary" onClick={handleAdd}>
+                Хадгалах
+              </Button>
             </div>
           )}
         </>

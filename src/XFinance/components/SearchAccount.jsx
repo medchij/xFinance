@@ -3,7 +3,6 @@ import {
   Input,
   TabList,
   Tab,
-  Spinner,
   Button,
 } from "@fluentui/react-components";
 import {
@@ -109,108 +108,105 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
   return (
     <div style={styles.overlay}>
       <div style={styles.modal}>
-        <h3 style={styles.title}>Хайх ({activeTab})</h3>
-          <>
-            <div style={styles.tabContainer}>
-                <TabList selectedValue={activeTab} onTabSelect={(_, data) => setActiveTab(data.value)} style={{flex: 1}}>
-                    <Tab style={activeTab === 'account' ? {...styles.tabButton, ...styles.activeTab} : styles.tabButton} value="account">🏦 Данс ({searchData.account.length})</Tab>
-                    <Tab style={activeTab === 'cf' ? {...styles.tabButton, ...styles.activeTab} : styles.tabButton} value="cf">💸 CF ({searchData.cf.length})</Tab>
-                    <Tab style={activeTab === 'customer' ? {...styles.tabButton, ...styles.activeTab} : styles.tabButton} value="customer">👤 Харилцагч ({searchData.customer.length})</Tab>
-                </TabList>
-                <Button icon={<ArrowClockwise16Regular />} appearance="subtle" onClick={handleRefresh} aria-label="Сэргээх" disabled={loading}></Button>
-            </div>
+        <div style={styles.tabContainer}>
+            <TabList selectedValue={activeTab} onTabSelect={(_, data) => setActiveTab(data.value)} style={{flex: 1}}>
+                <Tab style={activeTab === 'account' ? {...styles.tabButton, ...styles.activeTab} : styles.tabButton} value="account">🏦 Данс ({searchData.account.length})</Tab>
+                <Tab style={activeTab === 'cf' ? {...styles.tabButton, ...styles.activeTab} : styles.tabButton} value="cf">💸 CF ({searchData.cf.length})</Tab>
+                <Tab style={activeTab === 'customer' ? {...styles.tabButton, ...styles.activeTab} : styles.tabButton} value="customer">👤 Харилцагч ({searchData.customer.length})</Tab>
+            </TabList>
+            <Button icon={<ArrowClockwise16Regular />} appearance="subtle" onClick={handleRefresh} aria-label="Сэргээх" disabled={loading}></Button>
+        </div>
 
-            <Input
-              contentBefore={<Search16Regular />}
-              type="text"
-              placeholder={`Хайх...`}
-              value={searchText}
-              onChange={(_, data) => setSearchText(data.value)}
-              style={styles.input}
-            />
+        <Input
+          contentBefore={<Search16Regular />}
+          type="text"
+          placeholder={`Хайх...`}
+          value={searchText}
+          onChange={(_, data) => setSearchText(data.value)}
+          style={styles.input}
+        />
 
-            <div style={styles.tableContainer}>
-               <table style={styles.table}>
-                 <thead>
-                    <tr>
-                        {activeTab === "account" ? (
+        <div style={styles.tableContainer}>
+           <table style={styles.table}>
+             <thead>
+                <tr>
+                    {activeTab === "account" ? (
+                    <>
+                        <th style={styles.th}>ID</th>
+                        <th style={styles.th}>Дансны дугаар</th>
+                        <th style={styles.th}>Дансны нэр</th>
+                        <th style={styles.th}>Валют</th>
+                        <th style={styles.th}>Салбар</th>
+                    </>
+                    ) : activeTab === "cf" ? (
+                    <>
+                        <th style={styles.th}>ID</th>
+                        <th style={styles.th}>Код</th>
+                        <th style={styles.th}>Нэр</th>
+                    </>
+                    ) : (
+                    <>
+                        <th style={styles.th}>ID</th>
+                        <th style={styles.th}>Харилцагч</th>
+                        <th style={styles.th}>Статус</th>
+                    </>
+                    )}
+                </tr>
+             </thead>
+             <tbody>
+                {filteredData.map((row, index) => (
+                    <tr
+                      key={row.id || index}
+                      style={{ 
+                        ...styles.tableRow, 
+                        ...(hoveredRow === (row.id || index) && styles.tableRowHover), 
+                        ...(selectedRow?.id === row.id && styles.selectedRow) 
+                      }}
+                      onDoubleClick={() => handleRowClick( row, activeTab === "account" ? row.account_number : activeTab === "cf" ? row.original_id : row.name )}
+                      onMouseEnter={() => setHoveredRow(row.id || index)}
+                      onMouseLeave={() => setHoveredRow(null)}
+                    >
+                    {activeTab === "account" ? (
                         <>
-                            <th style={styles.th}>ID</th>
-                            <th style={styles.th}>Дансны дугаар</th>
-                            <th style={styles.th}>Дансны нэр</th>
-                            <th style={styles.th}>Валют</th>
-                            <th style={styles.th}>Салбар</th>
+                        <td style={styles.td}>{row.id}</td>
+                        <td style={styles.td}>{row.account_number}</td>
+                        <td style={styles.td}>{row.account_name}</td>
+                        <td style={styles.td}>{row.currency}</td>
+                        <td style={styles.td}>{row.branch}</td>
                         </>
-                        ) : activeTab === "cf" ? (
+                    ) : activeTab === "cf" ? (
                         <>
-                            <th style={styles.th}>ID</th>
-                            <th style={styles.th}>Код</th>
-                            <th style={styles.th}>Нэр</th>
+                        <td style={styles.td}>{row.id}</td>
+                        <td style={styles.td}>{row.original_id}</td>
+                        <td style={styles.td}>{row.name}</td>
                         </>
-                        ) : (
+                    ) : (
                         <>
-                            <th style={styles.th}>ID</th>
-                            <th style={styles.th}>Харилцагч</th>
-                            <th style={styles.th}>Статус</th>
+                        <td style={styles.td}>{row.id}</td>
+                        <td style={styles.td}>{row.name}</td>
+                        <td style={styles.td}>{row.status}</td>
                         </>
-                        )}
+                    )}
                     </tr>
-                 </thead>
-                 <tbody>
-                    {filteredData.map((row, index) => (
-                        <tr
-                          key={row.id || index}
-                          style={{ 
-                            ...styles.tableRow, 
-                            ...(hoveredRow === (row.id || index) && styles.tableRowHover), 
-                            ...(selectedRow?.id === row.id && styles.selectedRow) 
-                          }}
-                          onDoubleClick={() => handleRowClick( row, activeTab === "account" ? row.account_number : activeTab === "cf" ? row.original_id : row.name )}
-                          onMouseEnter={() => setHoveredRow(row.id || index)}
-                          onMouseLeave={() => setHoveredRow(null)}
-                        >
-                        {activeTab === "account" ? (
-                            <>
-                            <td style={styles.td}>{row.id}</td>
-                            <td style={styles.td}>{row.account_number}</td>
-                            <td style={styles.td}>{row.account_name}</td>
-                            <td style={styles.td}>{row.currency}</td>
-                            <td style={styles.td}>{row.branch}</td>
-                            </>
-                        ) : activeTab === "cf" ? (
-                            <>
-                            <td style={styles.td}>{row.id}</td>
-                            <td style={styles.td}>{row.original_id}</td>
-                            <td style={styles.td}>{row.name}</td>
-                            </>
-                        ) : (
-                            <>
-                            <td style={styles.td}>{row.id}</td>
-                            <td style={styles.td}>{row.name}</td>
-                            <td style={styles.td}>{row.status}</td>
-                            </>
-                        )}
-                        </tr>
-                    ))}
-                 </tbody>
-               </table>
-            </div>
+                ))}
+             </tbody>
+           </table>
+        </div>
 
-            <div style={styles.buttonRow}>
-              {selectedRow ? (
-                <>
-                  <Button icon={<ArrowUndoRegular />} onClick={handleUndoSelection}>
-                    Буцаах
-                  </Button>
-                  <Button appearance="primary" icon={<CheckmarkRegular />} onClick={handleConfirmAndClose}>
-                    Баталгаажуулах
-                  </Button>
-                </>
-              ) : (
-                 <button style={styles.cancelButton} onClick={onClose}>Хаах</button>
-              )}
-            </div>
-          </>
+        <div style={styles.buttonRow}>
+          {selectedRow ? (
+            <>
+              <Button icon={<ArrowUndoRegular />} onClick={handleUndoSelection}>
+                Буцаах
+              </Button>
+              <Button appearance="primary" icon={<CheckmarkRegular />} onClick={handleConfirmAndClose}>
+                Баталгаажуулах
+              </Button>
+            </>
+          ) : (
+             <button style={styles.cancelButton} onClick={onClose}>Хаах</button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -234,31 +230,24 @@ const styles = {
         maxWidth: "900px",
         maxHeight: "90vh",
         background: "#fff",
-        padding: "20px",
+        padding: "15px", // Reduced padding
         borderRadius: "8px",
         boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
         display: "flex",
         flexDirection: "column",
-    },
-    title: {
-      textAlign: "left",
-      fontSize: "18px",
-      marginBottom: "15px",
-      borderBottom: "1px solid #ddd",
-      paddingBottom: "10px",
+        gap: '8px', // Added gap between elements
     },
     tabContainer: {
         display: "flex",
-        marginBottom: "10px",
     },
     tabButton: {
         flex: 1,
-        padding: "10px",
+        padding: "5px", // Reduced padding
         border: "none",
         borderBottom: "2px solid transparent",
         backgroundColor: "#fff",
         cursor: "pointer",
-        fontSize: "16px",
+        fontSize: "15px", // Slightly reduced font size
         transition: "background 0.3s ease-in-out, border-bottom 0.3s ease-in-out",
     },
     activeTab: {
@@ -272,7 +261,6 @@ const styles = {
       borderRadius: "4px",
       width: "100%",
       boxSizing: "border-box",
-      margin: "10px 0",
     },
     tableContainer: {
         flexGrow: 1,
@@ -288,10 +276,10 @@ const styles = {
     },
     th: {
         backgroundColor: "#f7f7f7",
-        padding: "10px",
+        padding: "6px 10px", // Reduced padding
         borderBottom: "1px solid #ddd",
         textAlign: "left",
-        fontSize: "12px",
+        fontSize: "11px", // Reduced font size
         position: "sticky",
         top: 0,
         zIndex: 1,
@@ -320,8 +308,8 @@ const styles = {
       display: "flex",
       justifyContent: "flex-end", 
       gap: "10px",
-      marginTop: "15px",
-      paddingTop: "15px",
+      marginTop: "10px", // Reduced margin
+      paddingTop: "10px", // Reduced padding
       borderTop: "1px solid #ddd",
     },
     cancelButton: {
