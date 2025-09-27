@@ -6,7 +6,6 @@ import { useAppContext } from "./AppContext";
 import { BASE_URL } from "../../config";
 
 const SearchAccount = ({ isOpen, onClose, onSelect }) => {
-  // REFACTOR: Use selectedCompany instead of dataDir
   const { selectedCompany, setLoading, showMessage } = useAppContext();
   
   const [activeTab, setActiveTab] = useState("account");
@@ -16,17 +15,15 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
   const [previousValue, setPreviousValue] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
 
-  // REFACTOR: Fetch data based on selectedCompany
   const fetchDataForCompany = useCallback(async () => {
-    // Don't fetch if the dialog is closed or no company is selected
     if (!isOpen || !selectedCompany) {
-      setData({ account: [], cf: [], customer: [] }); // Clear data if no company
+      setData({ account: [], cf: [], customer: [] });
       return;
     }
 
     console.log(`🏢 Fetching data for company: ${selectedCompany}`);
     setIsFetching(true);
-    showMessage("⏳ Мэдээлэл татаж байна...", 0); // Show loading message
+    showMessage("⏳ Мэдээлэл татаж байна...", 0);
 
     try {
       const endpoints = ["account", "cf", "customer"];
@@ -49,17 +46,17 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
     } catch (error) {
       console.error("📌 Дата татахад алдаа гарлаа:", error);
       showMessage(`❌ Алдаа: ${error.message}`);
-      setData({ account: [], cf: [], customer: [] }); // Clear data on error
+      setData({ account: [], cf: [], customer: [] });
     } finally {
       setIsFetching(false);
-      setLoading(false); // Make sure global loading is also turned off
+      setLoading(false);
     }
   }, [isOpen, selectedCompany, showMessage, setLoading]);
 
 
   useEffect(() => {
     fetchDataForCompany();
-  }, [fetchDataForCompany]); // Effect depends on the memoized fetch function
+  }, [fetchDataForCompany]);
 
   const handleRowClick = async (row, valueToInsert) => {
     try {
@@ -80,7 +77,6 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
   
   if (!isOpen) return null;
 
-  // Show a message if no company is selected
   if (!selectedCompany) {
       return (
           <div style={styles.overlay}>
@@ -90,18 +86,20 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
   }
 
   const currentData = data[activeTab] || [];
+  
+  // ЗАСВАР: Хайлтын логикийг мэдээллийн сангийн шинэ түлхүүр үгс ашигладаг болгов.
   const filteredData = currentData.filter((row) => {
     if (!row) return false;
     const lowerSearchText = searchText.toLowerCase();
     
     if (activeTab === "account") {
       return (
-        row["Дансны дугаар"]?.toLowerCase().includes(lowerSearchText) ||
-        row["Дансны нэр"]?.toLowerCase().includes(lowerSearchText)
+        row.account_number?.toLowerCase().includes(lowerSearchText) ||
+        row.account_name?.toLowerCase().includes(lowerSearchText)
       );
     } else if (activeTab === "cf") {
       return (
-        row.code?.toLowerCase().includes(lowerSearchText) ||
+        row.original_id?.toLowerCase().includes(lowerSearchText) ||
         row.name?.toLowerCase().includes(lowerSearchText)
       );
     } else { // customer
@@ -132,7 +130,6 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
             />
 
             <div style={styles.tableContainer}>
-              {/* Table rendering logic remains mostly the same, but uses filteredData */}
                <table style={styles.table}>
                  <thead>
               <tr>
@@ -160,31 +157,30 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
               </tr>
             </thead>
             <tbody>
+              {/* ЗАСВАР: Хүснэгтийг зурдаг хэсгийг мэдээллийн сангийн шинэ түлхүүр үгс ашигладаг болгов. */}
               {filteredData.map((row, index) => (
                 <tr
                   key={row.id || index}
-                  style={{
-                    ...styles.tableRow,
-                  }}
+                  style={styles.tableRow}
                   onDoubleClick={() =>
                     handleRowClick(
                       row,
-                      activeTab === "account" ? row["Дансны дугаар"] : activeTab === "cf" ? row.code : row.name
+                      activeTab === "account" ? row.account_number : activeTab === "cf" ? row.original_id : row.name
                     )
                   }
                 >
                   {activeTab === "account" ? (
                     <>
                       <td style={styles.td}>{row.id}</td>
-                      <td style={styles.td}>{row["Дансны дугаар"]}</td>
-                      <td style={styles.td}>{row["Дансны нэр"]}</td>
-                      <td style={styles.td}>{row["Валют"]}</td>
-                      <td style={styles.td}>{row["Салбар"]}</td>
+                      <td style={styles.td}>{row.account_number}</td>
+                      <td style={styles.td}>{row.account_name}</td>
+                      <td style={styles.td}>{row.currency}</td>
+                      <td style={styles.td}>{row.branch}</td>
                     </>
                   ) : activeTab === "cf" ? (
                     <>
                       <td style={styles.td}>{row.id}</td>
-                      <td style={styles.td}>{row.code}</td>
+                      <td style={styles.td}>{row.original_id}</td>
                       <td style={styles.td}>{row.name}</td>
                     </>
                   ) : (
