@@ -6,16 +6,16 @@
            xsi:type="TaskPaneApp">
   <Id>374ff70c-b2b6-44ce-a72f-837fd1e1bd9f</Id>
   <Version>1.0.0.0</Version>
-  <ProviderName>xFinance </ProviderName>
+  <ProviderName>Medchij</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="XFinance"/>
-  <Description DefaultValue="A template to get started."/>
-  <IconUrl DefaultValue="https://localhost:3000/assets/icon-32.png"/>
-  <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/icon-64.png"/>
+  <DisplayName DefaultValue="xFinance"/>
+  <Description DefaultValue="Санхүүгийн тайлан, тооцоололд зориулсан Excel-н нэмэлт хэрэгсэл."/>
+  <IconUrl DefaultValue="https://medchij-xfinance.vercel.app/assets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://medchij-xfinance.vercel.app/assets/icon-64.png"/>
   <SupportUrl DefaultValue="https://medchij-xfinance.vercel.app/help"/>
 
   <AppDomains>
-     <AppDomain>https://medchij-xfinance.vercel.app/</AppDomain>
+     <AppDomain>https://medchij-xfinance.vercel.app</AppDomain>
   </AppDomains>
 
   <Hosts>
@@ -74,26 +74,26 @@
 
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16x16" DefaultValue="https://localhost:3000/assets/icon-16.png"/>
-        <bt:Image id="Icon.32x32" DefaultValue="https://localhost:3000/assets/icon-32.png"/>
-        <bt:Image id="Icon.80x80" DefaultValue="https://localhost:3000/assets/icon-80.png"/>
+        <bt:Image id="Icon.16x16" DefaultValue="https://medchij-xfinance.vercel.app/assets/icon-16.png"/>
+        <bt:Image id="Icon.32x32" DefaultValue="https://medchij-xfinance.vercel.app/assets/icon-32.png"/>
+        <bt:Image id="Icon.80x80" DefaultValue="https://medchij-xfinance.vercel.app/assets/icon-80.png"/>
       </bt:Images>
 
       <bt:Urls>
         <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://go.microsoft.com/fwlink/?LinkId=276812"/>
-        <bt:Url id="Commands.Url" DefaultValue="https://localhost:3000/commands.html"/>
-        <bt:Url id="XFinance.Url" DefaultValue="https://localhost:3000/XFinance.html"/>
+        <bt:Url id="Commands.Url" DefaultValue="https://medchij-xfinance.vercel.app/commands.html"/>
+        <bt:Url id="XFinance.Url" DefaultValue="https://medchij-xfinance.vercel.app/XFinance.html"/>
       </bt:Urls>
 
       <bt:ShortStrings>
-        <bt:String id="GetStarted.Title" DefaultValue="Get started with your sample add-in!"/>
-        <bt:String id="CommandsGroup.Label" DefaultValue="Commands Group"/>
-        <bt:String id="XFinanceButton.Label" DefaultValue="XFinance нээх"/>
+        <bt:String id="GetStarted.Title" DefaultValue="xFinance нэмэлтийг ашиглаж эхлээрэй!"/>
+        <bt:String id="CommandsGroup.Label" DefaultValue="xFinance"/>
+        <bt:String id="XFinanceButton.Label" DefaultValue="xFinance нээх"/>
       </bt:ShortStrings>
 
       <bt:LongStrings>
-        <bt:String id="GetStarted.Description" DefaultValue="Таны жишээ нэмэлтийг амжилттай ачааллаа. Эхлэхийн тулд HOME таб руу очоод XFinance самбарыг нээнэ үү."/>
-        <bt:String id="XFinanceButton.Tooltip" DefaultValue="XFinance самбар нээнэ"/>
+        <bt:String id="GetStarted.Description" DefaultValue="xFinance нэмэлт амжилттай суулаа. Ribbon цэсний Home таб дотроос 'xFinance' товчийг дарж ажлын самбарыг нээнэ үү."/>
+        <bt:String id="XFinanceButton.Tooltip" DefaultValue="xFinance ажлын самбарыг нээнэ"/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>
