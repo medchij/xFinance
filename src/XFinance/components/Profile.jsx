@@ -3,68 +3,58 @@ import { BASE_URL } from "../../config";
 import {
   Dropdown,
   Option,
-  Button,
   Field,
   tokens,
+  Spinner, // For loading state
 } from "@fluentui/react-components";
 import { useAppContext } from "./AppContext";
 import Header from "./Header";
 
 const Profile = ({ isSidebarOpen }) => {
-  const {
-    isLoggedIn,
-    setIsLoggedIn,
-    dataDir,
-    setDataDir,
-    showMessage,
-  } = useAppContext();
+  const { dataDir, setDataDir, showMessage } = useAppContext();
+  const [companies, setCompanies] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [localDataDir, setLocalDataDir] = useState(dataDir || "dataNany");
-  const [saving, setSaving] = useState(false);
-
-  const options = ["dataNany", "dataSoyombo", "dataMall"];
-
+  // Fetch the list of available companies from the new database endpoint
   useEffect(() => {
-    fetch("/env.json")
-      .then((res) => res.json())
-      .then((data) =>
-        setLocalDataDir(data.DATA_DIR?.replace("./", "") || "dataNany")
-      )
-      .catch(() => {});
-  }, []);
+    const fetchCompanies = async () => {
+      try {
+        setIsLoading(true);
+        const res = await fetch(`${BASE_URL}/api/companies`);
+        if (!res.ok) {
+          throw new Error("Серверээс компаниудын жагсаалтыг татахад алдаа гарлаа.");
+        }
+        const fetchedCompanies = await res.json();
+        setCompanies(fetchedCompanies);
 
-  const handleLogin = async () => {
-    const updated = { DATA_DIR: `./${localDataDir}` };
-    setSaving(true);
+        // If no company is currently selected in the context, set the first one as default.
+        if (!dataDir && fetchedCompanies.length > 0) {
+          setDataDir(fetchedCompanies[0].id);
+        }
+        
+      } catch (error) {
+        console.error("Failed to fetch companies:", error);
+        showMessage(`❌ Компани татахад алдаа гарлаа: ${error.message}`, 5000);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    try {
-      const res =  await fetch(`${BASE_URL}/api/save-env`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updated),
-      });
+    fetchCompanies();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setDataDir, showMessage]); // dataDir is intentionally omitted to avoid re-fetching when it changes. We only want to fetch once.
 
-      const result = await res.json();
-      showMessage(result.message || "✅ Нэвтрэлт амжилттай");
-      setDataDir(localDataDir);
-      setIsLoggedIn(true);
-    } catch (error) {
-      showMessage("❌ Нэвтрэх үед алдаа гарлаа");
+  const handleCompanyChange = (_, data) => {
+    if (data.optionValue) {
+      setDataDir(data.optionValue);
+      showMessage(`🏢 ${data.optionValue} компанид шилжлээ.`, 3000);
     }
-
-    setSaving(false);
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    showMessage("⚠️ Та системээс гарлаа");
   };
 
   return (
     <div
       style={{
         flexGrow: 1,
-        // padding: "32px 24px", 
         backgroundColor: tokens.colorNeutralBackground1,
         minHeight: "100vh",
         marginLeft: isSidebarOpen ? 250 : 50,
@@ -75,7 +65,7 @@ const Profile = ({ isSidebarOpen }) => {
     >
       <Header
         logo="assets/logo-filled.png"
-        message={isLoggedIn ? "Welcome!" : "Login шаардлагатай"}
+        message={dataDir ? `Та ${dataDir} орчинд байна` : "Компани сонгоно уу"}
       />
 
       <div
@@ -84,40 +74,37 @@ const Profile = ({ isSidebarOpen }) => {
           padding: "24px",
           borderRadius: "8px",
           boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          marginTop: "20px",
+          margin: "20px",
         }}
       >
-        <h2 style={{ marginBottom: "16px" }}>
-          {isLoggedIn ? "👤 Профайл" : "🔐 Нэвтрэх"}
-        </h2>
-
-        {!isLoggedIn ? (
-          <>
-            <Field label="DATA_DIR фолдер сонгоно уу" style={{ padding: "20px" }}>
-              <Dropdown
-                value={localDataDir}
-                onOptionSelect={(_, d) => setLocalDataDir(d.optionValue)}
-              >
-                {options.map((opt) => (
-                  <Option key={opt} value={opt}>
-                    {opt}
-                  </Option>
-                ))}
-              </Dropdown>
-            </Field>
-
-            <Button appearance="primary" onClick={handleLogin} disabled={saving}>
-              {saving ? "Түр хүлээнэ үү..." : "🔑 Нэвтрэх"}
-            </Button>
-          </>
+        <h2 style={{ marginBottom: "16px" }}>Компани Сонголт</h2>
+        
+        {isLoading ? (
+          <Spinner label="Компаниудыг ачааллаж байна..." />
         ) : (
-          <>
-            <p>🔧 Та <b>{dataDir}</b> орчинд ажиллаж байна.</p>
-            <Button appearance="secondary" onClick={handleLogout}>
-              🚪 Гарах
-            </Button>
-          </>
+          <Field 
+            label="Таны ажиллах боломжтой компаниуд"
+            style={{ maxWidth: "400px" }}
+          >
+            <Dropdown
+              value={dataDir || ""}
+              onOptionSelect={handleCompanyChange}
+              placeholder="Компани сонгоно уу..."
+              disabled={companies.length === 0}
+            >
+              {companies.map((company) => (
+                <Option key={company.id} value={company.id}>
+                  {company.name}
+                </Option>
+              ))}
+            </Dropdown>
+          </Field>
         )}
+        
+        {companies.length === 0 && !isLoading && (
+            <p style={{color: tokens.colorPaletteRedBackground3}}>⚠️ Мэдээллийн санд компани бүртгэгдээгүй байна. `setup-database.js` скриптийг ажиллуулна уу.</p>
+        )}
+
       </div>
     </div>
   );

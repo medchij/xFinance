@@ -2,11 +2,11 @@ import React, { useState, useEffect } from "react";
 import {  Input, TabList, Tab } from "@fluentui/react-components";
 import { Search16Regular } from "@fluentui/react-icons";
 import { setActiveCellValue, getActiveCellFormula, fetchAccountBalanceData } from "../xFinance";
-import { useAppContext } from "./AppContext"; // ✅ AppContext ашиглах
+import { useAppContext } from "./AppContext";
 import { BASE_URL } from "../../config";
+
 const SearchAccount = ({ isOpen, onClose, onSelect }) => {
-  const { setLoading, showMessage } = useAppContext(); // ✅ Context-оос авна
-  const [message, setMessage] = useState("");
+  const { dataDir, setLoading, showMessage } = useAppContext();
   const [activeTab, setActiveTab] = useState("account");
   const [accountData, setAccountData] = useState([]);
   const [cfData, setCfData] = useState([]);
@@ -15,26 +15,65 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
   const [selectedRow, setSelectedRow] = useState(null);
   const [previousValue, setPreviousValue] = useState(null);
-  const { dataDir } = useAppContext();
-  //  console.log(${BASE_URL});
-  useEffect(() => {
-    console.log("🔗 BASE_URL =", BASE_URL);
-    if (!isOpen) return;
 
-    Promise.all([
-      fetch(`${BASE_URL}/api/account`).then((res) => res.json()),
-      fetch(`${BASE_URL}/api/cf`).then((res) => res.json()),
-      fetch(`${BASE_URL}/api/customer`).then((res) => res.json()),
-    ])
-      .then(([accounts, cf, customers]) => {
+  useEffect(() => {
+    // If the dialog is closed or no company is selected, do nothing and clear old data.
+    if (!isOpen || !dataDir) {
+      setAccountData([]);
+      setCfData([]);
+      setCustomerData([]);
+      return;
+    }
+
+    const fetchAllDataForCompany = async () => {
+      console.log(`🏢 Fetching data for company: ${dataDir}`);
+      setLoading(true);
+      showMessage("⏳ Мэдээлэл татаж байна...", 0); // Show loading message indefinitely
+
+      try {
+        const [accountsRes, cfRes, customersRes] = await Promise.all([
+          fetch(`${BASE_URL}/api/account?company_id=${dataDir}`),
+          fetch(`${BASE_URL}/api/cf?company_id=${dataDir}`),
+          fetch(`${BASE_URL}/api/customer?company_id=${dataDir}`),
+        ]);
+
+        // Check for network errors
+        if (!accountsRes.ok || !cfRes.ok || !customersRes.ok) {
+           throw new Error('Нэг эсвэл түүнээс дээш хүсэлт амжилтгүй боллоо.');
+        }
+
+        const accounts = await accountsRes.json();
+        const cf = await cfRes.json();
+        const customers = await customersRes.json();
+
+        // Check for application-level errors returned in the JSON body
+        if (accounts.error || cf.error || customers.error) {
+            const errorMessage = accounts.message || cf.message || customers.message;
+            throw new Error(errorMessage);
+        }
+
         setAccountData(accounts);
         setCfData(cf);
         setCustomerData(customers);
-      })
-      .catch((err) => console.error("📌 Дата татахад алдаа гарлаа:", err));
-  }, [isOpen, dataDir]);
- 
+        showMessage("✅ Мэдээлэл амжилттай татлаа.", 3000);
 
+      } catch (error) {
+        console.error("📌 Дата татахад алдаа гарлаа:", error);
+        showMessage(`❌ Алдаа: ${error.message}`, 5000);
+        // Clear data on error to avoid showing stale information
+        setAccountData([]);
+        setCfData([]);
+        setCustomerData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllDataForCompany();
+
+  }, [isOpen, dataDir, setLoading, showMessage]); // Effect depends on these
+
+ 
   const switchTab = (tab) => {
     setActiveTab(tab);
     setSearchText("");
@@ -45,15 +84,16 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
     try {
       setSelectedRow(row);
       if (onSelect) {
-        onSelect(row); // 👉 бүхэл row-г дамжуулна
+        onSelect(row); 
         onClose();
       } else {
-        const currentFormula = await getActiveCellFormula(setMessage, setLoading);
+        const currentFormula = await getActiveCellFormula(showMessage, setLoading);
         setPreviousValue(currentFormula);
-        await setActiveCellValue(valueToInsert, setMessage, setLoading);
+        await setActiveCellValue(valueToInsert, showMessage, setLoading);
       }
     } catch (err) {
       console.error("❌ Row click error:", err);
+      showMessage(`❌ Алдаа: ${err.message}`, 5000);
     }
   };
 
@@ -70,26 +110,28 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
   const data = activeTab === "account" ? accountData : activeTab === "cf" ? cfData : customerData;
 
   const filteredData = data.filter((row) => {
+    if (!row) return false;
+    const lowerSearchText = searchText.toLowerCase();
+    
     if (activeTab === "account") {
       return (
-        row["Дансны дугаар"]?.toLowerCase().includes(searchText.toLowerCase()) ||
-        row["Дансны нэр"]?.toLowerCase().includes(searchText.toLowerCase())
+        row["Дансны дугаар"]?.toLowerCase().includes(lowerSearchText) ||
+        row["Дансны нэр"]?.toLowerCase().includes(lowerSearchText)
       );
     } else if (activeTab === "cf") {
+      // Assuming cf data from DB now has 'name' and 'code'
       return (
-        row.code?.toLowerCase().includes(searchText.toLowerCase()) ||
-        row.name?.toLowerCase().includes(searchText.toLowerCase())
+        row.code?.toLowerCase().includes(lowerSearchText) ||
+        row.name?.toLowerCase().includes(lowerSearchText)
       );
-    } else {
-      return row["name"]?.toLowerCase().includes(searchText.toLowerCase());
+    } else { // customer
+      return row["name"]?.toLowerCase().includes(lowerSearchText);
     }
   });
 
   return (
     <div style={styles.overlay}>
       <div style={styles.modal}>
-        {/* <h2 style={styles.title}>📋 Хайлт</h2> */}
-
         <TabList selectedValue={activeTab} onTabSelect={(_, data) => switchTab(data.value)} style={styles.tabContainer}>
           <Tab value="account">🏦 Данс</Tab>
           <Tab value="cf">💸 CF</Tab>
@@ -157,7 +199,7 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
             <tbody>
               {filteredData.map((row, index) => (
                 <tr
-                  key={index}
+                  key={row.id || index}
                   style={{
                     ...styles.tableRow,
                     ...(hoveredRow === index ? styles.tableRowHover : {}),
@@ -204,15 +246,7 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
             <button
               style={styles.fetchButton}
               onClick={async () => {
-                try {
-                  setLoading(true);
-                  showMessage("⏳ Дансны мэдээллийг татаж байна...");
-                  await fetchAccountBalanceData(showMessage, setLoading);
-                } catch (error) {
-                  showMessage("❌ Алдаа гарлаа: " + error.message);
-                } finally {
-                  setLoading(false);
-                }
+                  showMessage("🔄 Энэ функц идэвхгүй байна.", 3000);
               }}
             >
               🔄 Account шинэчлэх
@@ -230,6 +264,7 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
   );
 };
 
+// Styles remain the same...
 const styles = {
   overlay: {
     position: "fixed",
@@ -264,9 +299,7 @@ const styles = {
   },
   tabContainer: {
     display: "flex",
-    //justifyContent: "center",
     marginBottom: "10px",
-    //borderBottom: "2px solid black",
   },
   tabButton: {
     flex: 1,
@@ -311,7 +344,7 @@ const styles = {
     marginLeft: "10px",
     padding: "5px 8px",
     cursor: "pointer",
-    borderRadius: "4px",
+borderRadius: "4px",
   },
   tableContainer: {
     width: "100%",
@@ -341,9 +374,9 @@ const styles = {
   td: {
     padding: "0 5px",
     fontSize: "12px",
-    whiteSpace: "nowrap", // ✅ 1 мөрөнд багтаах
-    overflow: "hidden", // ✅ Хэтэрсэн текстийг нуух
-    textOverflow: "ellipsis", // ✅ … гэж харагдуулах
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
     maxWidth: "180px",
   },
   tableRow: {
@@ -371,7 +404,7 @@ const styles = {
   fetchButton: {
     background: "#ccc",
     border: "none",
-    padding: "10px 15px", // ✅ Хаах товчтой ижил padding
+    padding: "10px 15px",
     cursor: "pointer",
     borderRadius: "4px",
   },
