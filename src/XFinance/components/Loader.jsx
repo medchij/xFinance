@@ -3,6 +3,7 @@ import { Spinner } from '@fluentui/react-components';
 
 const Loader = () => {
   return (
+    // Дэлгэц бүрхсэн, хагас тунгалаг давхарга (Overlay)
     <div
       style={{
         position: 'fixed',
@@ -10,14 +11,19 @@ const Loader = () => {
         left: 0,
         width: '100%',
         height: '100%',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Бүдэг хар дэвсгэр
         display: 'flex',
+        flexDirection: 'column', // Элементүүдийг босоогоор байрлуулах
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 10000,
+        zIndex: 10000, // Бусад бүх зүйлсийн дээр харагдана
+        gap: '16px', // Spinner болон текстийн хоорондох зай
       }}
     >
-      <Spinner labelPosition="below" label="Ачааллаж байна..." />
+      {/* Label-гүй Spinner */}
+      <Spinner size="huge" />
+      {/* Цагаан өнгөтэй текст */}
+      <p style={{ margin: 0, color: 'white', fontSize: '16px' }}>Ачааллаж байна...</p>
     </div>
   );
 };

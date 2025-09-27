@@ -29,7 +29,6 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
       setSelectedRow(null);
       setPreviousValue(null);
       setHoveredRow(null);
-      showMessage("Мэдээлэл ачааллаж байна...")
       fetchSearchData(false);
     }
   }, [isOpen, fetchSearchData]);

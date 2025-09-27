@@ -77,7 +77,9 @@ export const AppProvider = ({ children }) => {
         return;
     }
     const hasData = searchData.account.length > 0 || searchData.cf.length > 0 || searchData.customer.length > 0;
-    if (hasData && !force) return;
+    if (hasData && !force) {
+        return;
+    }
 
     console.log(`🔍 Fetching search data for ${selectedCompany}...`);
     setLoading(true);
@@ -97,7 +99,7 @@ export const AppProvider = ({ children }) => {
     } finally {
         setLoading(false);
     }
-  }, [selectedCompany, showMessage]);
+  }, [selectedCompany, showMessage, searchData]);
 
   // --- EFFECTS ---
 
