@@ -1,3 +1,4 @@
+
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -17,7 +18,7 @@ app.use(cors());
 app.use(express.json()); 
 
 // Test route to check if the server is running
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
   res.send('xFinance Express.js backend server is running!');
 });
 
@@ -43,9 +44,11 @@ app.use('/api/ping', pingRouter);
 const envRouter = require('./routes/env');
 app.use('/api/env', envRouter);
 
+// Export the app for Vercel
+module.exports = app;
 
-const PORT = process.env.BACKEND_PORT || 3001;
-
-app.listen(PORT, () => {
-  console.log(`✅ Backend server is running on http://localhost:${PORT}`);
-});
+// The app.listen() is removed as Vercel handles the server creation
+// const PORT = process.env.BACKEND_PORT || 3001;
+// app.listen(PORT, () => {
+//   console.log(`✅ Backend server is running on http://localhost:${PORT}`);
+// });
