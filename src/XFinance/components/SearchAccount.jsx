@@ -116,9 +116,9 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
           <>
             <div style={styles.tabContainer}>
                 <TabList selectedValue={activeTab} onTabSelect={(_, data) => setActiveTab(data.value)} style={{flex: 1}}>
-                    <Tab style={activeTab === \'account\' ? {...styles.tabButton, ...styles.activeTab} : styles.tabButton} value="account">🏦 Данс ({searchData.account.length})</Tab>
-                    <Tab style={activeTab === \'cf\' ? {...styles.tabButton, ...styles.activeTab} : styles.tabButton} value="cf">💸 CF ({searchData.cf.length})</Tab>
-                    <Tab style={activeTab === \'customer\' ? {...styles.tabButton, ...styles.activeTab} : styles.tabButton} value="customer">👤 Харилцагч ({searchData.customer.length})</Tab>
+                    <Tab style={activeTab === 'account' ? {...styles.tabButton, ...styles.activeTab} : styles.tabButton} value="account">🏦 Данс ({searchData.account.length})</Tab>
+                    <Tab style={activeTab === 'cf' ? {...styles.tabButton, ...styles.activeTab} : styles.tabButton} value="cf">💸 CF ({searchData.cf.length})</Tab>
+                    <Tab style={activeTab === 'customer' ? {...styles.tabButton, ...styles.activeTab} : styles.tabButton} value="customer">👤 Харилцагч ({searchData.customer.length})</Tab>
                 </TabList>
                 <Button icon={<ArrowClockwise16Regular />} appearance="subtle" onClick={handleRefresh} aria-label="Сэргээх" disabled={loading}></Button>
             </div>
@@ -194,12 +194,12 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
                             </>
                         )}
                         </tr>
-                    ))}\
+                    ))}
                  </tbody>
                </table>
             </div>
 
-            <div style={styles.buttonRow}>\
+            <div style={styles.buttonRow}>
               {selectedRow ? (
                 <>
                   <Button icon={<ArrowUndoRegular />} onClick={handleUndoSelection}>
