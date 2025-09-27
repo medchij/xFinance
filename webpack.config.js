@@ -51,55 +51,53 @@ module.exports = async (env = {}, options = {}) => {
       ],
     },
     plugins: [
-  new HtmlWebpackPlugin({
-    filename: "XFinance.html",
-    template: "./src/XFinance/XFinance.html",
-    chunks: ["vendor", "XFinance"],
-  }),
-  new CopyWebpackPlugin({
-    patterns: [
-      { from: "assets/*", to: "assets/[name][ext][query]" },
-      {
-        from: "manifest*.xml",
-        to: "[name][ext]",
-        transform(content) {
-          return dev ? content : content.toString().replace(new RegExp(urlDev, "g"), urlProd);
-        },
-      },
+      new HtmlWebpackPlugin({
+        filename: "XFinance.html",
+        template: "./src/XFinance/XFinance.html",
+        chunks: ["vendor", "XFinance"],
+      }),
+      new CopyWebpackPlugin({
+        patterns: [
+          { from: "assets/*", to: "assets/[name][ext][query]" },
+          {
+            from: "manifest*.xml",
+            to: "[name][ext]",
+            transform(content) {
+              return dev ? content : content.toString().replace(new RegExp(urlDev, "g"), urlProd);
+            },
+          },
+        ],
+      }),
+      new HtmlWebpackPlugin({
+        filename: "commands.html",
+        template: "./src/commands/commands.html",
+        chunks: ["commands"],
+      }),
+      new webpack.ProvidePlugin({
+        Promise: ["es6-promise", "Promise"],
+        Buffer: ["buffer", "Buffer"],
+      }),
+      new NodePolyfillPlugin(),
+
+      // Environment variables
+      new webpack.DefinePlugin({
+        'process.env.NODE_ENV': JSON.stringify(options.mode),
+        'process.env.REACT_APP_API_URL': JSON.stringify(process.env.REACT_APP_API_URL || '')
+      }),
+
+      ...(useAnalyzer
+        ? [
+            new BundleAnalyzerPlugin({
+              analyzerMode: "static",
+              reportFilename: "report.html",
+              openAnalyzer: false,
+              generateStatsFile: true,
+              statsFilename: "stats.json",
+              defaultSizes: "gzip",
+            }),
+          ]
+        : []),
     ],
-  }),
-  new HtmlWebpackPlugin({
-    filename: "commands.html",
-    template: "./src/commands/commands.html",
-    chunks: ["commands"],
-  }),
-  new webpack.ProvidePlugin({
-    Promise: ["es6-promise", "Promise"],
-    Buffer: ["buffer", "Buffer"],
-  }),
-  new NodePolyfillPlugin(),
-
-  // ⬇️ DefinePlugin
-  new webpack.DefinePlugin({
-    "process.env.REACT_APP_API_URL": JSON.stringify(
-      dev ? "" : (process.env.REACT_APP_API_URL || "")
-    ),
-  }),
-
-  // ⬇️ Conditional spread зөв байрлалтай
-  ...(useAnalyzer
-    ? [
-        new BundleAnalyzerPlugin({
-          analyzerMode: "static",
-          reportFilename: "report.html",
-          openAnalyzer: false,
-          generateStatsFile: true,
-          statsFilename: "stats.json",
-          defaultSizes: "gzip",
-        }),
-      ]
-    : []),
-],
 
     externals: { "@microsoft/office-js": "Office" },
     optimization: {
@@ -121,19 +119,18 @@ module.exports = async (env = {}, options = {}) => {
       maxAssetSize: 700000,
     },
     devServer: {
-  hot: true,
-  headers: { "Access-Control-Allow-Origin": "*" },
-  // Analyzer эсвэл WRITE_TO_DISK=true үед RAM биш диск рүү бичих (түр хэрэглээ)
-  devMiddleware: { writeToDisk: !!process.env.WRITE_TO_DISK || useAnalyzer },
-  server: dev
-    ? {
-        type: "https",
-        options: env.WEBPACK_BUILD || options.https !== undefined
-          ? options.https
-          : await getHttpsOptions(),
-      }
-    : "http",
-  port: process.env.npm_package_config_dev_server_port || 3000,
-},
+      hot: true,
+      headers: { "Access-Control-Allow-Origin": "*" },
+      devMiddleware: { writeToDisk: !!process.env.WRITE_TO_DISK || useAnalyzer },
+      server: dev
+        ? {
+            type: "https",
+            options: env.WEBPACK_BUILD || options.https !== undefined
+              ? options.https
+              : await getHttpsOptions(),
+          }
+        : "http",
+      port: process.env.npm_package_config_dev_server_port || 3000,
+    },
   };
 };
