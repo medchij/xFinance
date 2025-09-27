@@ -1,34 +1,17 @@
 const { Pool } = require('pg');
 
-// Vercel environment variables are automatically available.
+// Vercel-ийн production орчинд SSL холболт шаардлагатай.
+const isProduction = process.env.NODE_ENV === 'production';
+
 const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL + "?sslmode=require",
+  connectionString: process.env.POSTGRES_URL,
+  // Production орчинд (Vercel дээр) SSL тохиргоог идэвхжүүлнэ.
+  // rejectUnauthorized: false гэдэг нь self-signed гэрчилгээг зөвшөөрөх бөгөөд
+  // Vercel Postgres-д холбогдоход ихэвчлэн шаардлагатай байдаг.
+  ssl: isProduction ? { rejectUnauthorized: false } : false,
 });
 
-/**
- * A utility function to query the database. It handles acquiring a client from the pool,
- * executing the query, and releasing the client back to the pool.
- * This helps prevent connection leaks and manages the pool efficiently in a serverless environment.
- *
- * @param {string} text The SQL query string.
- * @param {Array} params The parameters to pass to the SQL query.
- * @returns {Promise<QueryResult>} The result of the query.
- */
-const query = async (text, params) => {
-  let client;
-  try {
-    client = await pool.connect();
-    const result = await client.query(text, params);
-    return result;
-  } catch (error) {
-    console.error('Database Query Error:', error);
-    // Re-throw the error to be handled by the caller
-    throw new Error('Database operation failed.', { cause: error });
-  } finally {
-    if (client) {
-      client.release();
-    }
-  }
+// query гэдэг функц экспорт хийж, бусад файлуудад ашиглах боломжийг олгоно.
+module.exports = {
+  query: (text, params) => pool.query(text, params),
 };
-
-module.exports = { query };
