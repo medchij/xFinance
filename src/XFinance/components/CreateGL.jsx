@@ -1,100 +1,168 @@
 import React, { useState, useEffect } from "react";
-import { BASE_URL} from "../../config";
+import { useAppContext } from "./AppContext";
+import { BASE_URL } from "../../config";
+
 const CreateGL = ({ isOpen, onClose }) => {
+  const { showMessage, setLoading, selectedCompany, fetchSearchData } = useAppContext();
+
   const [dansniiNer, setDansniiNer] = useState("");
   const [edDugaar, setEdDugaar] = useState("");
   const [dansniiAngilal, setDansniiAngilal] = useState("");
   const [currency, setCurrency] = useState("MNT");
+
   const [categories, setCategories] = useState([]);
-  const [filteredAccounts, setFilteredAccounts] = useState([]);
+  const [glAccounts, setGlAccounts] = useState([]);
   const [currencies, setCurrencies] = useState([]);
-  const [message, setMessage] = useState("");
 
- useEffect(() => {
-  (async () => {
-    try {
-      const [catRes, curRes] = await Promise.all([
-        fetch(`${BASE_URL}/api/glcategory`),
-        fetch(`${BASE_URL}/api/currency`),
-      ]);
+  useEffect(() => {
+    const fetchDropdownData = async () => {
+      if (!selectedCompany) return;
+      setLoading(true);
+      try {
+        const companyQuery = `?company_id=${selectedCompany.id}`;
+        const [catRes, curRes] = await Promise.all([
+          fetch(`${BASE_URL}/api/glcategory${companyQuery}`),
+          fetch(`${BASE_URL}/api/currency${companyQuery}`),
+        ]);
 
-      if (!catRes.ok || !curRes.ok) {
-        throw new Error("Серверээс амжилтгүй хариу ирлээ.");
+        if (!catRes.ok || !curRes.ok) {
+          throw new Error("Серверээс ангилал эсвэл валютын мэдээлэл татахад алдаа гарлаа.");
+        }
+
+        const [catData, curData] = await Promise.all([catRes.json(), curRes.json()]);
+
+        setCategories(Array.isArray(catData) ? catData : []);
+        setCurrencies(Array.isArray(curData) ? curData : []);
+      } catch (err) {
+        console.error("Dropdown data fetch error:", err);
+        showMessage("❌ " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchDropdownData();
+    }
+  }, [isOpen, selectedCompany]);
+
+  useEffect(() => {
+    const fetchGLAccounts = async () => {
+      if (!dansniiAngilal || !selectedCompany) {
+        setGlAccounts([]);
+        setEdDugaar("");
+        setDansniiNer("");
+        return;
       }
 
-      const [catData, curData] = await Promise.all([
-        catRes.json(),
-        curRes.json(),
-      ]);
+      setLoading(true);
+      try {
+        const companyQuery = `?company_id=${selectedCompany.id}`;
+        const res = await fetch(`${BASE_URL}/api/glaccount${companyQuery}`);
+        if (!res.ok) throw new Error("ЕДД жагсаалт татахад алдаа гарлаа.");
+        const data = await res.json();
 
-      setCategories(Array.isArray(catData) ? catData : []);
-      setCurrencies(Array.isArray(curData) ? curData : []);
-    } catch (err) {
-      console.error("Reference fetch error:", err);
-      // showMessage?.("❌ Өгөгдөл татахад алдаа гарлаа"); // Хэрвээ AppContext ашигладаг бол
-    }
-  })();
-}, []);
+        const filtered = (Array.isArray(data) ? data : []).filter(
+          (a) => a.category === dansniiAngilal
+        );
+        setGlAccounts(filtered);
+      } catch (err) {
+        console.error("GLAccount fetch error:", err);
+        showMessage("❌ " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-// Ангилал өөрчлөгдөхөд ЕДД жагсаалтыг шүүх
-useEffect(() => {
-  if (!dansniiAngilal) {
-    setFilteredAccounts([]);
-    setEdDugaar("");
-    setDansniiNer("");
-    return;
-  }
+    fetchGLAccounts();
+  }, [dansniiAngilal, selectedCompany]);
 
-  (async () => {
-    try {
-      const res = await fetch(`${BASE_URL}/api/glaccount`);
-      if (!res.ok) throw new Error("GLAccount татахад алдаа гарлаа.");
-      const data = await res.json();
+  const handleAccountChange = (e) => {
+    const selectedAccountNumber = e.target.value;
+    setEdDugaar(selectedAccountNumber);
 
-      const filtered = (Array.isArray(data) ? data : []).filter(
-        (a) => a["Дансны ангилал"] === dansniiAngilal
-      );
+    const selected = glAccounts.find(
+      (a) => a.account_number === selectedAccountNumber
+    );
 
-      setFilteredAccounts(filtered);
-      setEdDugaar("");
+    if (selected) {
+      setDansniiNer(selected.account_name);
+    } else {
       setDansniiNer("");
-    } catch (err) {
-      console.error("GLAccount fetch error:", err);
-      // showMessage?.("❌ ЕДД жагсаалт татахад алдаа гарлаа");
     }
-  })();
-}, [dansniiAngilal]);
+  };
 
-const handleAccountChange = (e) => {
-  const selected = filteredAccounts.find(
-    (a) => a["Дансны дугаар"] === e.target.value
-  );
-  if (selected) {
-    setEdDugaar(selected["Дансны дугаар"]);
-    setDansniiNer(selected["Дансны нэр"]);
-  } else {
+  const handleCreate = async () => {
+    if (!selectedCompany) {
+      showMessage("⚠️ Компани сонгоно уу.");
+      return;
+    }
+    if (!dansniiAngilal || !edDugaar || !dansniiNer || !currency) {
+      showMessage("⚠️ Бүх талбарыг гүйцэд бөглөнө үү.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const newGLAccount = {
+        company_id: selectedCompany.id,
+        account_name: dansniiNer,
+        account_number: edDugaar,
+        category: dansniiAngilal,
+        currency: currency,
+      };
+
+      const res = await fetch(`${BASE_URL}/api/glaccount`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newGLAccount),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "ЕДД үүсгэхэд алдаа гарлаа.");
+      }
+
+      showMessage("✅ Ерөнхий дэвтрийн данс амжилттай үүслээ!");
+      fetchSearchData(true); // Дансны жагсаалтыг шинэчлэх
+      handleClose();
+    } catch (err) {
+      console.error("Create GL error:", err);
+      showMessage("❌ " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    setDansniiAngilal("");
     setEdDugaar("");
     setDansniiNer("");
-  }
-};
-
-const handleCreate = () => {
-  setMessage("Данс амжилттай үүслээ!");
-  setTimeout(() => setMessage(""), 3000);
-  setDansniiAngilal("");
-  setEdDugaar("");
-  setDansniiNer("");
-  setCurrency("MNT");
-};
+    setCurrency("MNT");
+    onClose();
+  };
 
   if (!isOpen) return null;
+
+  if (!selectedCompany) {
+    return (
+      <div style={styles.overlay}>
+        <div style={styles.modal}>
+          <p>⚠️ ЕДД үүсгэхийн тулд эхлээд Профайл хуудаснаас компани сонгоно уу.</p>
+          <div style={styles.buttonRow}>
+            <button style={styles.cancelButton} onClick={onClose}>
+              Хаах
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.overlay}>
       <div style={styles.modal}>
         <h2 style={styles.title}>Ерөнхий дэвтэр үүсгэх</h2>
-
-        {message && <div style={styles.successMessage}>{message}</div>}
 
         <div style={styles.row}>
           <label>Дансны ангилал</label>
@@ -121,9 +189,9 @@ const handleCreate = () => {
             disabled={!dansniiAngilal}
           >
             <option value="">Дансны дугаар сонгох</option>
-            {filteredAccounts.map((account, index) => (
-              <option key={index} value={account["Дансны дугаар"]}>
-                {account["Дансны дугаар"]}
+            {glAccounts.map((account, index) => (
+              <option key={index} value={account.account_number}>
+                {account.account_number}
               </option>
             ))}
           </select>
@@ -158,7 +226,7 @@ const handleCreate = () => {
           <button style={styles.submitButton} onClick={handleCreate}>
             Данс үүсгэх
           </button>
-          <button style={styles.cancelButton} onClick={onClose}>
+          <button style={styles.cancelButton} onClick={handleClose}>
             Болих
           </button>
         </div>

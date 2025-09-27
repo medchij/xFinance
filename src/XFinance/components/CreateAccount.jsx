@@ -2,9 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useAppContext } from "./AppContext";
 import { BASE_URL } from "../../config";
 
-
 const CreateAccount = ({ isOpen, onClose }) => {
-  const { showMessage, setLoading } = useAppContext(); // ✅ AppContext ашиглана
+  const { showMessage, setLoading, selectedCompany, fetchSearchData } = useAppContext();
   const [edd, setEdd] = useState("");
   const [dansniiNer, setDansniiNer] = useState("");
   const [currency, setCurrency] = useState("");
@@ -17,11 +16,13 @@ const CreateAccount = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!selectedCompany) return;
       try {
+        const companyQuery = `?company_id=${selectedCompany.id}`;
         const [currencyRes, branchRes, glRes] = await Promise.all([
-          fetch(`${BASE_URL}/api/currency`),
-          fetch(`${BASE_URL}/api/branch`),
-          fetch(`${BASE_URL}/api/glaccount`),
+          fetch(`${BASE_URL}/api/currency${companyQuery}`),
+          fetch(`${BASE_URL}/api/branch${companyQuery}`),
+          fetch(`${BASE_URL}/api/glaccount${companyQuery}`),
         ]);
 
         setCurrencies(await currencyRes.json());
@@ -33,9 +34,12 @@ const CreateAccount = ({ isOpen, onClose }) => {
       }
     };
 
-    fetchData();
-  }, []);
+    if (isOpen) {
+      fetchData();
+    }
+  }, [isOpen, selectedCompany]);
 
+  // ЗАСВАР: Англи түлхүүр үгс ашиглах
   useEffect(() => {
     if (edd && salbar) {
       generateAccountNumber();
@@ -43,12 +47,12 @@ const CreateAccount = ({ isOpen, onClose }) => {
 
     if (edd) {
       const selectedAccount = glAccounts.find(
-        (account) => account["Дансны дугаар"] === edd
+        (account) => account.account_number === edd
       );
 
       if (selectedAccount) {
-        setDansniiNer(selectedAccount["Дансны нэр"]);
-        setCurrency(selectedAccount["Валют"]);
+        setDansniiNer(selectedAccount.account_name);
+        setCurrency(selectedAccount.currency);
       }
     } else {
       setDansniiNer("");
@@ -60,15 +64,16 @@ const CreateAccount = ({ isOpen, onClose }) => {
     return number.toString().padStart(length, "0");
   };
 
+  // ЗАСВАР: Англи түлхүүр үгс ашиглах
   const generateAccountNumber = () => {
     const selectedAccount = glAccounts.find(
-      (account) => account["Дансны дугаар"] === edd
+      (account) => account.account_number === edd
     );
 
     if (selectedAccount && salbar) {
-      const eddDugaar = selectedAccount["Дансны дугаар"];
+      const eddDugaar = selectedAccount.account_number;
       const salbarCode = salbar;
-      const tooluur = parseInt(selectedAccount["Тоолуур"]) + 1;
+      const tooluur = parseInt(selectedAccount.counter) + 1;
 
       const newAccountNumber = `${eddDugaar}${salbarCode}${padNumber(tooluur, 4)}`;
 
@@ -77,6 +82,10 @@ const CreateAccount = ({ isOpen, onClose }) => {
   };
 
   const handleCreate = async () => {
+    if (!selectedCompany) {
+      showMessage("⚠️ Эхлээд компани сонгоно уу.");
+      return;
+    }
     if (!dansniiDugaar || !dansniiNer || !currency || !salbar || !edd) {
       showMessage("⚠️ Бүх талбарыг бөглөнө үү");
       return;
@@ -84,10 +93,13 @@ const CreateAccount = ({ isOpen, onClose }) => {
 
     try {
       setLoading(true);
+      const companyQuery = `?company_id=${selectedCompany.id}`;
+      const companyBody = { company_id: selectedCompany.id };
 
-      const res = await fetch(`${BASE_URL}/api/account`);
+      const res = await fetch(`${BASE_URL}/api/account${companyQuery}`);
       const allAccounts = await res.json();
-      const duplicate = allAccounts.find((acc) => acc["Дансны дугаар"] === dansniiDugaar);
+      // ЗАСВАР: Англи түлхүүр үг ашиглах
+      const duplicate = allAccounts.find((acc) => acc.account_number === dansniiDugaar);
 
       if (duplicate) {
         showMessage("⚠️ Ижил дансны дугаар аль хэдийн үүссэн байна");
@@ -95,15 +107,14 @@ const CreateAccount = ({ isOpen, onClose }) => {
       }
 
       const newAccount = {
-        id: (allAccounts.length + 1).toString(),
-        "Дансны дугаар": dansniiDugaar,
-        "Дансны нэр": dansniiNer,
-        "Валют": currency,
-        "Салбар": branches.find((b) => b.code === salbar)?.name || salbar,
-        "Нээсэн огноо": new Date().toLocaleString("en-GB"),
+        ...companyBody,
+        account_number: dansniiDugaar,
+        account_name: dansniiNer,
+        currency: currency,
+        branch: branches.find((b) => b.code === salbar)?.name || salbar,
       };
 
-      const saveRes =  await fetch(`${BASE_URL}/api/account`,{
+      const saveRes = await fetch(`${BASE_URL}/api/account`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newAccount),
@@ -118,7 +129,7 @@ const CreateAccount = ({ isOpen, onClose }) => {
       const counterRes = await fetch(`${BASE_URL}/api/gl-tooluurchange`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ edd }),
+        body: JSON.stringify({ edd, ...companyBody }),
       });
 
       const counterResult = await counterRes.json();
@@ -128,11 +139,8 @@ const CreateAccount = ({ isOpen, onClose }) => {
       }
 
       showMessage("✅ Данс амжилттай үүслээ");
-      setEdd("");
-      setDansniiNer("");
-      setCurrency("");
-      setSalbar("");
-      setDansniiDugaar("");
+      fetchSearchData(true);
+      handleClose();
     } catch (err) {
       console.error("Данс үүсгэхэд алдаа гарлаа:", err);
       showMessage("❌ " + (err.message || "Сервертэй холбогдоход алдаа гарлаа"));
@@ -152,11 +160,23 @@ const CreateAccount = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
+  if (!selectedCompany) {
+    return (
+      <div style={styles.overlay}>
+        <div style={styles.modal}>
+          <p>⚠️ Данс үүсгэхийн тулд эхлээд Профайл хуудаснаас компани сонгоно уу.</p>
+          <div style={styles.buttonRow}>
+            <button style={styles.cancelButton} onClick={onClose}>Хаах</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.overlay}>
       <div style={styles.modal}>
         <h2 style={styles.title}>Данс үүсгэх</h2>
-
         <div style={styles.row}>
           <label>ЕДД</label>
           <select
@@ -165,14 +185,14 @@ const CreateAccount = ({ isOpen, onClose }) => {
             style={styles.input}
           >
             <option value="">ЕДД сонгох</option>
+            {/* ЗАСВАР: Англи түлхүүр үгс ашиглах */}
             {glAccounts.map((account, index) => (
-              <option key={index} value={account["Дансны дугаар"]}>
-                {account["Дансны дугаар"]} - {account["Дансны нэр"]}
+              <option key={index} value={account.account_number}>
+                {account.account_number} - {account.account_name}
               </option>
             ))}
           </select>
         </div>
-
         <div style={styles.row}>
           <label>Салбар</label>
           <select
@@ -188,7 +208,6 @@ const CreateAccount = ({ isOpen, onClose }) => {
             ))}
           </select>
         </div>
-
         <div style={styles.row}>
           <label>Дансны нэр</label>
           <input
@@ -199,7 +218,6 @@ const CreateAccount = ({ isOpen, onClose }) => {
             style={styles.input}
           />
         </div>
-
         <div style={styles.row}>
           <label>Дансны дугаар</label>
           <input
@@ -209,7 +227,6 @@ const CreateAccount = ({ isOpen, onClose }) => {
             style={{ ...styles.input, background: "#f9f9f9" }}
           />
         </div>
-
         <div style={styles.row}>
           <label>Валют</label>
           <input
@@ -219,7 +236,6 @@ const CreateAccount = ({ isOpen, onClose }) => {
             style={{ ...styles.input, background: "#f9f9f9" }}
           />
         </div>
-
         <div style={styles.buttonRow}>
           <button style={styles.submitButton} onClick={handleCreate}>
             Данс үүсгэх

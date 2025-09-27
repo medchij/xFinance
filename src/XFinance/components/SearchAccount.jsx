@@ -1,21 +1,34 @@
 import React, { useState, useEffect } from "react";
-import { Input, TabList, Tab, Spinner, Button } from "@fluentui/react-components";
-import { Search16Regular, ArrowClockwise16Regular } from "@fluentui/react-icons";
+import {
+  Input,
+  TabList,
+  Tab,
+  Spinner,
+  Button,
+} from "@fluentui/react-components";
+import {
+  Search16Regular,
+  ArrowClockwise16Regular,
+  CheckmarkRegular,
+  ArrowUndoRegular,
+} from "@fluentui/react-icons";
 import { setActiveCellValue, getActiveCellFormula } from "../xFinance";
 import { useAppContext } from "./AppContext";
 
 const SearchAccount = ({ isOpen, onClose, onSelect }) => {
   const { selectedCompany, setLoading, showMessage, searchData, fetchSearchData, loading } = useAppContext();
-  
+
   const [activeTab, setActiveTab] = useState("account");
   const [searchText, setSearchText] = useState("");
-  // ЗАСВАР: Орхигдуулсан state-үүдийг нэмэв.
   const [selectedRow, setSelectedRow] = useState(null);
   const [previousValue, setPreviousValue] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
-        fetchSearchData(false); 
+      // Reset state every time the modal opens
+      setSelectedRow(null);
+      setPreviousValue(null);
+      fetchSearchData(false);
     }
   }, [isOpen, fetchSearchData]);
 
@@ -23,23 +36,41 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
     fetchSearchData(true);
   };
 
-  // ЗАСВАР: handleRowClick функцийг АНХНЫ, БҮРЭН хувилбараар нь сэргээв.
+  // ЗАСВАР: Double-click хийхэд цонхыг хаахгүй, зөвхөн утгыг урьдчилан бичнэ.
   const handleRowClick = async (row, valueToInsert) => {
     try {
       setSelectedRow(row);
       if (onSelect) {
-        onSelect(row);
+        // onSelect-ийн хувьд шууд дамжуулаад хаана (хуучин логик хэвээрээ)
+        onSelect(row); 
         onClose();
       } else {
+        // Excel-д бичих үед баталгаажуулалт шаардана
         const currentFormula = await getActiveCellFormula(showMessage, setLoading);
         setPreviousValue(currentFormula);
         await setActiveCellValue(valueToInsert, showMessage, setLoading);
-        onClose();
       }
     } catch (err) {
       console.error("❌ Row click error:", err);
       showMessage(`❌ Алдаа: ${err.message}`);
     }
+  };
+
+  // ШИНЭ ФУНКЦ: Сонголтыг буцаах
+  const handleUndoSelection = async () => {
+    if (previousValue !== null) {
+      await setActiveCellValue(previousValue, showMessage, setLoading);
+      setSelectedRow(null);
+      setPreviousValue(null);
+      showMessage("↩️ Сонголт буцаагдлаа.");
+    }
+  };
+
+  // ШИНЭ ФУНКЦ: Сонголтыг баталгаажуулж, цонхыг хаах
+  const handleConfirmAndClose = () => {
+    setSelectedRow(null);
+    setPreviousValue(null);
+    onClose();
   };
   
   if (!isOpen) return null;
@@ -129,7 +160,7 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
                     {filteredData.map((row, index) => (
                         <tr
                         key={row.id || index}
-                        style={styles.tableRow}
+                        style={selectedRow?.id === row.id ? styles.selectedTableRow : styles.tableRow}
                         onDoubleClick={() =>
                             handleRowClick(
                             row,
@@ -164,8 +195,20 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
                </table>
             </div>
 
+            {/* ЗАСВАР: Сонголтын төлвөөс хамаарч товчнуудыг харуулна */}
             <div style={styles.buttonRow}>
-              <button style={styles.cancelButton} onClick={onClose}>Хаах</button>
+              {selectedRow ? (
+                <>
+                  <Button icon={<ArrowUndoRegular />} onClick={handleUndoSelection}>
+                    Буцаах
+                  </Button>
+                  <Button appearance="primary" icon={<CheckmarkRegular />} onClick={handleConfirmAndClose}>
+                    Баталгаажуулах
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={onClose}>Хаах</Button>
+              )}
             </div>
           </>
         )}
@@ -174,7 +217,7 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
   );
 };
 
-// СТИЛЬ ӨӨРЧЛӨГДӨӨГҮЙ
+// СТИЛЬД ӨӨРЧЛӨЛТ ОРООГҮЙ (зөвхөн сонгогдсон мөрийн өнгө нэмэгдсэн)
 const styles = {
     overlay: {
       position: "fixed",
@@ -227,11 +270,18 @@ const styles = {
         cursor: "pointer",
         transition: "background-color 0.2s ease",
     },
+    // ШИНЭ СТИЛЬ: Сонгогдсон мөрийн загвар
+    selectedTableRow: {
+        cursor: "pointer",
+        backgroundColor: "#e1f0ff",
+    },
     buttonRow: {
       display: "flex",
       justifyContent: "flex-end",
+      gap: "10px", // Товчнуудын хооронд зай нэмэв
       marginTop: "15px",
     },
+    // Энэ стиль ашиглагдахгүй болсон ч, таны хүсэлтээр хэвээр үлдээв
     cancelButton: {
         padding: '8px 16px',
         border: 'none',

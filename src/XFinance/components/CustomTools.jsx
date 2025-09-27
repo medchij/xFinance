@@ -8,7 +8,7 @@ import * as pfns from "../polaris";
 import { withLoading } from "../apiHelpers";
 import CreateGL from "./CreateGL";
 import CreateAccount from "./CreateAccount";
-import CustomerModal from "./CustomerModal";
+import CreateCustomer from "./CreateCustomer";
 import { useAppContext } from "./AppContext";
 import LogPanel from "./LogPanel";
 import {
@@ -272,7 +272,7 @@ const handleClick = async (label) => {
 
       <CreateGL isOpen={openGL} onClose={() => setOpenGL(false)} />
       <CreateAccount isOpen={openAccount} onClose={() => setOpenAccount(false)} />
-      <CustomerModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <CreateCustomer isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
       <SearchTableSheet isOpen={isSearchTableSheet} onClose={() => setSearchTableSheet(false)} />
       {isCalendarOpen && (
         <div

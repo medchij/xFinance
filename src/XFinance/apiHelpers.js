@@ -5,7 +5,6 @@ export async function withLoading(setLoading, setMessage, fn) {
     setLoading(true);
     const output = await fn();
 
-    // fetch-ийн Response буцсан бол шалгах
     if (output?.response instanceof Response) {
       console.log("📡 HTTP:", output.response.statusText + " " + output.response.status);
       if (!output.response.ok) {
@@ -25,11 +24,15 @@ export async function withLoading(setLoading, setMessage, fn) {
   }
 }
 
-// ✅ 2) settings.json ачаалахдаа env URL ашиглах + timeout
-export async function loadSettings() {
-  const res = await fetch(`${BASE_URL}/api/settings`);
-  if (!res.ok) throw new Error("⚠️ Settings.json татаж чадсангүй");
-  return await res.json();
+// ЗАСВАР: externalAPI.js-д ашиглахын тулд company_id-аар дууддаг хувилбарыг сэргээв.
+export async function loadSettings(company_id) {
+    if (!company_id) throw new Error("⚠️ Тохиргоог ачаалахын тулд компани ID шаардлагатай.");
+    const res = await fetch(`${BASE_URL}/api/settings?company_id=${company_id}`);
+    if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "⚠️ Тохиргоог татаж чадсангүй.");
+    }
+    return await res.json();
 }
 
 export function getSettingValue(settings, name) {

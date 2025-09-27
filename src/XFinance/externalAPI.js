@@ -9,6 +9,16 @@ import {
   saveSetting,
 } from "./apiHelpers";
 import { BASE_URL } from "../config";
+
+// Helper to get company_id from localStorage
+const getCompanyId = () => {
+  const companyId = localStorage.getItem("selectedCompany");
+  if (!companyId) {
+    throw new Error("⚠️ Компани сонгогдоогүй байна. Профайл хуудаснаас сонголт хийнэ үү.");
+  }
+  return companyId;
+}
+
 export async function fetchCurrencyRatesByAPI(setMessage, setLoading) {
   return withLoading(setLoading, setMessage, async () => {
     setMessage("⏳ Ханшийн мэдээлэл татаж байна...");
@@ -57,7 +67,6 @@ export async function fetchCurrencyRatesByAPI(setMessage, setLoading) {
     if (!response.ok) {
       handleHttpError(response, result);
     }
-    // console.log("🌐 Server-ээс ирсэн result:", result);
 
     if (!result || !Array.isArray(result.data)) {
       throw new Error("Буцаж ирсэн дата дотор Array байхгүй байна.");
@@ -88,7 +97,6 @@ export async function fetchCurrencyRatesByAPI(setMessage, setLoading) {
         throw new Error("USD эсвэл JPY ханш олдсонгүй.");
       }
 
-      // ✅ Ханшийн утгыг sheet рүү бичнэ
       sheet.getCell(row, col + 2).values = "1";
       sheet.getCell(row, col + 3).values = [[usdRate]];
       sheet.getCell(row, col + 4).values = [[jpyRate]];
@@ -100,7 +108,7 @@ export async function fetchCurrencyRatesByAPI(setMessage, setLoading) {
   });
 }
 
-async function getCarToken() {
+async function getCarToken(company_id) { // company_id-г параметрээр авна
   const response = await fetch("https://service.transdep.mn/autobox-backend/api/v1/user/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -116,8 +124,9 @@ async function getCarToken() {
 export async function fetchVehicleInfoByPlate(setMessage, setLoading) {
   return withLoading(setLoading, setMessage, async () => {
     setMessage("⏳ Машины мэдээлэл татаж байна...");
-
-    let settings = await loadSettings();
+    
+    const companyId = getCompanyId(); // localStorage-аас ID авах
+    let settings = await loadSettings(companyId); // ID-г дамжуулах
     let car_token = getSettingValue(settings, "car_token");
 
     const plateNo = await Excel.run(async (context) => {
@@ -145,13 +154,11 @@ export async function fetchVehicleInfoByPlate(setMessage, setLoading) {
       return { response, result };
     }
 
-    // 🟡 Token-оор хүсэлт илгээх
     let { response, result } = await fetchVehicleData(car_token);
 
-    // 🔁 Хэрвээ token хугацаа дууссан бол дахин token авч fetch хийх
     if (response.status === 401) {
-      car_token = await getCarToken();
-      await saveSetting("car_token", car_token); // ⚠️ saveSetting ашиглаж шинэ token хадгалах
+      car_token = await getCarToken(companyId);
+      await saveSetting("car_token", car_token); 
 
       ({ response, result } = await fetchVehicleData(car_token));
     }
@@ -192,8 +199,8 @@ export async function fetchKhanbankReceiptFromSheet(setMessage, setLoading) {
   return withLoading(setLoading, setMessage, async () => {
     setMessage("⏳ Хуулга татаж байна...");
 
-    // ✅ Settings.json-оос token авах
-    const settings = await loadSettings();
+    const companyId = getCompanyId(); // localStorage-аас ID авах
+    const settings = await loadSettings(companyId); // ID-г дамжуулах
     const token = getSettingValue(settings, "access_token");
 
     const { accountNo, fromDate, toDate } = await Excel.run(async (context) => {
@@ -222,25 +229,21 @@ export async function fetchKhanbankReceiptFromSheet(setMessage, setLoading) {
     myHeaders.append("Host", "api.khanbank.com:9003");
 
     const url = `https://api.khanbank.com:9003/v3/omni/accounts/receipt/${accountNo}?transactionDate=%7B%22lt%22:%22${fromDate}T17:42:30%22,%22gt%22:%22${toDate}T09:57:20%22%7D&docType=0&transactionAmount=%7B%22gt%22:%220%22,%22lt%22:%220%22%7D`;
-    //console.log("🔗 URL:", url);
+
     const response = await fetch(url, {
       method: "GET",
       headers: myHeaders,
       redirect: "follow",
     });
-    //     for (const [key, value] of myHeaders.entries()) {
-    //   console.log(`${key}: ${value}`);
-    // }
 
     const result = await response.json();
-    //console.log("📄 Хуулга дата:", result);
 
     if (!response.ok) {
       handleHttpError(response, result);
     }
 
     const transactions = result.transactions.map((tx) => ({
-      transactionDate: `${tx.transactionDate} ${tx.txnTime || ""}`, // ✅ transactionDate + txnTime
+      transactionDate: `${tx.transactionDate} ${tx.txnTime || ""}`,
       txnBranchId: tx.txnBranchId,
       beginBalance: tx.beginBalance.amount,
       Debit: tx.amountType.codeDescription === "Debit" ? tx.amount.amount : "",
@@ -275,11 +278,9 @@ export async function fetchKhanbankReceiptFromSheet(setMessage, setLoading) {
         tx.accountId,
       ]);
 
-      // Header бичих
       const headerRange = sheet.getRange("A8:H8");
       headerRange.values = [headers];
 
-      // Data бичих
       const dataRange = sheet.getRangeByIndexes(8, 0, rows.length, headers.length);
       dataRange.values = rows;
 
@@ -290,12 +291,13 @@ export async function fetchKhanbankReceiptFromSheet(setMessage, setLoading) {
     return { result, response };
   });
 }
-//Туслах функц: Khanbank token авах
+
 export async function getKhanbankToken(setMessage, setLoading) {
   return withLoading(setLoading, setMessage, async () => {
     setMessage("🔐 Access token авч байна...");
 
-    const settings = await loadSettings();
+    const companyId = getCompanyId(); // localStorage-аас ID авах
+    const settings = await loadSettings(companyId); // ID-г дамжуулах
     const username = getSettingValue(settings, "khanbank_username");
     const password = getSettingValue(settings, "khanbank_password");
     const deviceToken = getSettingValue(settings, "device_token");
@@ -307,7 +309,6 @@ export async function getKhanbankToken(setMessage, setLoading) {
       throw new Error("⚠️ Settings.json дээр шаардлагатай мэдээлэл дутуу байна");
     }
 
-    // ✅ Headers-ийг myHeaders.append хэлбэрээр бичих
     const myHeaders = new Headers();
     myHeaders.append("Origin", "https://corp.khanbank.com");
     myHeaders.append("Referer", "https://corp.khanbank.com/");
@@ -336,29 +337,26 @@ export async function getKhanbankToken(setMessage, setLoading) {
 
     const result = await response.json();
 
-    //console.log("🔑 Token хариу:", result);
-
     if (!response.ok) {
       handleHttpError(response, result);
     }
 
     setMessage("✅ Token амжилттай авлаа.");
 
-    // ✅ Token-уудыг хадгалах
-    // await Excel.run(async (context) => {
-    //   const sheet = context.workbook.worksheets.getItem("Import");
-    //   sheet.getRange("B2").values = [[result.access_token ?? ""]];
-    // });
+    const putHeaders = { 
+        "Content-Type": "application/json",
+        "company_id": companyId // company_id-г header-т нэмж өгөх
+    };
 
-    await fetch(`${BASE_URL}/api/settings/${accessId}`, {
+    await fetch(`${BASE_URL}/api/settings/${accessId}?company_id=${companyId}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: putHeaders,
       body: JSON.stringify({ value: result.access_token }),
     });
 
-    await fetch(`${BASE_URL}/api/settings/${refreshId}`, {
+    await fetch(`${BASE_URL}/api/settings/${refreshId}?company_id=${companyId}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: putHeaders,
       body: JSON.stringify({ value: result.refresh_token }),
     });
 
@@ -371,7 +369,8 @@ export async function fetchKhanbankAccountInfo(setMessage, setLoading) {
   return withLoading(setLoading, setMessage, async () => {
     setMessage("⏳ Данс лавлаж байна...");
 
-    const settings = await loadSettings();
+    const companyId = getCompanyId(); // localStorage-аас ID авах
+    const settings = await loadSettings(companyId); // ID-г дамжуулах
     let token = getSettingValue(settings, "access_token");
 
     const { accountNo, activeCellAddress } = await Excel.run(async (context) => {
@@ -416,11 +415,9 @@ export async function fetchKhanbankAccountInfo(setMessage, setLoading) {
     let { response, result } = await makeRequest(token);
 
     if (response.status === 401) {
-      // 🟡 Token хугацаа дууссан — шинэ token авна
       const tokenResp = await getKhanbankToken(setMessage, setLoading);
       token = tokenResp.result.access_token;
 
-      // дахин хүсэлт хийнэ
       ({ response, result } = await makeRequest(token));
     }
 

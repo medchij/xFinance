@@ -1,12 +1,17 @@
 import React, { useState } from "react";
 import { useAppContext } from "./AppContext";
 import { BASE_URL } from "../../config";
-const CustomerModal = ({ isOpen, onClose }) => {
-  const { showMessage, setLoading } = useAppContext(); // ✅ AppContext-оос авна
+
+const CreateCustomer = ({ isOpen, onClose }) => {
+  const { showMessage, setLoading, selectedCompany, fetchSearchData } = useAppContext();
   const [name, setName] = useState("");
   const [status, setStatus] = useState("Идэвхитэй");
 
   const handleCreate = async () => {
+    if (!selectedCompany) {
+      showMessage("⚠️ Эхлээд компани сонгоно уу.");
+      return;
+    }
     if (!name.trim()) {
       showMessage("⚠️ Нэрийг оруулна уу");
       return;
@@ -14,12 +19,13 @@ const CustomerModal = ({ isOpen, onClose }) => {
 
     try {
       setLoading(true);
+      const companyQuery = `?company_id=${selectedCompany.id}`;
 
-      const res = await fetch(`${BASE_URL}/api/customer`);
+      const res = await fetch(`${BASE_URL}/api/customer${companyQuery}`);
       const allCustomers = await res.json();
 
       const duplicate = allCustomers.find(
-        (cus) => cus["name"].toLowerCase() === name.toLowerCase()
+        (cus) => cus.name.toLowerCase() === name.trim().toLowerCase()
       );
 
       if (duplicate) {
@@ -31,8 +37,9 @@ const CustomerModal = ({ isOpen, onClose }) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
+          name: name.trim(),
           status,
+          company_id: selectedCompany.id, // ✅ company_id-г нэмэх
         }),
       });
 
@@ -42,11 +49,12 @@ const CustomerModal = ({ isOpen, onClose }) => {
         throw new Error(result.message || "Хадгалах үед алдаа гарлаа");
       }
 
-      showMessage("✅ Хэрэглэгч амжилттай нэмэгдлээ");
-      setName("");
-      setStatus("Идэвхитэй");
+      showMessage("✅ Харилцагч амжилттай нэмэгдлээ");
+      fetchSearchData(true); // ✅ Жагсаалтыг шинэчлэх
+      handleClose(); // ✅ Цонхыг хаах
+
     } catch (err) {
-      console.error("Хэрэглэгч нэмэхэд алдаа:", err);
+      console.error("Харилцагч нэмэхэд алдаа:", err);
       showMessage("❌ " + (err.message || "Сервертэй холбогдоход алдаа гарлаа"));
     } finally {
       setLoading(false);
@@ -61,17 +69,31 @@ const CustomerModal = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
+  // ✅ Компани сонгоогүй бол харуулах UI
+  if (!selectedCompany) {
+    return (
+      <div style={styles.overlay}>
+        <div style={styles.modal}>
+          <p>⚠️ Харилцагч үүсгэхийн тулд эхлээд Профайл хуудаснаас компани сонгоно уу.</p>
+          <div style={styles.buttonRow}>
+            <button style={styles.cancelButton} onClick={onClose}>Хаах</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.overlay}>
       <div style={styles.modal}>
-        <h2 style={styles.title}>Хэрэглэгч нэмэх</h2>
+        <h2 style={styles.title}>Харилцагч нэмэх</h2>
 
         <div style={styles.row}>
           <label>Нэр</label>
           <input
             type="text"
             value={name}
-            placeholder="Хэрэглэгчийн нэр оруулна уу"
+            placeholder="Харилцагчийн нэр оруулна уу"
             onChange={(e) => setName(e.target.value)}
             style={styles.input}
           />
@@ -166,4 +188,4 @@ const styles = {
   },
 };
 
-export default CustomerModal;
+export default CreateCustomer;

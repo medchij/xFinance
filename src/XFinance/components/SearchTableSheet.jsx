@@ -6,11 +6,12 @@ import {
   ArrowSortDown16Regular,
 } from "@fluentui/react-icons";
 import { getActiveCellFormula, setActiveCellValue } from "../xFinance";
-import { loadSettings, getSettingValue } from "../apiHelpers";
+import { getSettingValue } from "../apiHelpers"; // ЗАСВАР: loadSettings-г устгав
 import { useAppContext } from "./AppContext";
 
 const SearchTableSheet = ({ isOpen, onClose }) => {
-  const { setLoading, showMessage } = useAppContext();
+  // ЗАСВАР: AppContext-ээс settings болон fetchSettings-г авна
+  const { setLoading, showMessage, settings, fetchSettings, selectedCompany } = useAppContext();
   const [searchText, setSearchText] = useState("");
   const [data, setData] = useState([]);
   const [selectedRow, setSelectedRow] = useState(null);
@@ -20,12 +21,22 @@ const SearchTableSheet = ({ isOpen, onClose }) => {
   const [sortConfig, setSortConfig] = useState([]);
 
   useEffect(() => {
-    if (isOpen) fetchDataFromSheet();
-  }, [isOpen]);
+    if (isOpen && selectedCompany) {
+      // Эхлээд тохиргоог (кэшээс) ачаална, дараа нь sheet-н датаг уншина
+      fetchSettings(false).then(() => {
+        fetchDataFromSheet();
+      });
+    }
+  }, [isOpen, selectedCompany]); // Компани сонгогдсон үед ажиллана
 
   const fetchDataFromSheet = async () => {
     try {
-      const settings = await loadSettings();
+      // ЗАСВАР: AppContext-ээс авсан settings-г шууд ашиглана
+      if (settings.length === 0) {
+        showMessage("⚠️ Тохиргоо ачаалагдаагүй байна. Settings хуудсыг шалгана уу.", 0);
+        return;
+      }
+
       const sheetname = getSettingValue(settings, "sheetname");
       if (!sheetname) throw new Error("⚠️ 'sheetname' тохиргоо олдсонгүй");
 
@@ -105,7 +116,6 @@ const SearchTableSheet = ({ isOpen, onClose }) => {
       }
     });
   };
-//
 
 
   const handleRowClick = async (row) => {
@@ -127,7 +137,7 @@ const SearchTableSheet = ({ isOpen, onClose }) => {
       );
 
       await Excel.run(async (context) => {
-        const settings = await loadSettings();
+        // ЗАСВАР: AppContext-ээс авсан settings-г шууд ашиглана
         const sheetname = getSettingValue(settings, "sheetname");
         const sheet = context.workbook.worksheets.getItem(sheetname);
         const usedRange = sheet.getUsedRange();
@@ -150,29 +160,6 @@ const SearchTableSheet = ({ isOpen, onClose }) => {
       showMessage("❌ Алдаа: " + error.message);
     }
   };
-  // const handleRowClick = async (row) => {
-  //   try {
-  //     const formula = await getActiveCellFormula(showMessage, setLoading);
-  //     setPreviousValue(formula);
-  //     setSelectedRow(row);
-
-  //     const insertValue = row[0] || Object.values(row)[0];
-  //     await setActiveCellValue(insertValue, showMessage, setLoading);
-
-  //     const rowIndex = row.__index;
-  //     const lastKeyName = row.__lastKey || lastKey || "Сонгосон эсэх";
-
-  //     setData((prev) =>
-  //       prev.map((r) =>
-  //         r.__index === rowIndex
-  //           ? { ...r, [lastKeyName]: "✅ Сонгосон", __lastValue: "✅ Сонгосон" }
-  //           : r
-  //       )
-  //     );
-  //   } catch (error) {
-  //     showMessage("❌ Алдаа: " + error.message);
-  //   }
-  // };
 
   const handleUndo = async () => {
     if (previousValue) {
@@ -190,52 +177,47 @@ const SearchTableSheet = ({ isOpen, onClose }) => {
     return textMatch && hideMatch;
   });
 
-  // ⏹️ SORT CLEAR FUNCTION
-const clearSort = () => {
-  setSortConfig([]);
-};
+  const clearSort = () => {
+    setSortConfig([]);
+  };
 
-// 🔽 SORTING LOGIC
-const sortedData = [...filteredData].sort((a, b) => {
-  for (const { key, direction } of sortConfig) {
-    const aVal = a[key];
-    const bVal = b[key];
+  const sortedData = [...filteredData].sort((a, b) => {
+    for (const { key, direction } of sortConfig) {
+      const aVal = a[key];
+      const bVal = b[key];
 
-    const aStr = aVal?.toString().trim();
-    const bStr = bVal?.toString().trim();
+      const aStr = aVal?.toString().trim();
+      const bStr = bVal?.toString().trim();
 
-    // ISO 8601 огноо эсвэл yyyy-mm-dd хэлбэр илэрхийлэх эсэх
-    const isDate = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v);
-    const aIsDate = isDate(aStr);
-    const bIsDate = isDate(bStr);
+      const isDate = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v);
+      const aIsDate = isDate(aStr);
+      const bIsDate = isDate(bStr);
 
-    let result = 0;
+      let result = 0;
 
-    if (aIsDate && bIsDate) {
-      result = new Date(aStr) - new Date(bStr);
-    } else {
-      const aNum = parseFloat(aStr.replace(/[, ]/g, ""));
-      const bNum = parseFloat(bStr.replace(/[, ]/g, ""));
-
-      const aIsNum = !isNaN(aNum) && isFinite(aNum);
-      const bIsNum = !isNaN(bNum) && isFinite(bNum);
-
-      if (aIsNum && bIsNum) {
-        result = aNum - bNum;
+      if (aIsDate && bIsDate) {
+        result = new Date(aStr) - new Date(bStr);
       } else {
-        result = aStr.localeCompare(bStr, undefined, {
-          numeric: true,
-          sensitivity: "base",
-        });
+        const aNum = parseFloat(aStr.replace(/[, ]/g, ""));
+        const bNum = parseFloat(bStr.replace(/[, ]/g, ""));
+
+        const aIsNum = !isNaN(aNum) && isFinite(aNum);
+        const bIsNum = !isNaN(bNum) && isFinite(bNum);
+
+        if (aIsNum && bIsNum) {
+          result = aNum - bNum;
+        } else {
+          result = aStr.localeCompare(bStr, undefined, {
+            numeric: true,
+            sensitivity: "base",
+          });
+        }
       }
+
+      if (result !== 0) return direction === "ascending" ? result : -result;
     }
-
-    if (result !== 0) return direction === "ascending" ? result : -result;
-  }
-  return 0;
-});
-
-
+    return 0;
+  });
 
   if (!isOpen) return null;
 
@@ -259,9 +241,6 @@ const sortedData = [...filteredData].sort((a, b) => {
           style={{ marginBottom: "10px" }}
         />
        <button onClick={clearSort}>Сорт арилгах</button>
-
-
-
 
         {selectedRow && (
           <div style={styles.selectedRow}>
