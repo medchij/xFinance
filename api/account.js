@@ -1,11 +1,21 @@
-const fs = require("fs");
-const path = require("path");
-module.exports = (req, res) => {
-  try {
-    const dir = process.env.DATA_DIR || "backend/dataNany";
-    const file = path.join(process.cwd(), dir, "Account.json");
-    res.status(200).json(JSON.parse(fs.readFileSync(file, "utf8")));
-  } catch (e) {
-    res.status(500).json({ message: "Account.json уншихад алдаа", error: e.message });
-  }
+const { query } = require('./db.js');
+
+module.exports = async (req, res) => {
+    if (req.method !== 'GET') {
+        return res.status(405).end('Method Not Allowed');
+    }
+
+    const { company_id } = req.query;
+
+    if (!company_id) {
+        return res.status(400).json({ message: 'company_id is required' });
+    }
+
+    try {
+        const { rows } = await query(`SELECT * FROM ${company_id}_account`);
+        res.status(200).json(rows);
+    } catch (error) {
+        console.error(`Error fetching from ${company_id}_account:`, error);
+        res.status(500).json({ message: `Failed to fetch accounts for company ${company_id}` });
+    }
 };
