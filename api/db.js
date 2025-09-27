@@ -1,14 +1,9 @@
-const { Pool } = require('pg');
+const { Pool } = require('@neondatabase/serverless');
 
-// Vercel-ийн production орчинд SSL холболт шаардлагатай.
-const isProduction = process.env.NODE_ENV === 'production';
-
+// Vercel-д зориулсан тусгай сан нь SSL болон бусад тохиргоог
+// process.env.POSTGRES_URL-г ашиглан автоматаар хийдэг.
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL,
-  // Production орчинд (Vercel дээр) SSL тохиргоог идэвхжүүлнэ.
-  // rejectUnauthorized: false гэдэг нь self-signed гэрчилгээг зөвшөөрөх бөгөөд
-  // Vercel Postgres-д холбогдоход ихэвчлэн шаардлагатай байдаг.
-  ssl: isProduction ? { rejectUnauthorized: false } : false,
 });
 
 // query гэдэг функц экспорт хийж, бусад файлуудад ашиглах боломжийг олгоно.

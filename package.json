@@ -16,7 +16,6 @@
     "build": "cross-env ANALYZE=false webpack --mode production",
     "build:dev": "cross-env ANALYZE=false webpack --mode development",
     "dev-server": "cross-env ANALYZE=false webpack serve --mode development --port 3000",
-    
     "analyze": "cross-env ANALYZE=true webpack --mode production",
     "lint": "office-addin-lint check",
     "lint:fix": "office-addin-lint fix",
@@ -42,6 +41,7 @@
     "@fluentui/react-components": "^9.47.2",
     "@fluentui/react-icons": "^2.0.233",
     "@microsoft/office-js": "^1.1.108",
+    "@neondatabase/serverless": "^1.0.1",
     "buffer": "^6.0.3",
     "core-js": "^3.36.0",
     "cors": "^2.8.5",
