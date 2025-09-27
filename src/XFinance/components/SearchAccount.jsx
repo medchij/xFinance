@@ -15,6 +15,7 @@ import {
 import { setActiveCellValue, getActiveCellFormula } from "../xFinance";
 import { useAppContext } from "./AppContext";
 
+// Hover effect-д зориулж state нэмэв
 const SearchAccount = ({ isOpen, onClose, onSelect }) => {
   const { selectedCompany, setLoading, showMessage, searchData, fetchSearchData, loading } = useAppContext();
 
@@ -22,12 +23,13 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
   const [searchText, setSearchText] = useState("");
   const [selectedRow, setSelectedRow] = useState(null);
   const [previousValue, setPreviousValue] = useState(null);
+  const [hoveredRow, setHoveredRow] = useState(null); // <-- State for hover
 
   useEffect(() => {
     if (isOpen) {
-      // Reset state every time the modal opens
       setSelectedRow(null);
       setPreviousValue(null);
+      setHoveredRow(null);
       fetchSearchData(false);
     }
   }, [isOpen, fetchSearchData]);
@@ -36,16 +38,13 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
     fetchSearchData(true);
   };
 
-  // ЗАСВАР: Double-click хийхэд цонхыг хаахгүй, зөвхөн утгыг урьдчилан бичнэ.
   const handleRowClick = async (row, valueToInsert) => {
     try {
       setSelectedRow(row);
       if (onSelect) {
-        // onSelect-ийн хувьд шууд дамжуулаад хаана (хуучин логик хэвээрээ)
         onSelect(row); 
         onClose();
       } else {
-        // Excel-д бичих үед баталгаажуулалт шаардана
         const currentFormula = await getActiveCellFormula(showMessage, setLoading);
         setPreviousValue(currentFormula);
         await setActiveCellValue(valueToInsert, showMessage, setLoading);
@@ -56,7 +55,6 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
     }
   };
 
-  // ШИНЭ ФУНКЦ: Сонголтыг буцаах
   const handleUndoSelection = async () => {
     if (previousValue !== null) {
       await setActiveCellValue(previousValue, showMessage, setLoading);
@@ -66,7 +64,6 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
     }
   };
 
-  // ШИНЭ ФУНКЦ: Сонголтыг баталгаажуулж, цонхыг хаах
   const handleConfirmAndClose = () => {
     setSelectedRow(null);
     setPreviousValue(null);
@@ -78,7 +75,12 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
   if (!selectedCompany) {
       return (
           <div style={styles.overlay}>
-              <div style={styles.modal}><p>⚠️ Хайлт хийхийн тулд эхлээд Профайл хуудаснаас компани сонгоно уу.</p><button style={styles.cancelButton} onClick={onClose}>Хаах</button></div>
+              <div style={styles.modal}>
+                <p>⚠️ Хайлт хийхийн тулд эхлээд Профайл хуудаснаас компани сонгоно уу.</p>
+                <div style={styles.buttonRow}>
+                    <button style={styles.cancelButton} onClick={onClose}>Хаах</button>
+                </div>
+              </div>
           </div>
       )
   }
@@ -107,15 +109,16 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
   return (
     <div style={styles.overlay}>
       <div style={styles.modal}>
+        <h3 style={styles.title}>Хайх ({activeTab})</h3>
         {loading && searchData.account.length === 0 ? (
           <Spinner label="Мэдээлэл ачааллаж байна..." />
         ) : (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <TabList selectedValue={activeTab} onTabSelect={(_, data) => setActiveTab(data.value)}>
-                    <Tab value="account">🏦 Данс ({searchData.account.length})</Tab>
-                    <Tab value="cf">💸 CF ({searchData.cf.length})</Tab>
-                    <Tab value="customer">👤 Харилцагч ({searchData.customer.length})</Tab>
+            <div style={styles.tabContainer}>
+                <TabList selectedValue={activeTab} onTabSelect={(_, data) => setActiveTab(data.value)} style={{flex: 1}}>
+                    <Tab style={activeTab === \'account\' ? {...styles.tabButton, ...styles.activeTab} : styles.tabButton} value="account">🏦 Данс ({searchData.account.length})</Tab>
+                    <Tab style={activeTab === \'cf\' ? {...styles.tabButton, ...styles.activeTab} : styles.tabButton} value="cf">💸 CF ({searchData.cf.length})</Tab>
+                    <Tab style={activeTab === \'customer\' ? {...styles.tabButton, ...styles.activeTab} : styles.tabButton} value="customer">👤 Харилцагч ({searchData.customer.length})</Tab>
                 </TabList>
                 <Button icon={<ArrowClockwise16Regular />} appearance="subtle" onClick={handleRefresh} aria-label="Сэргээх" disabled={loading}></Button>
             </div>
@@ -126,7 +129,7 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
               placeholder={`Хайх...`}
               value={searchText}
               onChange={(_, data) => setSearchText(data.value)}
-              style={{margin: '10px 0'}}
+              style={styles.input}
             />
 
             <div style={styles.tableContainer}>
@@ -159,14 +162,15 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
                  <tbody>
                     {filteredData.map((row, index) => (
                         <tr
-                        key={row.id || index}
-                        style={selectedRow?.id === row.id ? styles.selectedTableRow : styles.tableRow}
-                        onDoubleClick={() =>
-                            handleRowClick(
-                            row,
-                            activeTab === "account" ? row.account_number : activeTab === "cf" ? row.original_id : row.name
-                            )
-                        }
+                          key={row.id || index}
+                          style={{ 
+                            ...styles.tableRow, 
+                            ...(hoveredRow === (row.id || index) && styles.tableRowHover), // Hover effect
+                            ...(selectedRow?.id === row.id && styles.selectedRow) // Selected effect
+                          }}
+                          onDoubleClick={() => handleRowClick( row, activeTab === "account" ? row.account_number : activeTab === "cf" ? row.original_id : row.name )}
+                          onMouseEnter={() => setHoveredRow(row.id || index)}
+                          onMouseLeave={() => setHoveredRow(null)}
                         >
                         {activeTab === "account" ? (
                             <>
@@ -190,13 +194,12 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
                             </>
                         )}
                         </tr>
-                    ))}
+                    ))}\
                  </tbody>
                </table>
             </div>
 
-            {/* ЗАСВАР: Сонголтын төлвөөс хамаарч товчнуудыг харуулна */}
-            <div style={styles.buttonRow}>
+            <div style={styles.buttonRow}>\
               {selectedRow ? (
                 <>
                   <Button icon={<ArrowUndoRegular />} onClick={handleUndoSelection}>
@@ -207,7 +210,7 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
                   </Button>
                 </>
               ) : (
-                <Button onClick={onClose}>Хаах</Button>
+                 <button style={styles.cancelButton} onClick={onClose}>Хаах</button>
               )}
             </div>
           </>
@@ -217,78 +220,124 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
   );
 };
 
-// СТИЛЬД ӨӨРЧЛӨЛТ ОРООГҮЙ (зөвхөн сонгогдсон мөрийн өнгө нэмэгдсэн)
+// Хуучин болон шинэ загварыг нэгтгэсэн, сайжруулсан хувилбар
 const styles = {
     overlay: {
-      position: "fixed",
-      top: 0,
-      left: 0,
-      width: "100vw",
-      height: "100vh",
-      background: "rgba(0, 0, 0, 0.4)",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      zIndex: 1001,
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        background: "rgba(0, 0, 0, 0.4)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 1001,
     },
     modal: {
-      width: "clamp(300px, 90%, 900px)",
-      maxHeight: "80vh",
-      background: "#fff",
-      padding: "20px",
-      borderRadius: "8px",
-      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-      display: "flex",
-      flexDirection: "column",
+        width: "90%",
+        maxWidth: "900px",
+        maxHeight: "90vh",
+        background: "#fff",
+        padding: "20px",
+        borderRadius: "8px",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+        display: "flex",
+        flexDirection: "column",
+    },
+    title: {
+      textAlign: "left",
+      fontSize: "18px",
+      marginBottom: "15px",
+      borderBottom: "1px solid #ddd",
+      paddingBottom: "10px",
+    },
+    tabContainer: {
+        display: "flex",
+        marginBottom: "10px",
+    },
+    tabButton: {
+        flex: 1,
+        padding: "10px",
+        border: "none",
+        borderBottom: "2px solid transparent",
+        backgroundColor: "#fff",
+        cursor: "pointer",
+        fontSize: "16px",
+        transition: "background 0.3s ease-in-out, border-bottom 0.3s ease-in-out",
+    },
+    activeTab: {
+        borderBottom: "2px solid #7e57c2",
+        color: "#7e57c2",
+    },
+    input: {
+      padding: "8px",
+      fontSize: "14px",
+      border: "1px solid #ccc",
+      borderRadius: "4px",
+      width: "100%",
+      boxSizing: "border-box",
+      margin: "10px 0",
     },
     tableContainer: {
-      flexGrow: 1,
-      overflowY: "auto",
-      border: "1px solid #ddd",
-      borderRadius: "4px",
+        flexGrow: 1,
+        width: "100%",
+        overflow: "auto", // Automatically add scrollbars when needed
+        border: "1px solid #ddd",
+        borderRadius: "4px",
     },
     table: {
         width: "100%",
-        borderCollapse: "collapse",
+        borderCollapse: "separate",
+        borderSpacing: 0,
     },
     th: {
         backgroundColor: "#f7f7f7",
-        padding: "8px 12px",
+        padding: "10px",
         borderBottom: "1px solid #ddd",
         textAlign: "left",
-        fontSize: "14px",
+        fontSize: "12px",
         position: "sticky",
         top: 0,
         zIndex: 1,
     },
     td: {
-        padding: "8px 12px",
-        fontSize: "13px",
+        padding: "8px 10px",
+        fontSize: "12px",
         borderBottom: "1px solid #eee",
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        maxWidth: "180px", // Prevent extremely wide columns
     },
     tableRow: {
         cursor: "pointer",
-        transition: "background-color 0.2s ease",
+        transition: "background 0.2s ease-in-out",
     },
-    // ШИНЭ СТИЛЬ: Сонгогдсон мөрийн загвар
-    selectedTableRow: {
-        cursor: "pointer",
-        backgroundColor: "#e1f0ff",
+    tableRowHover: {
+        backgroundColor: "#f0f0f0",
+    },
+    selectedRow: {
+        backgroundColor: "#d6eaf8",
+        fontWeight: "bold",
     },
     buttonRow: {
       display: "flex",
-      justifyContent: "flex-end",
-      gap: "10px", // Товчнуудын хооронд зай нэмэв
+      justifyContent: "flex-end", // Align buttons to the right
+      gap: "10px",
       marginTop: "15px",
+      paddingTop: "15px",
+      borderTop: "1px solid #ddd",
     },
-    // Энэ стиль ашиглагдахгүй болсон ч, таны хүсэлтээр хэвээр үлдээв
     cancelButton: {
-        padding: '8px 16px',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer'
+      background: "#f0f0f0",
+      color: "#333",
+      border: "1px solid #ccc",
+      padding: "8px 16px",
+      cursor: "pointer",
+      borderRadius: "4px",
     },
-  };
+};
   
 
 export default SearchAccount;

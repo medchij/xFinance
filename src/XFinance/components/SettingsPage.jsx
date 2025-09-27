@@ -50,7 +50,6 @@ const useStyles = makeStyles({
 
 const SettingsPage = ({ isSidebarOpen }) => {
   const styles = useStyles();
-  // ЗАСВАР: AppContext-ээс дата болон функцүүдийг авна
   const { 
     selectedCompany, 
     showMessage, 
@@ -67,14 +66,12 @@ const SettingsPage = ({ isSidebarOpen }) => {
   const [newSetting, setNewSetting] = useState({ name: "", value: "" });
   const [showNewInput, setShowNewInput] = useState(false);
 
-  // Компонент анх ачааллахад болон компани солигдоход датаг дуудна.
   useEffect(() => {
     if (selectedCompany) {
-      fetchSettings(false); // Кэш ашиглана
+      fetchSettings(false);
     }
   }, [selectedCompany, fetchSettings]);
 
-  // Settings дата өөрчлөгдөхөд Tab-уудыг шинэчилнэ
   useEffect(() => {
     if (settings.length > 0) {
         const uniqueTabs = [...new Set(settings.map((item) => item.tab))].sort();
@@ -89,7 +86,7 @@ const SettingsPage = ({ isSidebarOpen }) => {
   }, [settings, activeTab]);
 
   const handleRefresh = () => {
-      fetchSettings(true); // Албадан сэргээнэ
+      fetchSettings(true);
   };
 
   const handleEdit = (row) => {
@@ -99,7 +96,8 @@ const SettingsPage = ({ isSidebarOpen }) => {
 
   const handleSave = async (id) => {
     await withLoading(setLoading, showMessage, async () => {
-      const url = `${BASE_URL}/api/settings/${id}?company_id=${selectedCompany}`;
+      // ZASVAR: ID-g query parameter bolgoj yavuulsan
+      const url = `${BASE_URL}/api/settings?id=${id}&company_id=${selectedCompany}`;
       const response = await fetch(url, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -108,7 +106,7 @@ const SettingsPage = ({ isSidebarOpen }) => {
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "Серверийн алдаа");
       
-      await fetchSettings(true); // Re-fetch to show updated data
+      await fetchSettings(true);
       setEditId(null);
       showMessage("✅ Тохиргоо амжилттай хадгалагдлаа");
     });
@@ -130,7 +128,7 @@ const SettingsPage = ({ isSidebarOpen }) => {
             const result = await response.json();
             if (!response.ok) throw new Error(result.message || "Шинэ тохиргоо нэмэхэд алдаа гарлаа.");
             
-            await fetchSettings(true); // Refresh the list
+            await fetchSettings(true);
             setNewSetting({ name: "", value: "" });
             setShowNewInput(false);
             showMessage("✅ Шинэ тохиргоо амжилттай нэмэгдлээ.", "success");
@@ -153,7 +151,6 @@ const SettingsPage = ({ isSidebarOpen }) => {
         <Spinner label={`'${selectedCompany}' компанийн тохиргоог ачааллаж байна...`} />
       ) : (
         <>
-          {/* ЗАСВАР: Сэргээх товчтой толгой хэсэг */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2>📋 {activeTab ? `${activeTab} тохиргоо` : "Тохиргоо"}</h2>
             <Button 
