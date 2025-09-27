@@ -68,6 +68,7 @@ const SettingsPage = ({ isSidebarOpen }) => {
 
   useEffect(() => {
     if (selectedCompany) {
+      showMessage(`'${selectedCompany}' компанийн тохиргоог ачааллаж байна...`)
       fetchSettings(false);
     }
   }, [selectedCompany, fetchSettings]);
@@ -86,6 +87,7 @@ const SettingsPage = ({ isSidebarOpen }) => {
   }, [settings, activeTab]);
 
   const handleRefresh = () => {
+      showMessage("Тохиргоог дахин ачааллаж байна...")
       fetchSettings(true);
   };
 
@@ -96,7 +98,6 @@ const SettingsPage = ({ isSidebarOpen }) => {
 
   const handleSave = async (id) => {
     await withLoading(setLoading, showMessage, async () => {
-      // ZASVAR: ID-g query parameter bolgoj yavuulsan
       const url = `${BASE_URL}/api/settings?id=${id}&company_id=${selectedCompany}`;
       const response = await fetch(url, {
         method: "PUT",
@@ -147,9 +148,7 @@ const SettingsPage = ({ isSidebarOpen }) => {
     >
       {!selectedCompany ? (
         <h2>⚠️ Компани сонгогдоогүй байна. Профайл хуудаснаас сонгоно уу.</h2>
-      ) : loading && settings.length === 0 ? (
-        <Spinner label={`'${selectedCompany}' компанийн тохиргоог ачааллаж байна...`} />
-      ) : (
+       ) : (
         <>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2>📋 {activeTab ? `${activeTab} тохиргоо` : "Тохиргоо"}</h2>

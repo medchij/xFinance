@@ -15,7 +15,6 @@ import {
 import { setActiveCellValue, getActiveCellFormula } from "../xFinance";
 import { useAppContext } from "./AppContext";
 
-// Hover effect-д зориулж state нэмэв
 const SearchAccount = ({ isOpen, onClose, onSelect }) => {
   const { selectedCompany, setLoading, showMessage, searchData, fetchSearchData, loading } = useAppContext();
 
@@ -23,18 +22,20 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
   const [searchText, setSearchText] = useState("");
   const [selectedRow, setSelectedRow] = useState(null);
   const [previousValue, setPreviousValue] = useState(null);
-  const [hoveredRow, setHoveredRow] = useState(null); // <-- State for hover
+  const [hoveredRow, setHoveredRow] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
       setSelectedRow(null);
       setPreviousValue(null);
       setHoveredRow(null);
+      showMessage("Мэдээлэл ачааллаж байна...")
       fetchSearchData(false);
     }
   }, [isOpen, fetchSearchData]);
 
   const handleRefresh = () => {
+    showMessage("Мэдээллийг дахин ачааллаж байна...")
     fetchSearchData(true);
   };
 
@@ -110,9 +111,6 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
     <div style={styles.overlay}>
       <div style={styles.modal}>
         <h3 style={styles.title}>Хайх ({activeTab})</h3>
-        {loading && searchData.account.length === 0 ? (
-          <Spinner label="Мэдээлэл ачааллаж байна..." />
-        ) : (
           <>
             <div style={styles.tabContainer}>
                 <TabList selectedValue={activeTab} onTabSelect={(_, data) => setActiveTab(data.value)} style={{flex: 1}}>
@@ -165,8 +163,8 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
                           key={row.id || index}
                           style={{ 
                             ...styles.tableRow, 
-                            ...(hoveredRow === (row.id || index) && styles.tableRowHover), // Hover effect
-                            ...(selectedRow?.id === row.id && styles.selectedRow) // Selected effect
+                            ...(hoveredRow === (row.id || index) && styles.tableRowHover), 
+                            ...(selectedRow?.id === row.id && styles.selectedRow) 
                           }}
                           onDoubleClick={() => handleRowClick( row, activeTab === "account" ? row.account_number : activeTab === "cf" ? row.original_id : row.name )}
                           onMouseEnter={() => setHoveredRow(row.id || index)}
@@ -214,13 +212,11 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
               )}
             </div>
           </>
-        )}
       </div>
     </div>
   );
 };
 
-// Хуучин болон шинэ загварыг нэгтгэсэн, сайжруулсан хувилбар
 const styles = {
     overlay: {
         position: "fixed",
@@ -282,7 +278,7 @@ const styles = {
     tableContainer: {
         flexGrow: 1,
         width: "100%",
-        overflow: "auto", // Automatically add scrollbars when needed
+        overflow: "auto", 
         border: "1px solid #ddd",
         borderRadius: "4px",
     },
@@ -308,7 +304,7 @@ const styles = {
         whiteSpace: "nowrap",
         overflow: "hidden",
         textOverflow: "ellipsis",
-        maxWidth: "180px", // Prevent extremely wide columns
+        maxWidth: "180px", 
     },
     tableRow: {
         cursor: "pointer",
@@ -323,7 +319,7 @@ const styles = {
     },
     buttonRow: {
       display: "flex",
-      justifyContent: "flex-end", // Align buttons to the right
+      justifyContent: "flex-end", 
       gap: "10px",
       marginTop: "15px",
       paddingTop: "15px",
