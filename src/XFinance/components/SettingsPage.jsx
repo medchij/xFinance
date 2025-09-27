@@ -15,7 +15,7 @@ import {
   Tab,
   Spinner
 } from "@fluentui/react-components";
-import { EditRegular, SaveRegular, CheckmarkCircle24Regular, DismissCircle24Regular, AddRegular } from "@fluentui/react-icons";
+import { EditRegular, SaveRegular, CheckmarkCircle24Regular, DismissCircle24Regular, AddRegular, ArrowClockwise16Regular } from "@fluentui/react-icons";
 import { useAppContext } from "./AppContext";
 import { withLoading } from "../apiHelpers";
 import { BASE_URL } from "../../config";
@@ -50,56 +50,47 @@ const useStyles = makeStyles({
 
 const SettingsPage = ({ isSidebarOpen }) => {
   const styles = useStyles();
-  // REFACTOR: Use selectedCompany instead of dataDir
-  const { selectedCompany, showMessage, setLoading } = useAppContext();
+  // ЗАСВАР: AppContext-ээс дата болон функцүүдийг авна
+  const { 
+    selectedCompany, 
+    showMessage, 
+    setLoading, 
+    settings, 
+    fetchSettings, 
+    loading 
+  } = useAppContext();
   
-  const [settings, setSettings] = useState([]);
   const [tabs, setTabs] = useState([]);
   const [activeTab, setActiveTab] = useState(null);
   const [editId, setEditId] = useState(null);
   const [editValue, setEditValue] = useState("");
   const [newSetting, setNewSetting] = useState({ name: "", value: "" });
   const [showNewInput, setShowNewInput] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
 
-  // REFACTOR: Fetch settings based on the selectedCompany
-  const fetchSettings = useCallback(async () => {
-    // Don't fetch if no company is selected
-    if (!selectedCompany) {
-      setSettings([]);
-      setTabs([]);
-      return;
-    }
-    
-    setIsFetching(true);
-    try {
-      const response = await fetch(`${BASE_URL}/api/settings?company_id=${selectedCompany}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Тохиргоог серверээс татахад алдаа гарлаа.");
-      }
-      const data = await response.json();
-      setSettings(data);
-      
-      const uniqueTabs = [...new Set(data.map((item) => item.tab))].sort();
-      setTabs(uniqueTabs);
-
-      // Set active tab to the first one if it's not already set or invalid
-      if (!activeTab || !uniqueTabs.includes(activeTab)) {
-         setActiveTab(uniqueTabs[0] || null);
-      }
-    } catch (error) {
-      showMessage(`❌ Тохиргоо татах үед алдаа: ${error.message}`);
-      setSettings([]);
-      setTabs([]);
-    } finally {
-      setIsFetching(false);
-    }
-  }, [selectedCompany, showMessage, activeTab]);
-
+  // Компонент анх ачааллахад болон компани солигдоход датаг дуудна.
   useEffect(() => {
-    fetchSettings();
-  }, [selectedCompany, fetchSettings]); // Re-fetch when company changes
+    if (selectedCompany) {
+      fetchSettings(false); // Кэш ашиглана
+    }
+  }, [selectedCompany, fetchSettings]);
+
+  // Settings дата өөрчлөгдөхөд Tab-уудыг шинэчилнэ
+  useEffect(() => {
+    if (settings.length > 0) {
+        const uniqueTabs = [...new Set(settings.map((item) => item.tab))].sort();
+        setTabs(uniqueTabs);
+        if (!activeTab || !uniqueTabs.includes(activeTab)) {
+            setActiveTab(uniqueTabs[0] || null);
+        }
+    } else {
+        setTabs([]);
+        setActiveTab(null);
+    }
+  }, [settings, activeTab]);
+
+  const handleRefresh = () => {
+      fetchSettings(true); // Албадан сэргээнэ
+  };
 
   const handleEdit = (row) => {
     setEditId(row.id);
@@ -117,7 +108,7 @@ const SettingsPage = ({ isSidebarOpen }) => {
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "Серверийн алдаа");
       
-      await fetchSettings(); // Re-fetch to show updated data
+      await fetchSettings(true); // Re-fetch to show updated data
       setEditId(null);
       showMessage("✅ Тохиргоо амжилттай хадгалагдлаа");
     });
@@ -136,14 +127,10 @@ const SettingsPage = ({ isSidebarOpen }) => {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ...newSetting, tab: activeTab }),
             });
-
             const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.message || "Шинэ тохиргоо нэмэхэд алдаа гарлаа.");
-            }
+            if (!response.ok) throw new Error(result.message || "Шинэ тохиргоо нэмэхэд алдаа гарлаа.");
             
-            await fetchSettings(); // Refresh the list
+            await fetchSettings(true); // Refresh the list
             setNewSetting({ name: "", value: "" });
             setShowNewInput(false);
             showMessage("✅ Шинэ тохиргоо амжилттай нэмэгдлээ.", "success");
@@ -160,14 +147,23 @@ const SettingsPage = ({ isSidebarOpen }) => {
         transition: "margin-left 0.3s ease-in-out",
       }}
     >
-      {/* REFACTOR: Show a message if no company is selected */}
       {!selectedCompany ? (
         <h2>⚠️ Компани сонгогдоогүй байна. Профайл хуудаснаас сонгоно уу.</h2>
-      ) : isFetching ? (
+      ) : loading && settings.length === 0 ? (
         <Spinner label={`'${selectedCompany}' компанийн тохиргоог ачааллаж байна...`} />
       ) : (
         <>
-          <h2>📋 {activeTab ? `${activeTab} тохиргоо` : "Тохиргоо"}</h2>
+          {/* ЗАСВАР: Сэргээх товчтой толгой хэсэг */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2>📋 {activeTab ? `${activeTab} тохиргоо` : "Тохиргоо"}</h2>
+            <Button 
+              icon={<ArrowClockwise16Regular />} 
+              appearance="subtle" 
+              onClick={handleRefresh} 
+              aria-label="Сэргээх"
+              disabled={loading}
+            />
+          </div>
           
           {tabs.length > 0 && (
               <TabList selectedValue={activeTab} onTabSelect={(_, data) => setActiveTab(data.value)} className={styles.tabList}>

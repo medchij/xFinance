@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect } from "react";
 import { BASE_URL } from "../../config";
 import {
   Dropdown,
@@ -6,51 +6,38 @@ import {
   Field,
   tokens,
   Spinner,
+  Button,
 } from "@fluentui/react-components";
+import { ArrowClockwise16Regular } from "@fluentui/react-icons";
 import { useAppContext } from "./AppContext";
 import Header from "./Header";
 
 const Profile = ({ isSidebarOpen }) => {
-  // REFACTOR: Use selectedCompany instead of dataDir
-  const { selectedCompany, setSelectedCompany, showMessage } = useAppContext();
-  const [companies, setCompanies] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // ЗАСВАР: AppContext-ээс дата болон функцүүдийг авна
+  const { 
+    selectedCompany, 
+    setSelectedCompany, 
+    showMessage, 
+    companies, 
+    fetchCompanies, 
+    loading 
+  } = useAppContext();
 
-  // Fetch the list of available companies from the database
-  const fetchCompanies = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const res = await fetch(`${BASE_URL}/api/companies`);
-      if (!res.ok) {
-        throw new Error("Серверээс компаниудын жагсаалтыг татахад алдаа гарлаа.");
-      }
-      const fetchedCompanies = await res.json();
-      setCompanies(fetchedCompanies);
-
-      // If no company is currently selected, and we have companies, prompt the user.
-      // Don't automatically select one.
-      if (!selectedCompany && fetchedCompanies.length > 0) {
-          showMessage("⚠️ Ажиллах компаниа сонгоно уу.", 0);
-      }
-
-    } catch (error) {
-      console.error("Failed to fetch companies:", error);
-      showMessage(`❌ Компани татахад алдаа гарлаа: ${error.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedCompany, setSelectedCompany, showMessage]); // Add dependencies
-
+  // Компонент анх ачааллахад кэш ашиглан датаг дуудна.
   useEffect(() => {
-    fetchCompanies();
-  }, []); // Fetch only once on component mount
+    fetchCompanies(false);
+  }, [fetchCompanies]);
 
   const handleCompanyChange = (_, data) => {
     if (data.optionValue) {
-      // REFACTOR: Update selectedCompany state
       setSelectedCompany(data.optionValue);
       showMessage(`🏢 ${data.optionValue} компанид шилжлээ.`);
     }
+  };
+
+  // Сэргээх товч дарахад дуудагдана (force=true)
+  const handleRefresh = () => {
+    fetchCompanies(true);
   };
 
   return (
@@ -67,7 +54,6 @@ const Profile = ({ isSidebarOpen }) => {
     >
       <Header
         logo="assets/logo-filled.png"
-        // REFACTOR: Update header message
         message={selectedCompany ? `Та ${selectedCompany} орчинд байна` : "Компани сонгоогүй байна"}
       />
 
@@ -80,9 +66,20 @@ const Profile = ({ isSidebarOpen }) => {
           margin: "20px",
         }}
       >
-        <h2 style={{ marginBottom: "16px" }}>Компани Сонголт</h2>
+        {/* ЗАСВАР: Сэргээх товчтой толгой хэсэг */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: "16px" }}>
+          <h2>Компани Сонголт</h2>
+          <Button 
+            icon={<ArrowClockwise16Regular />} 
+            appearance="subtle" 
+            onClick={handleRefresh} 
+            aria-label="Сэргээх"
+            disabled={loading}
+          />
+        </div>
 
-        {isLoading ? (
+        {/* Global loading state ашиглана */}
+        {loading && companies.length === 0 ? (
           <Spinner label="Компаниудыг ачааллаж байна..." />
         ) : (
           <Field
@@ -90,7 +87,6 @@ const Profile = ({ isSidebarOpen }) => {
             style={{ maxWidth: "400px" }}
           >
             <Dropdown
-              // REFACTOR: Use selectedCompany for the value
               value={selectedCompany || ""}
               onOptionSelect={handleCompanyChange}
               placeholder="Компани сонгоно уу..."
@@ -105,7 +101,7 @@ const Profile = ({ isSidebarOpen }) => {
           </Field>
         )}
 
-        {companies.length === 0 && !isLoading && (
+        {companies.length === 0 && !loading && (
           <p style={{ color: tokens.colorPaletteRedBackground3 }}>
             ⚠️ Мэдээллийн санд компани бүртгэгдээгүй байна. `setup-database.js` скриптийг ажиллуулна уу.
           </p>
