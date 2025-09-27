@@ -5,23 +5,19 @@ const { query } = require('../db'); // Go up one level to find db.js
 // --- Middleware to check for company_id ---
 // This will apply to all routes in this file
 router.use((req, res, next) => {
-  // In Express, it's common to get IDs from URL parameters or headers.
-  // Let's check both query and headers for robustness.  
   const company_id = req.query.company_id || req.headers['x-company-id'];
 
   if (!company_id) {
     return res.status(400).json({ message: 'company_id is required as a query parameter or x-company-id header.' });
   }
 
-  // Attach company_id to the request object so all routes can access it
   req.company_id = company_id;
-  next(); // Continue to the next middleware or route handler
+  next();
 });
 
 // --- Route Handlers ---
 
 // GET /api/settings?company_id=...
-// Handles fetching all settings for the given company
 router.get('/', async (req, res) => {
   try {
     const { rows } = await query('SELECT * FROM settings WHERE company_id = $1 ORDER BY tab, name', [req.company_id]);
@@ -33,7 +29,6 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/settings?company_id=...
-// Handles adding a new setting for the given company
 router.post('/', async (req, res) => {
   const { name, value, tab } = req.body;
 
@@ -53,11 +48,15 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /api/settings/:id?company_id=...
-// Handles updating an existing setting
-router.put('/:id', async (req, res) => {
-  const { id } = req.params; // Get the setting ID from the URL path
+// PUT /api/settings?id=...&company_id=...
+// Handles updating an existing setting by getting ID from query parameter
+router.put('/', async (req, res) => {
+  const { id } = req.query; // Get ID from query parameter
   const { value } = req.body;
+
+  if (!id) {
+    return res.status(400).json({ message: 'id is a required query parameter' });
+  }
 
   if (value === undefined) {
     return res.status(400).json({ message: 'value is a required field in the body' });

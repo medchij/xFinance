@@ -1,4 +1,3 @@
-
 {
   "version": 2,
   "builds": [
@@ -14,14 +13,14 @@
       }
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "backend/server.js"
+      "source": "/api/(.*)",
+      "destination": "/backend/server.js"
     },
     {
-      "src": "/(.*)",
-      "dest": "/$1"
+      "source": "/((?!api/).*)",
+      "destination": "/XFinance.html"
     }
   ]
 }
