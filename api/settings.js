@@ -28,7 +28,8 @@ module.exports = async (req, res) => {
 // Handles GET requests to fetch settings
 const handleGet = async (req, res, company_id) => {
   try {
-    const { rows } = await query(`SELECT * FROM ${company_id}_settings ORDER BY tab, name`);
+    // ЗАСВАР: SQL query-г зөв хүснэгт рүү, company_id-г ашиглан шүүдэг болгов.
+    const { rows } = await query('SELECT * FROM settings WHERE company_id = $1 ORDER BY tab, name', [company_id]);
     res.status(200).json(rows);
   } catch (error) {
     console.error(`Error fetching settings for ${company_id}:`, error);
@@ -45,9 +46,10 @@ const handlePost = async (req, res, company_id) => {
   }
 
   try {
+    // ЗАСВАР: INSERT query-д company_id-г нэмж өгөв.
     const { rows } = await query(
-      `INSERT INTO ${company_id}_settings (name, value, tab) VALUES ($1, $2, $3) RETURNING *`,
-      [name, value, tab]
+      'INSERT INTO settings (company_id, name, value, tab) VALUES ($1, $2, $3, $4) RETURNING *',
+      [company_id, name, value, tab]
     );
     res.status(201).json(rows[0]); // Return the newly created setting
   } catch (error) {
@@ -70,9 +72,10 @@ const handlePut = async (req, res, company_id) => {
   }
 
   try {
+    // ЗАСВАР: UPDATE query-г зөвхөн тухайн компанийн тохиргоог засахаар хязгаарлав.
     const { rows } = await query(
-      `UPDATE ${company_id}_settings SET value = $1 WHERE id = $2 RETURNING *`,
-      [value, id]
+      'UPDATE settings SET value = $1 WHERE id = $2 AND company_id = $3 RETURNING *',
+      [value, id, company_id]
     );
 
     if (rows.length === 0) {
