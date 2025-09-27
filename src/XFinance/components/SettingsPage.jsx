@@ -20,158 +20,138 @@ import { useAppContext } from "./AppContext";
 import { withLoading } from "../apiHelpers";
 import { BASE_URL } from "../../config";
 
-// NOTE: User's original styles are preserved exactly.
 const useStyles = makeStyles({
-  container: {
-    flexGrow: 1,
-    padding: "20px",
-    backgroundColor: tokens.colorNeutralBackground1,
-    minHeight: "100vh",
-  },
-  tabList: {
-    marginBottom: "16px",
-  },
-  table: {
-    width: "100%",
-    marginBottom: "16px",
-    tableLayout: "auto",
-    overflowX: "auto",
-  },
-  input: {
-    minWidth: "50px",
-    maxWidth: "150px",
-  },
-  valueCell: {
-    wordBreak: "break-word",
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    maxWidth: "300px",
-  },
-  newRow: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "10px",
-    marginTop: "10px",
-    alignItems: "flex-end",
-  },
-  actionCell: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: "6px",
-  },
-  actionButton: {
-    padding: "6px",
-    borderRadius: "6px",
-    backgroundColor: tokens.colorBrandBackground,
-    color: "white",
-    border: "none",
-    cursor: "pointer",
-    transition: "all 0.2s ease-in-out",
-  },
-  actionButtonHover: {
-    backgroundColor: tokens.colorBrandBackgroundHover,
-  },
+    container: {
+        padding: "20px",
+        minHeight: "100vh",
+      },
+      tabList: {
+        marginBottom: "16px",
+      },
+      table: {
+        width: "100%",
+        marginBottom: "16px",
+      },
+      input: {
+        minWidth: "100px",
+      },
+      actionCell: {
+        display: "flex",
+        gap: "8px",
+        justifyContent: "center",
+      },
+      newRow: {
+        display: "flex",
+        gap: "10px",
+        marginTop: "16px",
+        alignItems: "flex-end",
+      },
 });
 
 const SettingsPage = ({ isSidebarOpen }) => {
   const styles = useStyles();
-  const { dataDir, showMessage, setLoading } = useAppContext();
+  // REFACTOR: Use selectedCompany instead of dataDir
+  const { selectedCompany, showMessage, setLoading } = useAppContext();
   
   const [settings, setSettings] = useState([]);
   const [tabs, setTabs] = useState([]);
   const [activeTab, setActiveTab] = useState(null);
   const [editId, setEditId] = useState(null);
-  const [editRow, setEditRow] = useState({ name: "", value: "" });
+  const [editValue, setEditValue] = useState("");
   const [newSetting, setNewSetting] = useState({ name: "", value: "" });
   const [showNewInput, setShowNewInput] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
 
-  // Fetch settings based on the selected company (dataDir)
-  const fetchSettingsForCompany = useCallback(async () => {
-    if (!dataDir) {
+  // REFACTOR: Fetch settings based on the selectedCompany
+  const fetchSettings = useCallback(async () => {
+    // Don't fetch if no company is selected
+    if (!selectedCompany) {
       setSettings([]);
       setTabs([]);
       return;
     }
+    
     setIsFetching(true);
     try {
-      const response = await fetch(`${BASE_URL}/api/settings?company_id=${dataDir}`);
+      const response = await fetch(`${BASE_URL}/api/settings?company_id=${selectedCompany}`);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "Тохиргоог серверээс татахад алдаа гарлаа.");
       }
       const data = await response.json();
       setSettings(data);
+      
       const uniqueTabs = [...new Set(data.map((item) => item.tab))].sort();
       setTabs(uniqueTabs);
-      // Preserve active tab if it still exists, otherwise set to the first one.
-      if (!uniqueTabs.includes(activeTab)) {
+
+      // Set active tab to the first one if it's not already set or invalid
+      if (!activeTab || !uniqueTabs.includes(activeTab)) {
          setActiveTab(uniqueTabs[0] || null);
       }
     } catch (error) {
-      showMessage(`❌ Тохиргоо татах үед алдаа: ${error.message}`, 5000);
+      showMessage(`❌ Тохиргоо татах үед алдаа: ${error.message}`);
       setSettings([]);
       setTabs([]);
     } finally {
       setIsFetching(false);
     }
-  }, [dataDir, showMessage, activeTab]);
+  }, [selectedCompany, showMessage, activeTab]);
 
   useEffect(() => {
-    fetchSettingsForCompany();
-  }, [dataDir]); // Re-fetch when company changes
+    fetchSettings();
+  }, [selectedCompany, fetchSettings]); // Re-fetch when company changes
 
   const handleEdit = (row) => {
     setEditId(row.id);
-    setEditRow({ name: row.name, value: row.value });
+    setEditValue(row.value);
   };
 
   const handleSave = async (id) => {
     await withLoading(setLoading, showMessage, async () => {
-      const url = `${BASE_URL}/api/settings/${id}?company_id=${dataDir}`;
+      const url = `${BASE_URL}/api/settings/${id}?company_id=${selectedCompany}`;
       const response = await fetch(url, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ value: editRow.value }),
+        body: JSON.stringify({ value: editValue }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "Серверийн алдаа");
       
-      await fetchSettingsForCompany(); // Re-fetch to show updated data
+      await fetchSettings(); // Re-fetch to show updated data
       setEditId(null);
       showMessage("✅ Тохиргоо амжилттай хадгалагдлаа");
     });
   };
 
-  const handleAdd = async () => {
-    if (!newSetting.name.trim() || !newSetting.value.trim()) {
-      showMessage("⚠️ Нэр болон утга шаардлагатай");
-      return;
-    }
+    const handleAdd = async () => {
+        if (!newSetting.name.trim() || !newSetting.value.trim() || !activeTab) {
+        showMessage("⚠️ Нэр, утга болон идэвхтэй таб шаардлагатай.", "warning");
+        return;
+        }
 
-    await withLoading(setLoading, showMessage, async () => {
-      const url = `${BASE_URL}/api/settings?company_id=${dataDir}`;
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...newSetting, tab: activeTab }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Серверийн алдаа");
+        await withLoading(setLoading, showMessage, async () => {
+            const url = `${BASE_URL}/api/settings?company_id=${selectedCompany}`;
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ...newSetting, tab: activeTab }),
+            });
 
-      await fetchSettingsForCompany(); // Re-fetch to include the new setting
-      setNewSetting({ name: "", value: "" });
-      setShowNewInput(false);
-      showMessage("✅ Шинэ тохиргоо нэмэгдлээ");
-    });
-  };
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || "Шинэ тохиргоо нэмэхэд алдаа гарлаа.");
+            }
+            
+            await fetchSettings(); // Refresh the list
+            setNewSetting({ name: "", value: "" });
+            setShowNewInput(false);
+            showMessage("✅ Шинэ тохиргоо амжилттай нэмэгдлээ.", "success");
+        });
+    };
 
   const filteredSettings = settings.filter((item) => item.tab === activeTab);
-  const isSensitiveKey = (key) => ["khanbank_password", "access_token", "device_token", "refresh_token", "car_token"].includes(key);
 
-  // Main container with original styles
   return (
     <div
       className={styles.container}
@@ -180,50 +160,56 @@ const SettingsPage = ({ isSidebarOpen }) => {
         transition: "margin-left 0.3s ease-in-out",
       }}
     >
-      {!dataDir ? (
+      {/* REFACTOR: Show a message if no company is selected */}
+      {!selectedCompany ? (
         <h2>⚠️ Компани сонгогдоогүй байна. Профайл хуудаснаас сонгоно уу.</h2>
       ) : isFetching ? (
-        <Spinner label={`'${dataDir}' компанийн тохиргоог ачааллаж байна...`} />
+        <Spinner label={`'${selectedCompany}' компанийн тохиргоог ачааллаж байна...`} />
       ) : (
         <>
-          <h2>📋 {activeTab}</h2>
-          <TabList selectedValue={activeTab} onTabSelect={(_, data) => setActiveTab(data.value)} className={styles.tabList}>
-            {tabs.map((tab) => <Tab key={tab} value={tab}>{tab}</Tab>)}
-          </TabList>
+          <h2>📋 {activeTab ? `${activeTab} тохиргоо` : "Тохиргоо"}</h2>
+          
+          {tabs.length > 0 && (
+              <TabList selectedValue={activeTab} onTabSelect={(_, data) => setActiveTab(data.value)} className={styles.tabList}>
+                {tabs.map((tab) => <Tab key={tab} value={tab}>{tab}</Tab>)}
+              </TabList>
+          )}
 
           <Table className={styles.table}>
             <TableHeader>
               <TableRow>
-                <TableHeaderCell>Нэр</TableHeaderCell>
+                <TableHeaderCell style={{width: '20%'}}>Нэр</TableHeaderCell>
                 <TableHeaderCell>Утга</TableHeaderCell>
-                <TableHeaderCell>Үйлдэл</TableHeaderCell>
+                <TableHeaderCell style={{width: '15%', textAlign: 'center'}}>Үйлдэл</TableHeaderCell>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredSettings.map((row) => (
                 <TableRow key={row.id}>
+                  <TableCell>{row.name}</TableCell>
                   <TableCell>
                     {editId === row.id ? (
-                      <Input size="small" value={editRow.name} readOnly className={styles.input} style={{ backgroundColor: "#f9f9f9", color: "#666" }} />
-                    ) : ( row.name )}
-                  </TableCell>
-                  <TableCell className={styles.valueCell}>
-                    {editId === row.id ? (
-                      <Input size="small" value={editRow.value} onChange={(e, data) => setEditRow({ ...editRow, value: data.value })} className={styles.input} />
-                    ) : isSensitiveKey(row.name) ? (
-                      <span title="Hidden">••••••••</span>
+                      <Input fluid value={editValue} onChange={(e, data) => setEditValue(data.value)} />
                     ) : (
-                      <span title={row.value}>{row.value.length > 35 ? row.value.slice(0, 35) + "…" : row.value}</span>
+                      <span title={row.value} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '400px', display: 'block' }}>
+                          {row.value}
+                      </span>
                     )}
                   </TableCell>
                   <TableCell className={styles.actionCell}>
                     {editId === row.id ? (
                       <>
-                        <Tooltip content="Хадгалах"><Button appearance="subtle" size="small" icon={<CheckmarkCircle24Regular />} onClick={() => handleSave(row.id)} /></Tooltip>
-                        <Tooltip content="Болих"><Button appearance="subtle" size="small" icon={<DismissCircle24Regular />} onClick={() => setEditId(null)} /></Tooltip>
+                        <Tooltip content="Хадгалах" relationship="label">
+                            <Button icon={<CheckmarkCircle24Regular />} onClick={() => handleSave(row.id)} />
+                        </Tooltip>
+                        <Tooltip content="Болих" relationship="label">
+                            <Button icon={<DismissCircle24Regular />} onClick={() => setEditId(null)} />
+                        </Tooltip>
                       </>
                     ) : (
-                      <Tooltip content="Засах"><Button appearance="subtle" size="small" icon={<EditRegular />} onClick={() => handleEdit(row)} className={styles.actionButton} /></Tooltip>
+                        <Tooltip content="Засах" relationship="label">
+                            <Button icon={<EditRegular />} onClick={() => handleEdit(row)} />
+                        </Tooltip>
                     )}
                   </TableCell>
                 </TableRow>
@@ -231,14 +217,14 @@ const SettingsPage = ({ isSidebarOpen }) => {
             </TableBody>
           </Table>
 
-          <Button appearance="secondary" onClick={() => setShowNewInput(!showNewInput)}>
-            {showNewInput ? "❌ Болих" : "➕ Шинэ тохиргоо"}
+          <Button appearance="primary" icon={<AddRegular />} onClick={() => setShowNewInput(!showNewInput)}>
+            {showNewInput ? "Болих" : "Шинэ тохиргоо"}
           </Button>
 
           {showNewInput && (
             <div className={styles.newRow}>
-              <Input placeholder="Нэр" value={newSetting.name} onChange={(e, data) => setNewSetting({ ...newSetting, name: data.value })} className={styles.input} />
-              <Input placeholder="Утга" value={newSetting.value} onChange={(e, data) => setNewSetting({ ...newSetting, value: data.value })} className={styles.input} />
+              <Input placeholder="Нэр" value={newSetting.name} onChange={(e, data) => setNewSetting({ ...newSetting, name: data.value })} />
+              <Input placeholder="Утга" value={newSetting.value} onChange={(e, data) => setNewSetting({ ...newSetting, value: data.value })} />
               <Button appearance="primary" onClick={handleAdd}>Хадгалах</Button>
             </div>
           )}

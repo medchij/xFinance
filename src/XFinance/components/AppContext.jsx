@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
+import React, { createContext, useState, useContext, useEffect, useCallback } from "react";
 
 const AppContext = createContext();
 
@@ -9,44 +9,43 @@ export const AppProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [actionLog, setActionLog] = useState([]);
 
-  // FIX: Initialize state from localStorage synchronously to prevent re-render loops.
-  const [dataDir, setDataDir] = useState(() => {
-    const saved = localStorage.getItem("dataDir");
-    // This log will only run once on initial load.
-    console.log(saved ? `🔁 LocalStorage-оос dataDir сэргээв: ${saved}` : "🤔 LocalStorage-д dataDir байхгүй, default-г ашиглая: dataNany");
-    return saved || "dataNany";
-  });
+  // REFACTOR: Rename `dataDir` to `selectedCompany` for clarity.
+  // Initialize from localStorage or null. No default company.
+  const [selectedCompany, setSelectedCompany] = useState(() => localStorage.getItem("selectedCompany") || null);
 
-  // This effect now only *saves* the dataDir to localStorage when it changes.
+  // This effect saves the selected company to localStorage whenever it changes.
   useEffect(() => {
-    if (dataDir) {
-      localStorage.setItem("dataDir", dataDir);
+    if (selectedCompany) {
+      localStorage.setItem("selectedCompany", selectedCompany);
+      console.log(`🏢 Сонгогдсон компани хадгалагдлаа: ${selectedCompany}`);
     } else {
-      // If dataDir becomes null/undefined for some reason, remove it.
-      localStorage.removeItem("dataDir");
+      localStorage.removeItem("selectedCompany");
     }
-  }, [dataDir]);
+  }, [selectedCompany]);
 
-  const logAction = (msg) => {
+  // FIX: Use useCallback to memoize functions and prevent re-renders.
+  const logAction = useCallback((msg) => {
     const timestamp = new Date().toLocaleString();
     setActionLog((prevLog) => [...prevLog, { message: msg, time: timestamp }]);
-  };
+  }, []);
 
-  const showMessage = (msg) => {
+  const showMessage = useCallback((msg) => {
     setMessage(msg);
-    logAction(msg); // ✨ Лог бүртгэх
+    logAction(msg);
+    
+    const duration = msg.startsWith("✅") ? 1500 : 5000; // Shorter for success, longer for errors
 
-    if (msg.startsWith("✅")) {
-      setType("success");
-      setTimeout(() => setMessage(""), 1000);
-    } else if (msg.startsWith("❌")) {
-      setType("error");
-    } else if (msg.startsWith("⚠️")) {
-      setType("warning");
-    } else {
-      setType("info");
+    if (msg.startsWith("✅")) setType("success");
+    else if (msg.startsWith("❌")) setType("error");
+    else if (msg.startsWith("⚠️")) setType("warning");
+    else setType("info");
+
+    // Clear message after a delay, but not for indefinite messages (duration 0)
+    if (duration > 0) {
+        setTimeout(() => setMessage(""), duration);
     }
-  };
+
+  }, [logAction]);
 
   return (
     <AppContext.Provider
@@ -54,13 +53,12 @@ export const AppProvider = ({ children }) => {
         loading,
         setLoading,
         message,
-        setMessage,
         showMessage,
         type,
         isLoggedIn,
         setIsLoggedIn,
-        dataDir,
-        setDataDir,
+        selectedCompany, // EXPORT: Export the new state
+        setSelectedCompany, // EXPORT: Export the new setter
         actionLog,
       }}
     >
