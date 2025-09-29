@@ -17,16 +17,33 @@ export const AppProvider = ({ children }) => {
   const [searchData, setSearchData] = useState({ account: [], cf: [], customer: [] });
 
   // --- AUTH FUNCTIONS ---
-  const login = useCallback((username, password) => {
-    // Dummy login logic for demonstration
-    if (username && password) {
-      localStorage.setItem("authToken", "dummy-token"); // Store a dummy token
+  const login = useCallback(async (username, password) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Нэвтрэхэд алдаа гарлаа.');
+      }
+
+      localStorage.setItem("authToken", data.token);
       setIsLoggedIn(true);
-      showMessage("✅ Амжилттай нэвтэрлээ.", 3000);
+      showMessage(`✅ ${data.message}`, 3000);
       return true;
+    } catch (error) {
+      showMessage(`❌ ${error.message}`, "error");
+      return false;
+    } finally {
+      setLoading(false);
     }
-    showMessage("❌ Нэр, нууц үгээ оруулна уу.", "error");
-    return false;
   }, []);
 
   const logout = useCallback(() => {
@@ -63,15 +80,12 @@ export const AppProvider = ({ children }) => {
       if (!res.ok) throw new Error("Серверээс компаниудын жагсаалтыг татахад алдаа гарлаа.");
       const fetchedCompanies = await res.json();
       setCompanies(fetchedCompanies);
-      if (!selectedCompany && fetchedCompanies.length > 0) {
-        showMessage("⚠️ Ажиллах компаниа сонгоно уу.", 0);
-      }
     } catch (error) {
       showMessage(`❌ Компани татахад алдаа гарлаа: ${error.message}`);
     } finally {
       setLoading(false);
     }
-  }, [companies.length, selectedCompany, showMessage]);
+  }, [companies.length, showMessage]);
 
   const fetchSettings = useCallback(async (force = false) => {
     if (!selectedCompany) {

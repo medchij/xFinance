@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -23,6 +22,9 @@ app.get('/api', (req, res) => {
 });
 
 // API Routes
+const authRouter = require('./routes/auth');
+app.use('/api/auth', authRouter);
+
 const settingsRouter = require('./routes/settings');
 app.use('/api/settings', settingsRouter);
 

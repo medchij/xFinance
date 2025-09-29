@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import PropTypes from 'prop-types';
 import {
   Input,
@@ -6,10 +6,7 @@ import {
   Link,
   makeStyles,
   shorthands,
-  Dropdown,
-  Option,
 } from "@fluentui/react-components";
-import { useAppContext } from "./AppContext";
 import Header from "./Header";
 
 const useStyles = makeStyles({
@@ -39,47 +36,14 @@ const useStyles = makeStyles({
 
 const LoginPage = ({ onLogin, onCompanySelect, onNavigateToPublic }) => {
   const styles = useStyles();
-  const { showMessage } = useAppContext();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [companies, setCompanies] = useState([]);
-  const [selectedCompany, setSelectedCompany] = useState(null);
-
-  useEffect(() => {
-    // Fetch the list of companies from the backend
-    const fetchCompanies = async () => {
-      try {
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/companies`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch companies');
-        }
-        const data = await response.json();
-        setCompanies(data);
-        if (data.length > 0) {
-            // Set default company, e.g., the first one
-            setSelectedCompany(data[0]);
-        }
-      } catch (error) {
-        showMessage(`❌ Компанийн жагсаалт авахад алдаа гарлаа: ${error.message}`);
-      }
-    };
-
-    fetchCompanies();
-  }, [showMessage]);
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (!selectedCompany) {
-        showMessage("⚠️ Та компаниа сонгоно уу!");
-        return;
-    }
-    onCompanySelect(selectedCompany); // Pass selected company to AppContext
-    onLogin(username, password, selectedCompany); // Pass it to the login function as well
-  };
-  
-  const handleOptionSelect = (event, data) => {
-    const selectedValue = data.optionValue;
-    setSelectedCompany(selectedValue);
+    const defaultCompany = "default"; 
+    onCompanySelect(defaultCompany); 
+    onLogin(username, password, defaultCompany);
   };
 
   return (
@@ -100,20 +64,6 @@ const LoginPage = ({ onLogin, onCompanySelect, onNavigateToPublic }) => {
           onChange={(e, data) => setPassword(data.value)}
           required
         />
-        {companies.length > 0 && (
-            <Dropdown 
-                placeholder="Компани сонгох"
-                value={selectedCompany}
-                onOptionSelect={handleOptionSelect}
-            >
-                {companies.map((company) => (
-                    <Option key={company} value={company}>
-                        {company.charAt(0).toUpperCase() + company.slice(1)}
-                    </Option>
-                ))}
-            </Dropdown>
-        )}
-
         <Button appearance="primary" type="submit">Нэвтрэх</Button>
       </form>
 
