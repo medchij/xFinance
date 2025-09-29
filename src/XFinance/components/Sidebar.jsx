@@ -10,7 +10,7 @@ import {
   PersonCircle24Regular,
   Wrench24Regular,
   ChevronLeft24Regular,
-  ChevronRight24Regular,
+  Apps24Regular, // Icon for the new logo/toggle
 } from "@fluentui/react-icons";
 import { Button } from "@fluentui/react-components";
 import TransactionModal from "./TransactionModal";
@@ -19,7 +19,6 @@ import SearchAccount from "./SearchAccount";
 import SheetSelectorDialog from "./SheetSelectorDialog";
 import { writeToImportSheet, handleFileImport } from "../xFinance";
 import { useAppContext } from "./AppContext";
-
 
 const SidebarItem = ({ icon, text, isOpen, onClick }) => (
   <li style={{ width: "100%", marginBottom: "4px" }}>
@@ -48,18 +47,8 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
   const [isSheetDialogOpen, setSheetDialogOpen] = useState(false);
   const [sheetData, setSheetData] = useState();
   const [selectedSheet, setSelectedSheet] = useState(null);
-  //const [selectedSheetName, setSelectedSheetName] = useState(null);
-
 
   const { setLoading, showMessage } = useAppContext();
-
-  // const handleMouseEnter = () => {
-  //   if (!manualToggle) toggleSidebar(true);
-  // };
-
-  // const handleMouseLeave = () => {
-  //   if (!manualToggle) toggleSidebar(false);
-  // };
 
   const handleToggleClick = () => {
     setManualToggle(!manualToggle);
@@ -85,8 +74,6 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
   return (
     <>
       <div
-        // onMouseEnter={handleMouseEnter}
-        // onMouseLeave={handleMouseLeave}
         style={{
           width: isOpen ? "250px" : "50px",
           height: "100vh",
@@ -105,6 +92,25 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
         }}
       >
         <ul style={{ listStyle: "none", width: "100%", padding: 0, margin: 0 }}>
+          {/* New Toggle/Logo Button */}
+          <li style={{ width: "100%", marginBottom: "10px" }}>
+            <Button
+              onClick={handleToggleClick}
+              appearance="transparent"
+              icon={isOpen ? <ChevronLeft24Regular /> : <Apps24Regular />}
+              style={{
+                justifyContent: isOpen ? "flex-start" : "center",
+                width: "100%",
+                padding: "12px 20px",
+                textAlign: "left",
+                color: "#333",
+                fontWeight: "bold",
+              }}
+            >
+              {isOpen && "XFinance"}
+            </Button>
+          </li>
+
           <SidebarItem
             icon={<Home24Regular />}
             text="Нүүр хуудас"
@@ -141,14 +147,12 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
             isOpen={isOpen}
             onClick={() => setActivePage("settings")}
           />
-
           <SidebarItem
             icon={<Globe24Regular />}
             text="browser"
             isOpen={isOpen}
             onClick={() => setActivePage("browser")}
           />
-       
           <SidebarItem icon={<Chat24Regular />} text="Messages" isOpen={isOpen} />
         </ul>
 
@@ -176,26 +180,7 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
         </Button>
       </div>
 
-      <button
-        onClick={handleToggleClick}
-        style={{
-          position: "fixed",
-          top: "20px",
-          left: isOpen ? "250px" : "50px",
-          transform: "translateY(-50%)",
-          background: "#fff",
-          border: "none",
-          cursor: "pointer",
-          fontSize: "14px",
-          padding: "10px 15px",
-          borderRadius: "0 20% 20% 0",
-          boxShadow: "2px 2px 5px rgba(0,0,0,0.1)",
-          transition: "left 0.3s ease-in-out",
-          zIndex: 1001,
-        }}
-      >
-        {isOpen ? <ChevronLeft24Regular /> : <ChevronRight24Regular />}
-      </button>
+      {/* Old floating toggle button is removed. */}
 
       <TransactionModal isOpen={isTransactionOpen} onClose={() => setTransactionOpen(false)} />
       <SearchAccount isOpen={isSearchOpen} onClose={() => setSearchOpen(false)} />
@@ -205,7 +190,7 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
           setLoading(true);
           try {
             const { message, success } = await writeToImportSheet(
-              selectedSheet, // 🎯 SheetSelector-с авсан нэр
+              selectedSheet,
               sheetData,
               confirmed,
               setLoading,
@@ -220,7 +205,6 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
           }
         }}
       />
-   
 
       <SheetSelectorDialog
         isOpen={isSheetDialogOpen}

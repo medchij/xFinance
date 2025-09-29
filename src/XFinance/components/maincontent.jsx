@@ -6,7 +6,7 @@ import TextInsertion from "./TextInsertion";
 import { Ribbon24Regular, LockOpen24Regular, DesignIdeas24Regular } from "@fluentui/react-icons";
 import { insertText } from "../xFinance";
 
-const MainContent = ({ title, isSidebarOpen, isPublic = false }) => {
+const MainContent = ({ title, isSidebarOpen, isPublic = false, onNavigateToLogin }) => {
   const rootStyle = {
     flexGrow: 1,
     padding: "0",
@@ -21,7 +21,13 @@ const MainContent = ({ title, isSidebarOpen, isPublic = false }) => {
 
   return (
     <div style={rootStyle}>
-      <Header logo="assets/logo-filled.png" title={title} message="Тавтай морил" />
+      <Header 
+        logo="assets/logo-filled.png" 
+        title={title} 
+        message="Тавтай морил" 
+        isPublic={isPublic} 
+        onNavigateToLogin={onNavigateToLogin} 
+      />
       <HeroList
         message="Энэ нэмэлт хэрэгсэл нь таны ажиллагааг хялбарчлах болно"
         items={[
@@ -38,7 +44,8 @@ const MainContent = ({ title, isSidebarOpen, isPublic = false }) => {
 MainContent.propTypes = {
   title: PropTypes.string,
   isSidebarOpen: PropTypes.bool,
-  isPublic: PropTypes.bool, // isPublic prop added
+  isPublic: PropTypes.bool,
+  onNavigateToLogin: PropTypes.func,
 };
 
 export default MainContent;

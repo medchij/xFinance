@@ -1,53 +1,32 @@
-import React, { useState, lazy, Suspense } from "react";
-import { Button, tokens, makeStyles } from "@fluentui/react-components";
+import React, { useState } from "react";
+import LoginPage from "./LoginPage";
+import MainContent from "./maincontent";
 
-// Lazy-load хийх компонентууд
-const LoginPage = lazy(() => import(/* webpackChunkName: "page-login" */ "./LoginPage"));
-const MainContent = lazy(() => import(/* webpackChunkName: "page-main" */ "./maincontent"));
+const UnauthenticatedApp = ({ onLogin, onCompanySelect }) => {
+  // State to toggle between login and public view
+  const [showLogin, setShowLogin] = useState(false);
 
-const useStyles = makeStyles({
-  wrapper: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    minHeight: "100vh",
-    backgroundColor: tokens.colorNeutralBackground3, // Фон өнгө
-  },
-  buttonContainer: {
-    padding: "20px",
-    backgroundColor: "white", // Товчны арын дэвсгэр
-    width: "100%",
-    textAlign: "center",
-    boxShadow: "0 -2px 4px rgba(0,0,0,0.1)", // Сүүдэр
-    marginTop: "auto", // Доор байрлуулна
-  },
-});
+  const handleNavigateToLogin = () => {
+    setShowLogin(true);
+  };
 
-const UnauthenticatedApp = () => {
-  const styles = useStyles();
-  // "main" эсвэл "login" гэсэн 2 төлөвтэй
-  const [activeUnauthPage, setActiveUnauthPage] = useState("main"); 
-
-  const navigateToLogin = () => setActiveUnauthPage("login");
-  const navigateToMain = () => setActiveUnauthPage("main");
+  const handleNavigateToPublic = () => {
+    setShowLogin(false);
+  };
 
   return (
-    <Suspense fallback={<div style={{ padding: 12 }}>Түр хүлээгээрэй…</div>}>
-      {activeUnauthPage === "login" && (
-        <LoginPage onNavigateMain={navigateToMain} />
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+      {showLogin ? (
+        <LoginPage 
+          onLogin={onLogin} 
+          onCompanySelect={onCompanySelect} 
+          onNavigateToPublic={handleNavigateToPublic} 
+        />
+      ) : (
+        // Pass a function to MainContent to allow it to trigger navigation
+        <MainContent isPublic={true} onNavigateToLogin={handleNavigateToLogin} />
       )}
-
-      {activeUnauthPage === "main" && (
-        <div className={styles.wrapper}>
-          <MainContent title="XFinance" isPublic={true} />
-          <div className={styles.buttonContainer}>
-              <Button appearance="primary" onClick={navigateToLogin}>
-                  Системд нэвтрэх
-              </Button>
-          </div>
-        </div>
-      )}
-    </Suspense>
+    </div>
   );
 };
 
