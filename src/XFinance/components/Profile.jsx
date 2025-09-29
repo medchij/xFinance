@@ -5,7 +5,6 @@ import {
   Option,
   Field,
   tokens,
-  Spinner,
   Button,
 } from "@fluentui/react-components";
 import { ArrowClockwise16Regular } from "@fluentui/react-icons";
@@ -80,7 +79,7 @@ const Profile = ({ isSidebarOpen }) => {
 
         {/* Global loading state ашиглана */}
         {loading && companies.length === 0 ? (
-          <Spinner label="Компаниудыг ачааллаж байна..." />
+          null
         ) : (
           <Field
             label="Таны ажиллах боломжтой компаниуд"

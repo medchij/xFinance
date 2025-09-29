@@ -230,24 +230,25 @@ const styles = {
         maxWidth: "900px",
         maxHeight: "90vh",
         background: "#fff",
-        padding: "15px", // Reduced padding
+        padding: "12px",
         borderRadius: "8px",
         boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
         display: "flex",
         flexDirection: "column",
-        gap: '8px', // Added gap between elements
+        gap: '8px',
     },
     tabContainer: {
         display: "flex",
+        marginTop: "10px",
     },
     tabButton: {
         flex: 1,
-        padding: "5px", // Reduced padding
+        padding: "5px",
         border: "none",
         borderBottom: "2px solid transparent",
         backgroundColor: "#fff",
         cursor: "pointer",
-        fontSize: "15px", // Slightly reduced font size
+        fontSize: "15px",
         transition: "background 0.3s ease-in-out, border-bottom 0.3s ease-in-out",
     },
     activeTab: {
@@ -276,17 +277,17 @@ const styles = {
     },
     th: {
         backgroundColor: "#f7f7f7",
-        padding: "6px 10px", // Reduced padding
+        padding: "6px 10px",
         borderBottom: "1px solid #ddd",
         textAlign: "left",
-        fontSize: "11px", // Reduced font size
+        fontSize: "11px",
         position: "sticky",
         top: 0,
         zIndex: 1,
     },
     td: {
-        padding: "8px 10px",
-        fontSize: "12px",
+        padding: "3px 5px",
+        fontSize: "12px", 
         borderBottom: "1px solid #eee",
         whiteSpace: "nowrap",
         overflow: "hidden",
@@ -308,15 +309,15 @@ const styles = {
       display: "flex",
       justifyContent: "flex-end", 
       gap: "10px",
-      marginTop: "10px", // Reduced margin
-      paddingTop: "10px", // Reduced padding
+      marginTop: "5px",
+      paddingTop: "5px",
       borderTop: "1px solid #ddd",
     },
     cancelButton: {
       background: "#f0f0f0",
       color: "#333",
       border: "1px solid #ccc",
-      padding: "8px 16px",
+      padding: "4px 12px",
       cursor: "pointer",
       borderRadius: "4px",
     },

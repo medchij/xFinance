@@ -1,4 +1,5 @@
 @echo off
+chcp 65001
 :: Change directory to the script's location
 cd /d %~dp0
 
