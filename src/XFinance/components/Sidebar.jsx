@@ -169,7 +169,6 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
           icon={<PersonCircle24Regular />}
           style={{
             width: "100%",
-            justifyContent: isOpen ? "flex-start" : "center",
             padding: "12px 20px",
             marginTop: "auto",
             marginBottom: "20px",
