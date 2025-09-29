@@ -1,9 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 
-// Load environment variables from .env file
-dotenv.config();
+// Load environment variables from .env.local file in the root directory
+dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
 // Initialize database connection (and test it)
 require('./db.js');
@@ -49,8 +50,8 @@ app.use('/api/env', envRouter);
 // Export the app for Vercel
 module.exports = app;
 
-// The app.listen() is removed as Vercel handles the server creation
-// const PORT = process.env.BACKEND_PORT || 3001;
-// app.listen(PORT, () => {
-//   console.log(`✅ Backend server is running on http://localhost:${PORT}`);
-// });
+// Start the server for local development
+const PORT = process.env.BACKEND_PORT || 4000;
+app.listen(PORT, () => {
+  console.log(`✅ Backend server is running on http://localhost:${PORT}`);
+});
