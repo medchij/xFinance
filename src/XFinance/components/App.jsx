@@ -35,7 +35,7 @@ const InternalAuthenticatedApp = ({ title }) => {
           toggleSidebar={toggleSidebar}
           setActivePage={setActivePage}
         />
-        <div>
+        <div style={{ flexGrow: 1 }} >
           {activePage === "maincontent" && <MainContent title={title} isSidebarOpen={isSidebarOpen} />}
           {activePage === "CustomTools" && <CustomTools isSidebarOpen={isSidebarOpen} />}
           {activePage === "search" && <SearchAccount />}
