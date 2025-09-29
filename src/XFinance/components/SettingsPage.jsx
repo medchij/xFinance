@@ -32,9 +32,15 @@ const useStyles = makeStyles({
   },
   tabList: {
     marginBottom: "16px",
+    overflowX: 'auto', // Make tabs scrollable on small screens
+  },
+  tableContainer: {
+    overflowX: 'auto',
+    width: '100%',
   },
   table: {
     width: "100%",
+    minWidth: "600px", // Ensure table has a minimum width
     marginBottom: "16px",
   },
   input: {
@@ -90,14 +96,18 @@ const SettingsPage = ({ isSidebarOpen }) => {
 
   useEffect(() => {
     if (settings.length > 0) {
-      const uniqueTabs = [...new Set(settings.map((item) => item.tab))].sort();
-      setTabs(uniqueTabs);
-      if (!activeTab || !uniqueTabs.includes(activeTab)) {
-        setActiveTab(uniqueTabs[0] || null);
-      }
+        const uniqueTabs = [...new Set(settings.map((item) => item.tab))].sort((a, b) => {
+            if (a === 'Үндсэн тохиргоо') return -1;
+            if (b === 'Үндсэн тохиргоо') return 1;
+            return a.localeCompare(b);
+        });
+        setTabs(uniqueTabs);
+        if (!activeTab || !uniqueTabs.includes(activeTab)) {
+            setActiveTab(uniqueTabs[0] || null);
+        }
     } else {
-      setTabs([]);
-      setActiveTab(null);
+        setTabs([]);
+        setActiveTab(null);
     }
   }, [settings, activeTab]);
 
@@ -108,7 +118,6 @@ const SettingsPage = ({ isSidebarOpen }) => {
 
   const handleEdit = (row) => {
     setEditId(row.id);
-    // For sensitive keys, don't show the real value in the edit input
     setEditValue(isSensitiveKey(row.name) ? "" : row.value);
   };
 
@@ -200,73 +209,74 @@ const SettingsPage = ({ isSidebarOpen }) => {
               ))}
             </TabList>
           )}
-
-          <Table className={styles.table}>
-            <TableHeader>
-              <TableRow>
-                <TableHeaderCell style={{ width: "20%" }}>Нэр</TableHeaderCell>
-                <TableHeaderCell>Утга</TableHeaderCell>
-                <TableHeaderCell style={{ width: "15%", textAlign: "center" }}>
-                  Үйлдэл
-                </TableHeaderCell>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredSettings.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell>{row.name}</TableCell>
-                  <TableCell>
-                    {editId === row.id ? (
-                      <Input
-                        fluid
-                        value={editValue}
-                        placeholder={isSensitiveKey(row.name) ? 'Шинэ утга оруулна уу' : ''}
-                        onChange={(e, data) => setEditValue(data.value)}
-                      />
-                    ) : (
-                      <span
-                        title={isSensitiveKey(row.name) ? "********" : row.value}
-                        style={{
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          maxWidth: "400px",
-                          display: "block",
-                        }}
-                      >
-                        {isSensitiveKey(row.name) ? "********" : row.value}
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell className={styles.actionCell}>
-                    {editId === row.id ? (
-                      <>
-                        <Tooltip content="Хадгалах" relationship="label">
-                          <Button
-                            icon={<CheckmarkCircle24Regular />}
-                            onClick={() => handleSave(row.id)}
-                          />
-                        </Tooltip>
-                        <Tooltip content="Болих" relationship="label">
-                          <Button
-                            icon={<DismissCircle24Regular />}
-                            onClick={() => setEditId(null)}
-                          />
-                        </Tooltip>
-                      </>
-                    ) : (
-                      <Tooltip content="Засах" relationship="label">
-                        <Button
-                          icon={<EditRegular />}
-                          onClick={() => handleEdit(row)}
-                        />
-                      </Tooltip>
-                    )}
-                  </TableCell>
+          <div className={styles.tableContainer}>
+            <Table className={styles.table}>
+              <TableHeader>
+                <TableRow>
+                  <TableHeaderCell style={{ width: "20%" }}>Нэр</TableHeaderCell>
+                  <TableHeaderCell>Утга</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "15%", textAlign: "center" }}>
+                    Үйлдэл
+                  </TableHeaderCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredSettings.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell>{row.name}</TableCell>
+                    <TableCell>
+                      {editId === row.id ? (
+                        <Input
+                          fluid
+                          value={editValue}
+                          placeholder={isSensitiveKey(row.name) ? 'Шинэ утга оруулна уу' : ''}
+                          onChange={(e, data) => setEditValue(data.value)}
+                        />
+                      ) : (
+                        <span
+                          title={isSensitiveKey(row.name) ? "********" : row.value}
+                          style={{
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            maxWidth: "400px",
+                            display: "block",
+                          }}
+                        >
+                          {isSensitiveKey(row.name) ? "********" : row.value}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className={styles.actionCell}>
+                      {editId === row.id ? (
+                        <>
+                          <Tooltip content="Хадгалах" relationship="label">
+                            <Button
+                              icon={<CheckmarkCircle24Regular />}
+                              onClick={() => handleSave(row.id)}
+                            />
+                          </Tooltip>
+                          <Tooltip content="Болих" relationship="label">
+                            <Button
+                              icon={<DismissCircle24Regular />}
+                              onClick={() => setEditId(null)}
+                            />
+                          </Tooltip>
+                        </>
+                      ) : (
+                        <Tooltip content="Засах" relationship="label">
+                          <Button
+                            icon={<EditRegular />}
+                            onClick={() => handleEdit(row)}
+                          />
+                        </Tooltip>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
 
           <Button
             appearance="primary"

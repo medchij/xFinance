@@ -6,17 +6,21 @@ import TextInsertion from "./TextInsertion";
 import { Ribbon24Regular, LockOpen24Regular, DesignIdeas24Regular } from "@fluentui/react-icons";
 import { insertText } from "../xFinance";
 
-const MainContent = ({ title, isSidebarOpen, loading, errorMessage, importStatus }) => {
+const MainContent = ({ title, isSidebarOpen, isPublic = false }) => {
+  const rootStyle = {
+    flexGrow: 1,
+    padding: "0",
+    transition: "margin-left 0.3s ease-in-out",
+  };
+
+  // If it's not a public page, calculate the margin for the sidebar
+  if (!isPublic) {
+    rootStyle.marginLeft = isSidebarOpen ? "250px" : "50px";
+    rootStyle.width = isSidebarOpen ? "calc(100% - 250px)" : "calc(100% - 50px)";
+  }
+
   return (
-    <div
-      style={{
-        flexGrow: 1,
-        padding: "0",
-        marginLeft: isSidebarOpen ? "250px" : "50px",
-        transition: "margin-left 0.3s ease-in-out",
-        width: isSidebarOpen ? "calc(100% - 250px)" : "calc(100% - 50px)",
-      }}
-    >
+    <div style={rootStyle}>
       <Header logo="assets/logo-filled.png" title={title} message="Тавтай морил" />
       <HeroList
         message="Энэ нэмэлт хэрэгсэл нь таны ажиллагааг хялбарчлах болно"
@@ -34,9 +38,7 @@ const MainContent = ({ title, isSidebarOpen, loading, errorMessage, importStatus
 MainContent.propTypes = {
   title: PropTypes.string,
   isSidebarOpen: PropTypes.bool,
-  loading: PropTypes.bool,
-  errorMessage: PropTypes.string,
-  importStatus: PropTypes.bool,
+  isPublic: PropTypes.bool, // isPublic prop added
 };
 
 export default MainContent;

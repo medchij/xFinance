@@ -1,16 +1,6 @@
 import React, { useState, lazy, Suspense } from "react";
 import PropTypes from "prop-types";
-import { AppProvider, useAppContext } from "./AppContext";
-import AppLoader from "./AppLoader";
-import AppNotification from "./AppNotification";
-import ShortcutListener from "./ShortcutListener";
 
-// Lazy components
-const UnauthenticatedApp = lazy(() => import(/* webpackChunkName: "app-unauth" */ "./UnauthenticatedApp"));
-const AuthenticatedApp = lazy(() => import(/* webpackChunkName: "app-auth" */ "./AuthenticatedApp")); // AuthenticatedApp-г тусад нь гаргая
-
-// AuthenticatedApp-н тодорхойлолтыг тусдаа файл болгох нь зүйтэй ч, энд түр үлдээе
-// Тусдаа файл: AuthenticatedApp.jsx
 const Sidebar = lazy(() => import(/* webpackChunkName: "page-sidebar" */ "./Sidebar"));
 const MainContent = lazy(() => import(/* webpackChunkName: "page-main" */ "./maincontent"));
 const CustomTools = lazy(() => import(/* webpackChunkName: "page-tools" */ "./CustomTools"));
@@ -19,7 +9,7 @@ const SearchAccount = lazy(() => import(/* webpackChunkName: "page-search" */ ".
 const Profile = lazy(() => import(/* webpackChunkName: "page-profile" */ "./Profile"));
 const BrowserView = lazy(() => import(/* webpackChunkName: "page-browser" */ "./BrowserView"));
 
-const InternalAuthenticatedApp = ({ title }) => {
+const AuthenticatedApp = ({ title }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [activePage, setActivePage] = useState("maincontent");
 
@@ -47,32 +37,9 @@ const InternalAuthenticatedApp = ({ title }) => {
     </div>
   );
 };
-InternalAuthenticatedApp.propTypes = { title: PropTypes.string };
 
-
-// AppContent-г шинэчлэв
-const AppContent = ({ title }) => {
-  const { isLoggedIn } = useAppContext();
-
-  return (
-    <Suspense fallback={<AppLoader />}>
-      {isLoggedIn ? <InternalAuthenticatedApp title={title} /> : <UnauthenticatedApp />}
-      <AppLoader />
-      <AppNotification />
-    </Suspense>
-  );
+AuthenticatedApp.propTypes = {
+  title: PropTypes.string,
 };
-AppContent.propTypes = { title: PropTypes.string };
 
-
-const App = ({ title }) => {
-  return (
-    <AppProvider>
-      <ShortcutListener onTrigger={() => console.log("Shortcut triggered!")} />
-      <AppContent title={title} />
-    </AppProvider>
-  );
-};
-App.propTypes = { title: PropTypes.string };
-
-export default App;
+export default AuthenticatedApp;

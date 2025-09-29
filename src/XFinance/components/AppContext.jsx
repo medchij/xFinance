@@ -16,11 +16,34 @@ export const AppProvider = ({ children }) => {
   const [settings, setSettings] = useState([]);
   const [searchData, setSearchData] = useState({ account: [], cf: [], customer: [] });
 
+  // --- AUTH FUNCTIONS ---
+  const login = useCallback((username, password) => {
+    // Dummy login logic for demonstration
+    if (username && password) {
+      localStorage.setItem("authToken", "dummy-token"); // Store a dummy token
+      setIsLoggedIn(true);
+      showMessage("✅ Амжилттай нэвтэрлээ.", 3000);
+      return true;
+    }
+    showMessage("❌ Нэр, нууц үгээ оруулна уу.", "error");
+    return false;
+  }, []);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem("authToken"); // Clear the token
+    localStorage.removeItem("selectedCompany"); // Clear company selection
+    setIsLoggedIn(false);
+    setSelectedCompany(null);
+    setCompanies([]);
+    setSettings([]);
+    setSearchData({ account: [], cf: [], customer: [] });
+    showMessage("Системээс гарлаа.", 3000);
+  }, []);
+
   // --- DATA FETCHING FUNCTIONS ---
 
   const showMessage = useCallback((msg, duration) => {
     setMessage(msg);
-    // Log action can be added here if desired
     const effectiveDuration = duration === 0 ? 0 : (msg.startsWith("✅") ? 1500 : 5000);
     if (msg.startsWith("✅")) setType("success");
     else if (msg.startsWith("❌")) setType("error");
@@ -104,20 +127,22 @@ export const AppProvider = ({ children }) => {
   // --- EFFECTS ---
 
   useEffect(() => {
-    if (selectedCompany) {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      setIsLoggedIn(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isLoggedIn && selectedCompany) {
       localStorage.setItem("selectedCompany", selectedCompany);
       console.log(`🏢 Сонгогдсон компани хадгалагдлаа: ${selectedCompany}`);
-      // When company changes, clear related data to force re-fetch
       setSettings([]);
       setSearchData({ account: [], cf: [], customer: [] });
-    } else {
-      localStorage.removeItem("selectedCompany");
-      // Clear all company-specific data
-      setCompanies([]);
-      setSettings([]);
-      setSearchData({ account: [], cf: [], customer: [] });
+    } else if (!isLoggedIn) {
+        localStorage.removeItem("selectedCompany");
     }
-  }, [selectedCompany]);
+  }, [selectedCompany, isLoggedIn]);
 
   return (
     <AppContext.Provider
@@ -128,15 +153,14 @@ export const AppProvider = ({ children }) => {
         showMessage,
         type,
         isLoggedIn,
-        setIsLoggedIn,
+        login,
+        logout,
         selectedCompany,
         setSelectedCompany,
         actionLog,
-        // Export cached data
         companies,
         settings,
         searchData,
-        // Export fetch functions
         fetchCompanies,
         fetchSettings,
         fetchSearchData,

@@ -7,22 +7,21 @@ import {
   tokens,
   Button,
 } from "@fluentui/react-components";
-import { ArrowClockwise16Regular } from "@fluentui/react-icons";
+import { ArrowClockwise16Regular, SignOut24Regular } from "@fluentui/react-icons"; // SignOut24Regular нэмэв
 import { useAppContext } from "./AppContext";
 import Header from "./Header";
 
 const Profile = ({ isSidebarOpen }) => {
-  // ЗАСВАР: AppContext-ээс дата болон функцүүдийг авна
   const { 
     selectedCompany, 
     setSelectedCompany, 
     showMessage, 
     companies, 
     fetchCompanies, 
-    loading 
+    loading, 
+    logout // logout-г context-оос авав
   } = useAppContext();
 
-  // Компонент анх ачааллахад кэш ашиглан датаг дуудна.
   useEffect(() => {
     fetchCompanies(false);
   }, [fetchCompanies]);
@@ -34,7 +33,6 @@ const Profile = ({ isSidebarOpen }) => {
     }
   };
 
-  // Сэргээх товч дарахад дуудагдана (force=true)
   const handleRefresh = () => {
     fetchCompanies(true);
   };
@@ -56,6 +54,7 @@ const Profile = ({ isSidebarOpen }) => {
         message={selectedCompany ? `Та ${selectedCompany} орчинд байна` : "Компани сонгоогүй байна"}
       />
 
+      {/* Компани сонгох хэсэг */}
       <div
         style={{
           background: "#fff",
@@ -65,7 +64,6 @@ const Profile = ({ isSidebarOpen }) => {
           margin: "20px",
         }}
       >
-        {/* ЗАСВАР: Сэргээх товчтой толгой хэсэг */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: "16px" }}>
           <h2>Компани Сонголт</h2>
           <Button 
@@ -77,7 +75,6 @@ const Profile = ({ isSidebarOpen }) => {
           />
         </div>
 
-        {/* Global loading state ашиглана */}
         {loading && companies.length === 0 ? (
           null
         ) : (
@@ -102,9 +99,27 @@ const Profile = ({ isSidebarOpen }) => {
 
         {companies.length === 0 && !loading && (
           <p style={{ color: tokens.colorPaletteRedBackground3 }}>
-            ⚠️ Мэдээллийн санд компани бүртгэгдээгүй байна. `setup-database.js` скриптийг ажиллуулна уу.
+            ⚠️ Мэдээллийн санд компани бүртгэгдээгүй байна.
           </p>
         )}
+      </div>
+
+      {/* Системээс гарах хэсэг (Шинээр нэмэгдсэн) */}
+      <div
+        style={{
+          background: "#fff",
+          padding: "24px",
+          borderRadius: "8px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          margin: "20px",
+          marginTop: 0, // Дээд талын зайг арилгав
+        }}
+      >
+        <h2>Системээс гарах</h2>
+        <p style={{ marginBottom: "16px" }}>Та системээс гарч, нэвтрэх хуудас руу шилжих болно.</p>
+        <Button icon={<SignOut24Regular />} appearance="primary" onClick={logout}>
+          Гарах
+        </Button>
       </div>
     </div>
   );
