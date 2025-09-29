@@ -10,9 +10,15 @@ const MainContent = ({ title, isSidebarOpen, isPublic = false, onNavigateToLogin
   const rootStyle = {
     flexGrow: 1,
     padding: "0",
+    transition: "margin-left 0.3s ease-in-out",
     // The margin-left transition is now handled by the parent AuthenticatedApp.jsx
   };
 
+  // If it's not a public page, calculate the margin for the sidebar
+  if (!isPublic) {
+    rootStyle.marginLeft = isSidebarOpen ? "250px" : "50px";
+    rootStyle.width = isSidebarOpen ? "calc(100% - 250px)" : "calc(100% - 50px)";
+  }
   // The margin and width calculations are removed from here to prevent double-spacing.
   // The parent component (`AuthenticatedApp`) is now responsible for this layout.
 
