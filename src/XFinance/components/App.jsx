@@ -52,11 +52,11 @@ InternalAuthenticatedApp.propTypes = { title: PropTypes.string };
 
 // AppContent-г шинэчлэв
 const AppContent = ({ title }) => {
-  const { isLoggedIn } = useAppContext();
+  const { isLoggedIn, login, setSelectedCompany } = useAppContext();
 
   return (
     <Suspense fallback={<AppLoader />}>
-      {isLoggedIn ? <InternalAuthenticatedApp title={title} /> : <UnauthenticatedApp />}
+      {isLoggedIn ? <InternalAuthenticatedApp title={title} /> : <UnauthenticatedApp onLogin={login} onCompanySelect={setSelectedCompany} />}
       <AppLoader />
       <AppNotification />
     </Suspense>
