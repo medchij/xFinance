@@ -34,9 +34,9 @@ const MainContent = ({ title, isSidebarOpen, isPublic = false, onNavigateToLogin
       <HeroList
         message="Энэ нэмэлт хэрэгсэл нь таны ажиллагааг хялбарчлах болно"
         items={[
-          { icon: <Ribbon24Regular />, primaryText: "Office интеграцчлалаар ажлаа илүү үр дүнтэй болго" },
-          { icon: <LockOpen24Regular />, primaryText: "Илүү олон үйлдэл, боломжийг идэвхжүүл" },
-          { icon: <DesignIdeas24Regular />, primaryText: "Мэргэжлийн түвшинд бүтээж, мэдээллээ харагдуулах" },
+          { icon: <Ribbon24Regular />, primaryText: "Office интеграцчлалаар ажлаа илүү үр дүнтэй болгоорой!" },
+          { icon: <LockOpen24Regular />, primaryText: "Илүү олон үйлдэл, боломжийг идэвхжүүлээрэй!" },
+          { icon: <DesignIdeas24Regular />, primaryText: "Тайлан мэдээгээ илүү мэргэжлийн түвшинд тайлагнаарай!" },
         ]}
       />
       <TextInsertion insertText={insertText} />

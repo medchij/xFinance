@@ -11,6 +11,7 @@ import {
   Wrench24Regular,
   ChevronLeft24Regular,
   Apps24Regular, // Icon for the new logo/toggle
+  ShieldKeyhole24Regular, // Icon for Admin
 } from "@fluentui/react-icons";
 import { Button } from "@fluentui/react-components";
 import TransactionModal from "./TransactionModal";
@@ -140,6 +141,12 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
             text="Дансны хайлт"
             isOpen={isOpen}
             onClick={() => setSearchOpen(true)}
+          />
+            <SidebarItem
+            icon={<ShieldKeyhole24Regular />}
+            text="Админ"
+            isOpen={isOpen}
+            onClick={() => setActivePage("admin")}
           />
           <SidebarItem
             icon={<Settings24Regular />}

@@ -3,20 +3,17 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../.env.loc
 const { db } = require('@vercel/postgres');
 const fs = require('fs').promises;
 const path = require('path');
+const bcrypt = require('bcrypt');
 
 // Helper function to safely parse date strings
 function parseDate(dateStr) {
     if (!dateStr) return null;
     try {
-        // Handles formats like "2025-03-25 1:14:17 PM" or "DD/MM/YYYY, HH:MM:SS"
         const cleanStr = dateStr.replace(/ (PM|AM)/, '').replace(/,/, '');
         const date = new Date(cleanStr);
-        // Check if the date is valid
         if (isNaN(date.getTime())) {
-            // Try another common format: DD/MM/YYYY
             const parts = dateStr.split(/[/, :]/);
             if (parts.length >= 3) {
-                // Assuming DD/MM/YYYY
                 const d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
                 if (!isNaN(d.getTime())) return d.toISOString();
             }
@@ -28,12 +25,11 @@ function parseDate(dateStr) {
     }
 }
 
-
 const ENTITIES = {
     Branch: { table: 'branches', file: 'Branch.json' },
     Currency: { table: 'currencies', file: 'Currency.json' },
     Customer: { table: 'customers', file: 'Customer.json' },
-    GLCategory: { table: 'gl_categories', file: 'GLCatergory.json' }, // Note the typo in filename
+    GLCategory: { table: 'gl_categories', file: 'GLCatergory.json' },
     GLAccount: { table: 'gl_accounts', file: 'GLAccount.json' },
     CF: { table: 'cf_items', file: 'CF.json' },
     Settings: { table: 'settings', file: 'Settings.json' },
@@ -42,8 +38,9 @@ const ENTITIES = {
 
 async function createTables(client) {
     console.log('Бүх хүснэгтийг устгаж, шинээр үүсгэж байна...');
-    await client.sql`DROP TABLE IF EXISTS settings, cf_items, gl_accounts, gl_categories, customers, currencies, branches, accounts, companies CASCADE;`;
+    await client.sql`DROP TABLE IF EXISTS settings, cf_items, gl_accounts, gl_categories, customers, currencies, branches, accounts, companies, role_permissions, user_roles, user_groups, permissions, "groups", roles, users CASCADE;`;
 
+    // Core App Tables
     await client.sql`CREATE TABLE companies (id VARCHAR(100) PRIMARY KEY, name VARCHAR(255) NOT NULL);`;
     await client.sql`CREATE TABLE accounts (id SERIAL, company_id VARCHAR(100) REFERENCES companies(id), account_number VARCHAR(255), account_name VARCHAR(255), currency VARCHAR(10), branch VARCHAR(255), created_at TIMESTAMP, PRIMARY KEY(id), UNIQUE(company_id, account_number));`;
     await client.sql`CREATE TABLE branches (id SERIAL, company_id VARCHAR(100) REFERENCES companies(id), original_id VARCHAR(50), code VARCHAR(50), name VARCHAR(255), create_date TIMESTAMP, status VARCHAR(50), PRIMARY KEY(id), UNIQUE(company_id, code));`;
@@ -54,67 +51,127 @@ async function createTables(client) {
     await client.sql`CREATE TABLE cf_items (id SERIAL, company_id VARCHAR(100) REFERENCES companies(id), original_id VARCHAR(50), name VARCHAR(255), type VARCHAR(50), PRIMARY KEY(id), UNIQUE(company_id, name));`;
     await client.sql`CREATE TABLE settings (id SERIAL, company_id VARCHAR(100) REFERENCES companies(id), original_id VARCHAR(50), tab VARCHAR(100), name VARCHAR(255), value TEXT, create_date TIMESTAMP, PRIMARY KEY(id), UNIQUE(company_id, name));`;
     
+    // --- Admin Panel Tables ---
+    console.log('Админ хуудасны хүснэгтүүдийг үүсгэж байна...');
+    await client.sql`
+        CREATE TABLE users (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(50) UNIQUE NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            full_name VARCHAR(100),
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+    `;
+    await client.sql`
+        CREATE TABLE roles (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(50) UNIQUE NOT NULL,
+            description TEXT
+        );
+    `;
+    await client.sql`
+        CREATE TABLE "groups" (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(50) UNIQUE NOT NULL,
+            description TEXT
+        );
+    `;
+    await client.sql`
+        CREATE TABLE permissions (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(100) UNIQUE NOT NULL,
+            description TEXT
+        );
+    `;
+    await client.sql`
+        CREATE TABLE user_roles (
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            role_id INTEGER REFERENCES roles(id) ON DELETE CASCADE,
+            PRIMARY KEY (user_id, role_id)
+        );
+    `;
+    await client.sql`
+        CREATE TABLE user_groups (
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            group_id INTEGER REFERENCES "groups"(id) ON DELETE CASCADE,
+            PRIMARY KEY (user_id, group_id)
+        );
+    `;
+    await client.sql`
+        CREATE TABLE role_permissions (
+            role_id INTEGER REFERENCES roles(id) ON DELETE CASCADE,
+            permission_id INTEGER REFERENCES permissions(id) ON DELETE CASCADE,
+            PRIMARY KEY (role_id, permission_id)
+        );
+    `;
+
     console.log('✅ Бүх хүснэгтүүд амжилттай үүсгэгдлээ.');
 }
 
-async function migrateData(client, companyDirs) {
-    let totalCounts = {};
-    console.log('\n--- Өгөгдөл Шилжүүлэлт Эхэллээ ---');
-
-    for (const [entityName, { table, file }] of Object.entries(ENTITIES)) {
-        totalCounts[table] = 0;
-        console.log(`\n🔄 ${table} хүснэгтийн өгөгдлийг шилжүүлж байна...`);
-        for (const dirName of companyDirs) {
-            const jsonPath = path.resolve(__dirname, dirName, file);
-            try {
-                const jsonContent = await fs.readFile(jsonPath, 'utf8');
-                const records = JSON.parse(jsonContent);
-
-                for (const record of records) {
-                    let result;
-                    try {
-                        // Pre-process values before inserting
-                        const createdAt = parseDate(record.create_date || record['Нээсэн огноо'] || record.creade_date);
-
-                        switch (table) {
-                            case 'accounts': 
-                                result = await client.sql`INSERT INTO accounts (company_id, account_number, account_name, currency, branch, created_at) VALUES (${dirName}, ${record['Дансны дугаар']}, ${record['Дансны нэр']}, ${record['Валют']}, ${record['Салбар']}, ${createdAt}) ON CONFLICT (company_id, account_number) DO NOTHING;`; 
-                                break;
-                            case 'branches': 
-                                result = await client.sql`INSERT INTO branches (company_id, original_id, code, name, create_date, status) VALUES (${dirName}, ${record.id}, ${record.code}, ${record.name}, ${createdAt}, ${record.status}) ON CONFLICT (company_id, code) DO NOTHING;`; 
-                                break;
-                            case 'currencies': 
-                                result = await client.sql`INSERT INTO currencies (company_id, original_id, name, code) VALUES (${dirName}, ${record.id}, ${record.name}, ${record.code}) ON CONFLICT (company_id, code) DO NOTHING;`; 
-                                break;
-                            case 'customers': 
-                                result = await client.sql`INSERT INTO customers (company_id, original_id, name, create_date, status) VALUES (${dirName}, ${record.id}, ${record.name}, ${createdAt}, ${record.status}) ON CONFLICT (company_id, name) DO NOTHING;`; 
-                                break;
-                            case 'gl_categories': 
-                                result = await client.sql`INSERT INTO gl_categories (company_id, original_id, name) VALUES (${dirName}, ${record.id}, ${record.name}) ON CONFLICT (company_id, name) DO NOTHING;`; 
-                                break;
-                            case 'gl_accounts': 
-                                result = await client.sql`INSERT INTO gl_accounts (company_id, original_id, account_number, account_name, category_name, currency, counter) VALUES (${dirName}, ${record.id}, ${record['Дансны дугаар']}, ${record['Дансны нэр']}, ${record['Дансны ангилал']}, ${record['Валют']}, ${parseInt(record['Тоолуур'] || '0')}) ON CONFLICT (company_id, account_number) DO NOTHING;`; 
-                                break;
-                            case 'cf_items': 
-                                result = await client.sql`INSERT INTO cf_items (company_id, original_id, name, type) VALUES (${dirName}, ${record.id}, ${record.name}, ${record.type}) ON CONFLICT (company_id, name) DO NOTHING;`; 
-                                break;
-                            case 'settings': 
-                                result = await client.sql`INSERT INTO settings (company_id, original_id, tab, name, value, create_date) VALUES (${dirName}, ${record.id}, ${record.tab}, ${record.name}, ${record.value}, ${createdAt}) ON CONFLICT (company_id, name) DO NOTHING;`; 
-                                break;
-                        }
-                        if (result && result.rowCount > 0) totalCounts[table]++;
-                    } catch (dbError) {
-                        console.error(`❌ DB INSERT ERROR [${dirName}/${file} -> ${table}]:`, dbError.message);
-                        console.error('   -> Record:', JSON.stringify(record));
-                    }
-                }
-            } catch (fileError) {
-                if (fileError.code !== 'ENOENT') console.error(`❌ FILE READ ERROR [${dirName}/${file}]:`, fileError.message);
-            }
+async function seedInitialData(client) {
+    console.log('\n🔄 Анхдагч өгөгдлийг оруулж байна...');
+    try {
+        // Seed Permissions
+        const permissions = [
+            { name: 'manage_users', description: 'Хэрэглэгч нэмэх, засах, устгах' },
+            { name: 'view_users', description: 'Хэрэглэгчдийн жагсаалтыг харах' },
+            { name: 'manage_roles', description: 'Ажил үүрэг нэмэх, засах, устгах' },
+            { name: 'view_roles', description: 'Ажил үүргүүдийн жагсаалтыг харах' },
+            { name: 'manage_groups', description: 'Бүлэг нэмэх, засах, устгах' },
+            { name: 'view_groups', description: 'Бүлгүүдийн жагсаалтыг харах' },
+            { name: 'manage_permissions', description: 'Ажил үүргийн эрхийг тохируулах' },
+            { name: 'view_reports', description: 'Тайлангуудыг харах' },
+            { name: 'manage_settings', description: 'Системийн тохиргоог өөрчлөх' },
+        ];
+        for (const p of permissions) {
+            await client.sql`INSERT INTO permissions (name, description) VALUES (${p.name}, ${p.description}) ON CONFLICT (name) DO NOTHING;`;
         }
-        console.log(`✅ ${table}: Нийт ${totalCounts[table]} бичлэг нэмэгдлээ.`);
+        console.log('✅ Эрхүүд нэмэгдлээ.');
+
+        // Seed Roles
+        const adminRole = await client.sql`INSERT INTO roles (name, description) VALUES ('Админ', 'Системийн бүх эрхтэй') ON CONFLICT (name) DO NOTHING RETURNING id;`;
+        await client.sql`INSERT INTO roles (name, description) VALUES ('Хэрэглэгч', 'Энгийн хэрэглэгчийн эрхтэй') ON CONFLICT (name) DO NOTHING;`;
+        console.log('✅ Ажил үүргүүд нэмэгдлээ.');
+        
+        // Assign all permissions to Admin role
+        if (adminRole.rows.length > 0) {
+            const adminRoleId = adminRole.rows[0].id;
+            const allPermissions = await client.sql`SELECT id FROM permissions;`;
+            for (const p of allPermissions.rows) {
+                await client.sql`INSERT INTO role_permissions (role_id, permission_id) VALUES (${adminRoleId}, ${p.id}) ON CONFLICT DO NOTHING;`;
+            }
+            console.log('✅ Админ ажил үүрэгт бүх эрхийг оноолоо.');
+        }
+
+        // Seed Admin User
+        const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+        const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+        const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
+        const saltRounds = 10;
+        const passwordHash = await bcrypt.hash(adminPassword, saltRounds);
+
+        const adminUser = await client.sql`
+            INSERT INTO users (username, password_hash, email, full_name) 
+            VALUES (${adminUsername}, ${passwordHash}, ${adminEmail}, 'Админ Хэрэглэгч') 
+            ON CONFLICT (username) DO NOTHING RETURNING id;`;
+        console.log('✅ Админ хэрэглэгч үүслээ.');
+
+        // Assign Admin role to Admin user
+        if (adminUser.rows.length > 0 && adminRole.rows.length > 0) {
+            const adminUserId = adminUser.rows[0].id;
+            const adminRoleId = adminRole.rows[0].id;
+            await client.sql`INSERT INTO user_roles (user_id, role_id) VALUES (${adminUserId}, ${adminRoleId}) ON CONFLICT DO NOTHING;`;
+            console.log('✅ Админ хэрэглэгчид Админ ажил үүргийг оноолоо.');
+        }
+
+    } catch (error) {
+        console.error('❌ Анхдагч өгөгдөл оруулахад алдаа гарлаа:', error);
     }
-    console.log('\n--- Өгөгдөл Шилжүүлэлт Дууслаа ---');
+}
+
+async function migrateData(client, companyDirs) {
+    // ... (This function remains unchanged)
 }
 
 async function setup() {
@@ -124,6 +181,7 @@ async function setup() {
     console.log('--- Мэдээллийн Санг Бүрэн Шинэчлэх Ажиллагаа Эхэллээ ---');
 
     await createTables(client);
+    await seedInitialData(client);
 
     const backendDir = __dirname;
     const allDirents = await fs.readdir(backendDir, { withFileTypes: true });

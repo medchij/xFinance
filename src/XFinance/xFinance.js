@@ -176,6 +176,31 @@ export const handleNumberConversion = async (setMessage, setLoading) => {
     console.log("✅ Тоо руу хөрвүүлэлт амжилттай");
   });
 };
+export const handleNegativeConversion = async (setMessage, setLoading) => {
+  return withLoading(setLoading, setMessage, async () => {
+    await Excel.run(async (context) => {
+      const range = context.workbook.getSelectedRange();
+      range.load("values");
+      await context.sync();
+
+      const originalValues = range.values;
+
+      const newValues = originalValues.map((row) =>
+        row.map((cell) =>
+          typeof cell === "number" && !isNaN(cell)
+            ? (cell > 0 ? -cell : cell) // эерэгийг сөрөг болгоно
+            : cell
+        )
+      );
+
+      range.values = newValues;
+      await context.sync();
+    });
+
+    setMessage("✅ Сонгосон тоонуудыг сөрөг болголоо.");
+    console.log("✅ Negative conversion done");
+  });
+};
 
 //Текст рүү хөрвүүлэх функц
 export const handleTextConversion = async (setMessage, setLoading) => {

@@ -44,6 +44,7 @@ const groupedTools = [
     tools: [
       { icon: <NumberSymbol16Regular />, label: "Тоо руу хөрвүүлэх" },
       { icon: <NumberSymbol16Regular />, label: "Текст рүү хөрвүүлэх" },
+      { icon: <NumberSymbol16Regular />, label: "Тоог сөрөг болгох" },
       { icon: <ArrowSort16Regular />, label: "Хааны хуулга янзлах" },
       { icon: <ExcelIcon />, label: "Сонгосон мужийг экпорт хийх" },
     ],
@@ -130,6 +131,7 @@ lastImportedData = processedData;
   const actions = {
     "Тоо руу хөрвүүлэх": () => fns.handleNumberConversion(showMessage, setLoading),
     "Текст рүү хөрвүүлэх": () => fns.handleTextConversion(showMessage, setLoading),
+    "Тоог сөрөг болгох": () => fns.handleNegativeConversion(showMessage, setLoading),
     "Динамик хүснэгт": () => setSearchTableSheet(true),
     "Албан ханш татах": () => efns.fetchCurrencyRatesByAPI(showMessage, setLoading),
     "Машины мэдээлэл татах": () => efns.fetchVehicleInfoByPlate(showMessage, setLoading),

@@ -8,6 +8,7 @@ const SettingsPage = lazy(() => import(/* webpackChunkName: "page-settings" */ "
 const SearchAccount = lazy(() => import(/* webpackChunkName: "page-search" */ "./SearchAccount"));
 const Profile = lazy(() => import(/* webpackChunkName: "page-profile" */ "./Profile"));
 const BrowserView = lazy(() => import(/* webpackChunkName: "page-browser" */ "./BrowserView"));
+const AdminPage = lazy(() => import(/* webpackChunkName: "page-admin" */ "./AdminPage"));
 
 const AuthenticatedApp = ({ title }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -32,6 +33,7 @@ const AuthenticatedApp = ({ title }) => {
           {activePage === "settings" && <SettingsPage isSidebarOpen={isSidebarOpen} />}
           {activePage === "profile" && <Profile isSidebarOpen={isSidebarOpen} />}
           {activePage === "browser" && <BrowserView isSidebarOpen={isSidebarOpen} />}
+          {activePage === "admin" && <AdminPage isSidebarOpen={isSidebarOpen} />}
         </div>
       </Suspense>
     </div>

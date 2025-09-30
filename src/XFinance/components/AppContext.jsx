@@ -9,7 +9,7 @@ export const AppProvider = ({ children }) => {
   const [type, setType] = useState("info");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [actionLog, setActionLog] = useState([]);
-  const [selectedCompany, setSelectedCompany] = useState(() => localStorage.getItem("selectedCompany") || null);
+  const [selectedCompany, setSelectedCompany] = useState(() => localStorage.getItem("selectedCompany") || "data");
 
   // --- CACHED DATA STATES ---
   const [companies, setCompanies] = useState([]);

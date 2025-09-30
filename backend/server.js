@@ -47,6 +47,10 @@ app.use('/api/ping', pingRouter);
 const envRouter = require('./routes/env');
 app.use('/api/env', envRouter);
 
+const usersRouter = require('./routes/users');
+app.use('/api/users', usersRouter);
+
+
 // Export the app for Vercel
 module.exports = app;
 
