@@ -343,21 +343,16 @@ export async function getKhanbankToken(setMessage, setLoading) {
 
     setMessage("✅ Token амжилттай авлаа.");
 
-    const putHeaders = { 
-        "Content-Type": "application/json",
-        "company_id": companyId // company_id-г header-т нэмж өгөх
-    };
-
-    await fetch(`${BASE_URL}/api/settings/${accessId}`, {
-      method: "PUT",
-      headers: putHeaders,
-      body: JSON.stringify({ value: result.access_token, company_id: companyId }),
+    await fetch(`${BASE_URL}/api/settings?id=${accessId}&company_id=${companyId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: result.access_token }),
     });
 
-    await fetch(`${BASE_URL}/api/settings/${refreshId}`, {
-      method: "PUT",
-      headers: putHeaders,
-      body: JSON.stringify({ value: result.refresh_token, company_id: companyId }),
+    await fetch(`${BASE_URL}/api/settings?id=${refreshId}&company_id=${companyId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: result.refresh_token }),
     });
 
     return { result, response };
