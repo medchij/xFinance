@@ -55,7 +55,7 @@ const UserManagement = () => {
             const data = await response.json();
             setUsers(data);
         } catch (error) {
-            showMessage(`Алдар: ${error.message}`, "error");
+            showMessage(`Алдаа: ${error.message}`, "error");
         } finally {
             setLoading(false);
         }
@@ -81,7 +81,10 @@ const UserManagement = () => {
         setLoading(true);
         try {
             const response = await fetch(`${BASE_URL}/api/users/${userId}`, { method: 'DELETE' });
-            if (!response.ok) throw new Error("Хэрэглэгчийг устгахад алдаа гарлаа");
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.msg || "Хэрэглэгчийг устгахад алдаа гарлаа");
+            }
             showMessage("Хэрэглэгч амжилттай устгагдлаа", "success");
             fetchUsers(); // Refresh the list
         } catch (error) {
@@ -91,29 +94,15 @@ const UserManagement = () => {
         }
     };
 
-    const handleSaveUser = async (userData) => {
-        setLoading(true);
-        const isUpdating = !!userData.id;
-        const url = isUpdating ? `${BASE_URL}/api/users/${userData.id}` : `${BASE_URL}/api/users`;
-        const method = isUpdating ? 'PUT' : 'POST';
-
-        try {
-            const response = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(userData),
-            });
-            if (!response.ok) throw new Error("Хэрэглэгчийн мэдээллийг хадгалахад алдаа гарлаа");
-            
-            showMessage(`Хэрэглэгч амжилттай ${isUpdating ? 'шинэчлэгдлээ' : 'үүслээ'}`, "success");
-            setFormOpen(false);
-            fetchUsers(); // Refresh the list
-        } catch (error) {
-            showMessage(`Алдаа: ${error.message}`, "error");
-        } finally {
-            setLoading(false);
-        }
+    const handleFormSave = () => {
+        setFormOpen(false);
+        fetchUsers(); // Refresh the list after save
     };
+    
+    const handleFormClose = () => {
+        setFormOpen(false);
+    };
+
 
     return (
         <div className={styles.root}>
@@ -127,18 +116,18 @@ const UserManagement = () => {
             <Table arial-label="User list table" className={styles.table}>
                 <TableHeader>
                     <TableRow>
-                        <TableHeaderCell>Нэр</TableHeaderCell>
+                        <TableHeaderCell>Хэрэглэгчийн нэр</TableHeaderCell>
                         <TableHeaderCell>И-мэйл</TableHeaderCell>
-                        <TableHeaderCell>Ажил үүрэг</TableHeaderCell>
+                        <TableHeaderCell>Бүтэн нэр</TableHeaderCell>
                         <TableHeaderCell>Үйлдэл</TableHeaderCell>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {users.map((user) => (
                         <TableRow key={user.id}>
-                            <TableCell>{user.name}</TableCell>
+                            <TableCell>{user.username}</TableCell>
                             <TableCell>{user.email}</TableCell>
-                            <TableCell>{user.role}</TableCell>
+                            <TableCell>{user.full_name}</TableCell>
                             <TableCell>
                                 <div className={styles.actionCell}>
                                 <Button icon={<Edit24Regular />} aria-label="Засах" onClick={() => handleEditUser(user)} />
@@ -154,8 +143,8 @@ const UserManagement = () => {
                 {isFormOpen && (
                     <UserForm 
                         isOpen={isFormOpen} 
-                        onClose={() => setFormOpen(false)} 
-                        onSave={handleSaveUser}
+                        onClose={handleFormClose} 
+                        onSave={handleFormSave}
                         user={editingUser}
                     />
                 )}
