@@ -29,6 +29,7 @@ const useStyles = makeStyles({
   container: {
     padding: "20px",
     minHeight: "100vh",
+    boxSizing: "border-box",
   },
   tabList: {
     marginBottom: "16px",

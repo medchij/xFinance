@@ -348,16 +348,16 @@ export async function getKhanbankToken(setMessage, setLoading) {
         "company_id": companyId // company_id-г header-т нэмж өгөх
     };
 
-    await fetch(`${BASE_URL}/api/settings/${accessId}?company_id=${companyId}`, {
+    await fetch(`${BASE_URL}/api/settings/${accessId}`, {
       method: "PUT",
       headers: putHeaders,
-      body: JSON.stringify({ value: result.access_token }),
+      body: JSON.stringify({ value: result.access_token, company_id: companyId }),
     });
 
-    await fetch(`${BASE_URL}/api/settings/${refreshId}?company_id=${companyId}`, {
+    await fetch(`${BASE_URL}/api/settings/${refreshId}`, {
       method: "PUT",
       headers: putHeaders,
-      body: JSON.stringify({ value: result.refresh_token }),
+      body: JSON.stringify({ value: result.refresh_token, company_id: companyId }),
     });
 
     return { result, response };
