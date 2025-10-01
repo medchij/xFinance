@@ -27,7 +27,7 @@ import { BASE_URL } from "../../config";
 
 const useStyles = makeStyles({
   container: {
-    padding: "20px",
+    padding: "0",
     minHeight: "100vh",
     boxSizing: "border-box",
   },
@@ -49,7 +49,7 @@ const useStyles = makeStyles({
   },
   actionCell: {
     display: "flex",
-    gap: "8px",
+    gap: "0",
     justifyContent: "center",
   },
   newRow: {
