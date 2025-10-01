@@ -9,7 +9,6 @@ import { insertText } from "../xFinance";
 const MainContent = ({ title, isSidebarOpen, isPublic = false, onNavigateToLogin }) => {
   const rootStyle = {
     flexGrow: 1,
-    padding: "0",
     transition: "margin-left 0.3s ease-in-out",
     // The margin-left transition is now handled by the parent AuthenticatedApp.jsx
   };

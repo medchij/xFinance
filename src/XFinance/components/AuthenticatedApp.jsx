@@ -26,7 +26,13 @@ const AuthenticatedApp = ({ title }) => {
           toggleSidebar={toggleSidebar}
           setActivePage={setActivePage}
         />
-        <div style={{ flexGrow: 1, transition: "margin-left 0.3s ease-in-out", marginLeft: isSidebarOpen ? 250 : 50 }}>
+        <div style={{
+          flexGrow: 1,
+          transition: "margin-left 0.3s ease-in-out",
+          marginLeft: isSidebarOpen ? 250 : 50,
+          padding: "24px",
+          backgroundColor: "#f3f4f6"
+        }}>
           {activePage === "maincontent" && <MainContent title={title} isSidebarOpen={isSidebarOpen} />}
           {activePage === "CustomTools" && <CustomTools isSidebarOpen={isSidebarOpen} />}
           {activePage === "search" && <SearchAccount />}

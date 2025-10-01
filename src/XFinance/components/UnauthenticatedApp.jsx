@@ -15,7 +15,13 @@ const UnauthenticatedApp = ({ onLogin, onCompanySelect }) => {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      height: "100vh",
+      padding: "24px",
+      backgroundColor: "#f3f4f6"
+    }}>
       {showLogin ? (
         <LoginPage 
           onLogin={onLogin} 
