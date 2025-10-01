@@ -20,25 +20,12 @@ const ENTITIES = {
     CF: { table: 'cf_items', file: 'CF.json' },
     Settings: { table: 'settings', file: 'Settings.json' },
     Account: { table: 'accounts', file: 'Account.json' },
-    permissions: { table: 'permissions', file: 'permissions.json' },
-    role_permissions: { table: 'role_permissions', file: 'role_permissions.json' },
-    roles: { table: 'roles', file: 'roles.json' },
-    users: { table: 'users', file: 'users.json' },
     
 };
 
 async function createTables(client) {
     console.log('Бүх хүснэгтийг устгаж, шинээр үүсгэж байна...');
     await client.sql`DROP TABLE IF EXISTS roles, settings, cf_items, gl_accounts, gl_categories, customers, currencies, branches, accounts, companies, role_permissions, user_roles, user_groups, permissions, "groups", users CASCADE;`;
-
-    console.log('Админ хуудасны хүснэгтүүдийг үүсгэж байна...');
-    await client.sql`CREATE TABLE users (id SERIAL PRIMARY KEY, username VARCHAR(50) UNIQUE NOT NULL, password_hash VARCHAR(255) NOT NULL, email VARCHAR(255) UNIQUE NOT NULL, full_name VARCHAR(100), created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP);`;
-    await client.sql`CREATE TABLE roles (id SERIAL PRIMARY KEY, name VARCHAR(50) UNIQUE NOT NULL, description TEXT);`;
-    await client.sql`CREATE TABLE "groups" (id SERIAL PRIMARY KEY, name VARCHAR(50) UNIQUE NOT NULL, description TEXT);`;
-    await client.sql`CREATE TABLE permissions (id SERIAL PRIMARY KEY, name VARCHAR(100) UNIQUE NOT NULL, description TEXT);`;
-    await client.sql`CREATE TABLE user_roles (user_id INTEGER REFERENCES users(id) ON DELETE CASCADE, role_id INTEGER REFERENCES roles(id) ON DELETE CASCADE, PRIMARY KEY (user_id, role_id));`;
-    await client.sql`CREATE TABLE user_groups (user_id INTEGER REFERENCES users(id) ON DELETE CASCADE, group_id INTEGER REFERENCES "groups"(id) ON DELETE CASCADE, PRIMARY KEY (user_id, group_id));`;
-    await client.sql`CREATE TABLE role_permissions (role_id INTEGER REFERENCES roles(id) ON DELETE CASCADE, permission_id INTEGER REFERENCES permissions(id) ON DELETE CASCADE, PRIMARY KEY (role_id, permission_id));`;
 
     console.log('Үндсэн хүснэгтүүдийг үүсгэж байна...');
     await client.sql`CREATE TABLE companies (id VARCHAR(100) PRIMARY KEY, name VARCHAR(255) NOT NULL);`;
@@ -54,57 +41,11 @@ async function createTables(client) {
     console.log('✅ Бүх хүснэгтүүд амжилттай үүсгэгдлээ.');
 }
 
-async function seedInitialData(client) {
-    console.log('\n🔄 Анхдагч өгөгдлийг оруулж байна...');
-    let adminUserId;
-    try {
-        const permissions = [
-            { name: 'manage_users', description: 'Хэрэглэгч нэмэх, засах, устгах' },
-            { name: 'view_users', description: 'Хэрэглэгчдийн жагсаалтыг харах' },
-            { name: 'manage_roles', description: 'Ажил үүрэг нэмэх, засах, устгах' },
-            { name: 'view_roles', description: 'Ажил үүргүүдийн жагсаалтыг харах' },
-        ];
-        for (const p of permissions) {
-            await client.sql`INSERT INTO permissions (name, description) VALUES (${p.name}, ${p.description}) ON CONFLICT (name) DO NOTHING;`;
-        }
-        console.log('✅ Эрхүүд нэмэгдлээ.');
-
-        const adminRoleResult = await client.sql`INSERT INTO roles (name, description) VALUES ('Админ', 'Системийн бүх эрхтэй') ON CONFLICT (name) DO UPDATE SET description = 'Системийн бүх эрхтэй' RETURNING id;`;
-        console.log('✅ Ажил үүргүүд нэмэгдлээ.');
-        
-        const adminRoleId = adminRoleResult.rows[0].id;
-        const allPermissions = await client.sql`SELECT id FROM permissions;`;
-        for (const p of allPermissions.rows) {
-            await client.sql`INSERT INTO role_permissions (role_id, permission_id) VALUES (${adminRoleId}, ${p.id}) ON CONFLICT DO NOTHING;`;
-        }
-        console.log('✅ Админ ажил үүрэгт бүх эрхийг оноолоо.');
-
-        const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-        const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
-        const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
-        const passwordHash = await bcrypt.hash(adminPassword, 10);
-
-        const adminUserResult = await client.sql`INSERT INTO users (username, password_hash, email, full_name) VALUES (${adminUsername}, ${passwordHash}, ${adminEmail}, 'Админ Хэрэглэгч') ON CONFLICT (username) DO UPDATE SET password_hash = ${passwordHash} RETURNING id;`;
-        adminUserId = adminUserResult.rows[0].id;
-        console.log(`✅ Админ хэрэглэгч үүслээ (ID: ${adminUserId}).`);
-
-        await client.sql`INSERT INTO user_roles (user_id, role_id) VALUES (${adminUserId}, ${adminRoleId}) ON CONFLICT DO NOTHING;`;
-        console.log('✅ Админ хэрэглэгчид Админ ажил үүргийг оноолоо.');
-
-    } catch (error) {
-        console.error('❌ Анхдагч өгөгдөл оруулахад алдаа гарлаа:', error);
-        throw error;
-    }
-    return adminUserId;
-}
 
 async function migrateData(client, companyDirs, adminUserId) {
     console.log('\n--- Өгөгдөл Шилжүүлэлт Эхэллээ ---');
-    if (!adminUserId) {
-        console.error('❌ migrateData: Admin User ID олдсонгүй! Өгөгдөл шилжүүлэлтийг зогсоолоо.');
-        return;
-    }
-
+  
+    adminUserId=1
     const now = new Date().toISOString();
 
     for (const [entityName, { table, file }] of Object.entries(ENTITIES)) {
@@ -168,7 +109,7 @@ async function setup() {
         console.log('--- Мэдээллийн Санг Бүрэн Шинэчлэх Ажиллагаа Эхэллээ ---');
 
         await createTables(client);
-        const adminUserId = await seedInitialData(client);
+       
 
         const backendDir = __dirname;
         const allDirents = await fs.readdir(backendDir, { withFileTypes: true });

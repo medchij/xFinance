@@ -45,7 +45,7 @@ const InternalAuthenticatedApp = ({ title }) => {
     if (requiredPermission && !hasPermission(requiredPermission)) {
       // Эрх байхгүй тохиолдолд
       console.warn(`Permission denied: User tried to access '${page}' without '${requiredPermission}' permission.`);
-      showNotification({ message: "Энэ хуудсыг үзэх эрх танд байхгүй байна.", type: "error" });
+      showNotification("❌ Энэ хуудсыг үзэх эрх танд байхгүй байна.");
       return; // Хуудас солих үйлдлийг зогсооно
     } 
     
@@ -84,7 +84,7 @@ const AppContent = ({ title }) => {
 
   return (
     <Suspense fallback={<AppLoader />}>
-      {isLoggedIn ? <InternalAuthenticatedApp title={title} /> : <UnauthenticatedApp onLogin={login} onCompanySelect={setSelectedCompany} />}
+      {isLoggedIn ? <InternalAuthenticatedApp title={title} /> : <UnauthenticatedApp onLogin={login} onCompanySelect={setSelectedCompany} />}\
       <AppLoader />
       <AppNotification />
     </Suspense>
