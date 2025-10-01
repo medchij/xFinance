@@ -7,10 +7,8 @@ import ShortcutListener from "./ShortcutListener";
 
 // Lazy components
 const UnauthenticatedApp = lazy(() => import(/* webpackChunkName: "app-unauth" */ "./UnauthenticatedApp"));
-const AuthenticatedApp = lazy(() => import(/* webpackChunkName: "app-auth" */ "./AuthenticatedApp")); // AuthenticatedApp-г тусад нь гаргая
+const AuthenticatedApp = lazy(() => import(/* webpackChunkName: "app-auth" */ "./AuthenticatedApp"));
 
-// AuthenticatedApp-н тодорхойлолтыг тусдаа файл болгох нь зүйтэй ч, энд түр үлдээе
-// Тусдаа файл: AuthenticatedApp.jsx
 const Sidebar = lazy(() => import(/* webpackChunkName: "page-sidebar" */ "./Sidebar"));
 const MainContent = lazy(() => import(/* webpackChunkName: "page-main" */ "./maincontent"));
 const CustomTools = lazy(() => import(/* webpackChunkName: "page-tools" */ "./CustomTools"));
@@ -18,13 +16,41 @@ const SettingsPage = lazy(() => import(/* webpackChunkName: "page-settings" */ "
 const SearchAccount = lazy(() => import(/* webpackChunkName: "page-search" */ "./SearchAccount"));
 const Profile = lazy(() => import(/* webpackChunkName: "page-profile" */ "./Profile"));
 const BrowserView = lazy(() => import(/* webpackChunkName: "page-browser" */ "./BrowserView"));
+// AdminPage-г lazy load хийхээр нэмэв
+const AdminPage = lazy(() => import(/* webpackChunkName: "page-admin" */ "./AdminPage"));
+
+
+// PERMISSION CHECKER
+const pagePermissions = {
+  settings: 'view_settings_page',
+  admin: 'view_admin_page',
+  // Шаардлагатай бол бусад хуудсыг нэмнэ
+  // жишээ нь: reports: 'view_reports_page'
+};
+
 
 const InternalAuthenticatedApp = ({ title }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [activePage, setActivePage] = useState("maincontent");
+  const { hasPermission, showNotification } = useAppContext(); // showNotification-г авъя
 
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
+  };
+
+  // Хуудас солих хүсэлтийг зохицуулах шинэ функц
+  const handlePageChange = (page) => {
+    const requiredPermission = pagePermissions[page];
+
+    if (requiredPermission && !hasPermission(requiredPermission)) {
+      // Эрх байхгүй тохиолдолд
+      console.warn(`Permission denied: User tried to access '${page}' without '${requiredPermission}' permission.`);
+      showNotification({ message: "Энэ хуудсыг үзэх эрх танд байхгүй байна.", type: "error" });
+      return; // Хуудас солих үйлдлийг зогсооно
+    } 
+    
+    // Эрхтэй бол хуудсыг солино
+    setActivePage(page);
   };
 
   return (
@@ -33,7 +59,8 @@ const InternalAuthenticatedApp = ({ title }) => {
         <Sidebar
           isOpen={isSidebarOpen}
           toggleSidebar={toggleSidebar}
-          setActivePage={setActivePage}
+          // setActivePage-ийн оронд шинэ функцээ дамжуулна
+          setActivePage={handlePageChange} 
         />
         <div style={{ flexGrow: 1 }} >
           {activePage === "maincontent" && <MainContent title={title} isSidebarOpen={isSidebarOpen} />}
@@ -42,6 +69,8 @@ const InternalAuthenticatedApp = ({ title }) => {
           {activePage === "settings" && <SettingsPage isSidebarOpen={isSidebarOpen} />}
           {activePage === "profile" && <Profile isSidebarOpen={isSidebarOpen} />}
           {activePage === "browser" && <BrowserView isSidebarOpen={isSidebarOpen} />}
+          {/* AdminPage-г энд нэмж өгөх. Sidebar-аас 'admin' гэж дуудагдана. */}
+          {activePage === "admin" && <AdminPage isSidebarOpen={isSidebarOpen} />}
         </div>
       </Suspense>
     </div>
@@ -50,7 +79,6 @@ const InternalAuthenticatedApp = ({ title }) => {
 InternalAuthenticatedApp.propTypes = { title: PropTypes.string };
 
 
-// AppContent-г шинэчлэв
 const AppContent = ({ title }) => {
   const { isLoggedIn, login, setSelectedCompany } = useAppContext();
 

@@ -8,6 +8,8 @@ export const AppProvider = ({ children }) => {
   const [message, setMessage] = useState("");
   const [type, setType] = useState("info");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [permissions, setPermissions] = useState(new Set()); // Use a Set for efficient lookups
   const [actionLog, setActionLog] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState(() => localStorage.getItem("selectedCompany") || "data");
 
@@ -16,15 +18,46 @@ export const AppProvider = ({ children }) => {
   const [settings, setSettings] = useState([]);
   const [searchData, setSearchData] = useState({ account: [], cf: [], customer: [] });
 
+  const hasPermission = useCallback((permission) => {
+      return permissions.has(permission);
+  }, [permissions]);
+
+  const fetchCurrentUser = async () => {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+          setIsLoggedIn(false);
+          return;
+      }
+
+      setLoading(true);
+      try {
+          const response = await fetch(`${BASE_URL}/api/auth/me`, {
+              headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (response.ok) {
+              const data = await response.json();
+              setCurrentUser(data.user);
+              setPermissions(new Set(data.permissions || []));
+              setIsLoggedIn(true);
+          } else {
+              // Token is invalid or expired
+              logout(false); // Logout without showing a message
+          }
+      } catch (error) {
+          showMessage("❌ Хэрэглэгчийн мэдээлэл татахад алдаа гарлаа.");
+          logout(false);
+      } finally {
+          setLoading(false);
+      }
+  };
+
   // --- AUTH FUNCTIONS ---
   const login = useCallback(async (username, password) => {
     setLoading(true);
     try {
       const response = await fetch(`${BASE_URL}/api/auth/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
 
@@ -35,7 +68,7 @@ export const AppProvider = ({ children }) => {
       }
 
       localStorage.setItem("authToken", data.token);
-      setIsLoggedIn(true);
+      await fetchCurrentUser(); // Fetch user data right after login
       showMessage(`✅ ${data.message}`, 3000);
       return true;
     } catch (error) {
@@ -46,15 +79,19 @@ export const AppProvider = ({ children }) => {
     }
   }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem("authToken"); // Clear the token
-    localStorage.removeItem("selectedCompany"); // Clear company selection
+  const logout = useCallback((showLogoutMessage = true) => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("selectedCompany");
     setIsLoggedIn(false);
+    setCurrentUser(null);
+    setPermissions(new Set());
     setSelectedCompany(null);
     setCompanies([]);
     setSettings([]);
     setSearchData({ account: [], cf: [], customer: [] });
-    showMessage("Системээс гарлаа.", 3000);
+    if (showLogoutMessage) {
+        showMessage("Системээс гарлаа.", 3000);
+    }
   }, []);
 
   // --- DATA FETCHING FUNCTIONS ---
@@ -141,10 +178,8 @@ export const AppProvider = ({ children }) => {
   // --- EFFECTS ---
 
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    if (token) {
-      setIsLoggedIn(true);
-    }
+    // Check for token and fetch user data on initial load
+    fetchCurrentUser();
   }, []);
 
   useEffect(() => {
@@ -169,6 +204,9 @@ export const AppProvider = ({ children }) => {
         isLoggedIn,
         login,
         logout,
+        currentUser,
+        permissions,
+        hasPermission, // Expose the permission checker
         selectedCompany,
         setSelectedCompany,
         actionLog,

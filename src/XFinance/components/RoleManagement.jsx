@@ -1,164 +1,148 @@
-import React, { useState, useEffect, lazy, Suspense } from "react";
+import React, { useState } from 'react';
 import {
-    Button,
-    Table,
-    TableHeader,
-    TableHeaderCell,
-    TableBody,
-    TableRow,
-    TableCell,
     makeStyles,
-    tokens,
-    typography,
-} from "@fluentui/react-components";
-import { Add24Regular, Edit24Regular, Delete24Regular } from "@fluentui/react-icons";
-import { useAppContext } from "./AppContext";
-import { BASE_URL } from "../../config";
-
-const RoleForm = lazy(() => import(/* webpackChunkName: "admin-role-form" */ './RoleForm'));
+    shorthands,
+    Button,
+    Input,
+    Title3,
+    Body1,
+    Card,
+    CardHeader,
+    Checkbox,
+    Label
+} from '@fluentui/react-components';
 
 const useStyles = makeStyles({
     root: {
-        display: "flex",
-        flexDirection: "column",
-        gap: "20px",
+        display: 'flex',
+        flexDirection: 'column',
+        ...shorthands.gap('20px'),
     },
-    header: {
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
+    card: {
+        ...shorthands.padding('16px'),
+        display: 'flex',
+        flexDirection: 'column',
+        ...shorthands.gap('10px'),
     },
-    title: {
-        ...typography.title2,
+    formContainer: {
+        display: 'flex',
+        flexDirection: 'column',
+        ...shorthands.gap('15px'),
     },
-    table: {
-        width: "100%",
+    inputGroup: {
+        display: 'flex',
+        alignItems: 'center',
+        ...shorthands.gap('10px'),
     },
-    actionCell: {
-        display: "flex",
-        gap: tokens.spacingHorizontalS,
+    permissionsContainer: {
+        ...shorthands.border('1px', 'solid', '#ccc'),
+        ...shorthands.borderRadius('4px'),
+        ...shorthands.padding('10px'),
+        display: 'flex',
+        flexDirection: 'column',
+        ...shorthands.gap('5px'),
+        maxHeight: '200px',
+        overflowY: 'auto',
+    },
+    roleList: {
+        marginTop: '20px',
+    },
+    roleItem: {
+        ...shorthands.padding('10px'),
+        ...shorthands.borderBottom('1px', 'solid', '#eee'),
+        display: 'flex',
+        justifyContent: 'space-between',
+    },
+    permissionsList: {
+        fontStyle: 'italic',
+        color: '#666',
     }
 });
 
+// In a real app, this would be fetched from the permissions data source
+const availablePermissions = [
+    { id: 'view_dashboard', name: 'Хяналтын самбарыг харах' },
+    { id: 'manage_users', name: 'Хэрэглэгч удирдах' },
+    { id: 'manage_roles', name: 'Ажил үүрэг удирдах' },
+    { id: 'manage_permissions', name: 'Эрх удирдах' },
+    { id: 'submit_transaction', name: 'Гүйлгээ хийх' },
+    { id: 'approve_transaction', name: 'Гүйлгээ батлах' },
+    { id: 'view_reports', name: 'Тайлан харах' },
+];
+
 const RoleManagement = () => {
     const styles = useStyles();
-    const { showMessage, setLoading } = useAppContext();
-    const [roles, setRoles] = useState([]);
-    const [isFormOpen, setFormOpen] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const [editingRole, setEditingRole] = useState(null);
+    const [roles, setRoles] = useState([
+        { id: 1, name: 'Администратор', permissions: ['manage_users', 'manage_roles', 'view_dashboard'] },
+        { id: 2, name: 'Нягтлан', permissions: ['view_dashboard', 'submit_transaction', 'view_reports'] },
+    ]);
+    const [newRoleName, setNewRoleName] = useState('');
+    const [selectedPermissions, setSelectedPermissions] = useState(new Set());
 
-    const fetchRoles = async () => {
-        setLoading(true);
-        try {
-            const response = await fetch(`${BASE_URL}/api/roles`);
-            if (!response.ok) throw new Error("Ажил үүргүүдийг татахад алдаа гарлаа");
-            const data = await response.json();
-            setRoles(data);
-        } catch (error) {
-            showMessage(`Алдаа: ${error.message}`, "error");
-        } finally {
-            setLoading(false);
+    const handlePermissionChange = (permId, isChecked) => {
+        const newSelection = new Set(selectedPermissions);
+        if (isChecked) {
+            newSelection.add(permId);
+        } else {
+            newSelection.delete(permId);
         }
+        setSelectedPermissions(newSelection);
     };
-
-    useEffect(() => {
-        fetchRoles();
-    }, []);
 
     const handleAddRole = () => {
-        setEditingRole(null);
-        setFormOpen(true);
-    };
-
-    const handleEditRole = (role) => {
-        setEditingRole(role);
-        setFormOpen(true);
-    };
-
-    const handleDeleteRole = async (roleId) => {
-        if (!window.confirm("Энэ ажил үүргийг устгахдаа итгэлтэй байна уу?")) return;
-
-        setLoading(true);
-        try {
-            const response = await fetch(`${BASE_URL}/api/roles/${roleId}`, { method: 'DELETE' });
-            if (!response.ok) throw new Error("Ажил үүргийг устгахад алдаа гарлаа");
-            showMessage("Ажил үүрэг амжилттай устгагдлаа", "success");
-            fetchRoles(); // Refresh the list
-        } catch (error) {
-            showMessage(`Алдаа: ${error.message}`, "error");
-            setLoading(false); // Ensure loading is turned off on error
-        }
-    };
-
-    const handleSaveRole = async (roleData) => {
-        setIsSaving(true);
-        const isUpdating = !!roleData.id;
-        const url = isUpdating ? `${BASE_URL}/api/roles/${roleData.id}` : `${BASE_URL}/api/roles`;
-        const method = isUpdating ? 'PUT' : 'POST';
-
-        try {
-            const response = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(roleData),
-            });
-            if (!response.ok) throw new Error("Ажил үүргийн мэдээллийг хадгалахад алдаа гарлаа");
-            
-            showMessage(`Ажил үүрэг амжилттай ${isUpdating ? 'шинэчлэгдлээ' : 'үүслээ'}`, "success");
-            setFormOpen(false);
-            fetchRoles(); // Refresh the list
-        } catch (error) {
-            showMessage(`Алдаа: ${error.message}`, "error");
-        } finally {
-            setIsSaving(false);
+        if (newRoleName.trim()) {
+            const newRole = {
+                id: roles.length + 1,
+                name: newRoleName.trim(),
+                permissions: Array.from(selectedPermissions),
+            };
+            setRoles([...roles, newRole]);
+            setNewRoleName('');
+            setSelectedPermissions(new Set());
         }
     };
 
     return (
         <div className={styles.root}>
-            <div className={styles.header}>
-                <h2 className={styles.title}>Ажил үүргийн удирдлага</h2>
-                <Button icon={<Add24Regular />} appearance="primary" onClick={handleAddRole}>
-                    Шинэ ажил үүрэг
-                </Button>
-            </div>
+            <Title3>Ажил үүргийн удирдлага</Title3>
+            <Body1>Хэрэглэгчдэд оноох ажил үүргүүдийг үүсгэж, харгалзах эрхүүдийг сонгоно.</Body1>
 
-            <Table arial-label="Role list table" className={styles.table}>
-                <TableHeader>
-                    <TableRow>
-                        <TableHeaderCell>Нэр</TableHeaderCell>
-                        <TableHeaderCell>Тайлбар</TableHeaderCell>
-                        <TableHeaderCell>Үйлдэл</TableHeaderCell>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {roles.map((role) => (
-                        <TableRow key={role.id}>
-                            <TableCell>{role.name}</TableCell>
-                            <TableCell>{role.description}</TableCell>
-                            <TableCell>
-                                <div className={styles.actionCell}>
-                                <Button icon={<Edit24Regular />} aria-label="Засах" onClick={() => handleEditRole(role)} />
-                                <Button icon={<Delete24Regular />} aria-label="Устгах" onClick={() => handleDeleteRole(role.id)} />
-                                </div>
-                            </TableCell>
-                        </TableRow>
+            <Card className={styles.card}>
+                <div className={styles.formContainer}>
+                    <Label>Шинэ ажил үүрэг үүсгэх</Label>
+                    <div className={styles.inputGroup}>
+                        <Input 
+                            placeholder="Ажил үүргийн нэр"
+                            value={newRoleName}
+                            onChange={(_, data) => setNewRoleName(data.value)}
+                        />
+                        <Button appearance="primary" onClick={handleAddRole} disabled={!newRoleName.trim()}>Нэмэх</Button>
+                    </div>
+                    <Label>Эрхүүд</Label>
+                    <div className={styles.permissionsContainer}>
+                        {availablePermissions.map(perm => (
+                            <Checkbox 
+                                key={perm.id}
+                                label={perm.name}
+                                checked={selectedPermissions.has(perm.id)}
+                                onChange={(_, data) => handlePermissionChange(perm.id, data.checked)}
+                            />
+                        ))}
+                    </div>
+                </div>
+            </Card>
+
+            <div className={styles.roleList}>
+                <Title3 as="h3">Одоо байгаа ажил үүргүүд</Title3>
+                <Card>
+                    {roles.map(role => (
+                        <div key={role.id} className={styles.roleItem}>
+                            <Body1><strong>{role.name}</strong></Body1>
+                            <span className={styles.permissionsList}>{role.permissions.join(', ')}</span>
+                        </div>
                     ))}
-                </TableBody>
-            </Table>
-
-            <Suspense fallback={<div>Ачааллаж байна...</div>}>
-                {isFormOpen && (
-                    <RoleForm 
-                        isOpen={isFormOpen} 
-                        onClose={() => setFormOpen(false)} 
-                        onSave={handleSaveRole}
-                        role={editingRole}
-                        isSaving={isSaving}
-                    />
-                )}
-            </Suspense>
+                </Card>
+            </div>
         </div>
     );
 };

@@ -57,7 +57,12 @@ const useStyles = makeStyles({
         "&:hover": {
             backgroundColor: tokens.colorBrandBackgroundHover,
         }
-    }
+    },
+    "&[aria-disabled]": {
+        cursor: "not-allowed",
+        color: tokens.colorNeutralForegroundDisabled,
+        backgroundColor: tokens.colorSubtleBackground,
+    },
   },
   content: {
     flexGrow: 1,
@@ -69,8 +74,16 @@ const useStyles = makeStyles({
 const AdminPage = () => {
   const styles = useStyles();
   const [activeSection, setActiveSection] = useState("Users");
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
+
+  const handleToggleChange = (ev) => {
+    setIsMaintenanceMode(ev.currentTarget.checked);
+  };
 
   const renderSection = () => {
+    if (isMaintenanceMode) {
+      return <div>Засварын горимд байна.</div>;
+    }
     switch (activeSection) {
       case "Users":
         return <UserManagement />;
@@ -89,32 +102,40 @@ const AdminPage = () => {
     <div className={styles.root}>
       <div className={styles.sidebar}>
         <div className={styles.headerContainer}>
-          <Switch size="large" />
-          <h2 className={styles.title}>Админ</h2>
+          <Switch 
+            size="large" 
+            checked={isMaintenanceMode}
+            onChange={handleToggleChange}
+          />
+          <h2 className={styles.title}>{isMaintenanceMode ? "Засварт байгаа" : "Админ"}</h2>
         </div>
         <div className={styles.menuContainer}>
           <div 
             className={styles.menuItem} 
             data-active={activeSection === "Users"}
-            onClick={() => setActiveSection("Users")}>
+            onClick={() => !isMaintenanceMode && setActiveSection("Users")}
+            aria-disabled={isMaintenanceMode}>
             Хэрэглэгч
           </div>
           <div 
             className={styles.menuItem} 
             data-active={activeSection === "Roles"}
-            onClick={() => setActiveSection("Roles")}>
+            onClick={() => !isMaintenanceMode && setActiveSection("Roles")}
+            aria-disabled={isMaintenanceMode}>
             Ажил үүрэг
           </div>
           <div 
             className={styles.menuItem} 
             data-active={activeSection === "UserGroups"}
-            onClick={() => setActiveSection("UserGroups")}>
+            onClick={() => !isMaintenanceMode && setActiveSection("UserGroups")}
+            aria-disabled={isMaintenanceMode}>
             Хэрэглэгчийн бүлэг
           </div>
           <div 
             className={styles.menuItem} 
             data-active={activeSection === "Permissions"}
-            onClick={() => setActiveSection("Permissions")}>
+            onClick={() => !isMaintenanceMode && setActiveSection("Permissions")}
+            aria-disabled={isMaintenanceMode}>
             Эрхийн удирдлага
           </div>
         </div>

@@ -1,195 +1,151 @@
-import React, { useState, useEffect, useCallback } from "react";
-import {
-    Button,
-    Dropdown,
-    Option,
-    Checkbox,
-    Label,
-    makeStyles,
-    typography,
-    Spinner,
+import React, { useState, useMemo } from "react";
+import { 
+    makeStyles, 
+    shorthands, 
+    Button, 
+    Input,
+    TableBody,
+    TableCell,
+    TableRow,
+    Table,
+    TableHeader,
+    TableHeaderCell,
+    useTableFeatures,
+    useTableSort,
+    Body1,
+    Card,
+    CardHeader,
+    Title3
 } from "@fluentui/react-components";
-import { useAppContext } from "./AppContext";
-import { BASE_URL } from "../../config";
 
 const useStyles = makeStyles({
     root: {
         display: "flex",
         flexDirection: "column",
-        gap: "20px",
+        ...shorthands.gap("20px"),
+        height: "100%",
     },
-    title: {
-        ...typography.title2,
+    card: {
+        ...shorthands.flex(1),
+        display: "flex",
+        flexDirection: "column",
     },
     header: {
         display: "flex",
-        gap: "20px",
         alignItems: "center",
+        justifyContent: "space-between",
+        ...shorthands.padding("0", "16px"),
     },
-    permissionsContainer: {
+    form: {
         display: "flex",
-        flexDirection: "column",
-        gap: "10px",
-        maxHeight: "500px",
-        overflowY: "auto",
-        padding: "10px",
-        border: "1px solid #ccc",
-        borderRadius: "4px",
+        alignItems: "center",
+        ...shorthands.gap("10px"),
     },
-    permissionItem: {
-        display: "block",
-    },
-    footer: {
-        display: "flex",
-        justifyContent: "flex-end",
+    content: {
+        ...shorthands.overflow("auto"),
     }
 });
 
+const columns = [
+    { columnKey: "name", label: "Эрхийн нэр" },
+    { columnKey: "description", label: "Тайлбар" },
+];
+
+const initialItems = [
+    { id: 1, name: "view_dashboard", description: "Хяналтын самбарыг харах" },
+    { id: 2, name: "manage_users", description: "Хэрэглэгч удирдах (нэмэх, устгах, засах)" },
+    { id: 3, name: "manage_roles", description: "Ажил үүрэг удирдах" },
+    { id: 4, name: "manage_permissions", description: "Эрх удирдах" },
+    { id: 5, name: "submit_transaction", description: "Гүйлгээ хийх" },
+    { id: 6, name: "approve_transaction", description: "Гүйлгээ батлах" },
+    { id: 7, name: "view_reports", description: "Тайлан харах" },
+    { id: 8, name: "view_admin_page", description: "Админ хуудсыг харах" },
+];
+
 const PermissionManagement = () => {
     const styles = useStyles();
-    const { showMessage, setLoading } = useAppContext();
+    const [items, setItems] = useState(initialItems);
+    const [newPermissionName, setNewPermissionName] = useState("");
+    const [newPermissionDesc, setNewPermissionDesc] = useState("");
+
+    const {
+        getRows,
+        sort: { getSortDirection, toggleColumnSort, sort },
+    } = useTableFeatures(
+        {
+            columns,
+            items,
+        },
+        [
+            useTableSort({
+                defaultSortState: { sortColumn: "name", sortDirection: "ascending" },
+            }),
+        ]
+    );
+
+    const sortedRows = useMemo(() => sort(getRows()), [sort, getRows]);
+
+    const handleAddPermission = () => {
+        if (newPermissionName.trim() && newPermissionDesc.trim()) {
+            const newPermission = {
+                id: items.length + 1,
+                name: newPermissionName.trim(),
+                description: newPermissionDesc.trim(),
+            };
+            setItems([...items, newPermission]);
+            setNewPermissionName("");
+            setNewPermissionDesc("");
+        }
+    };
     
-    const [roles, setRoles] = useState([]);
-    const [permissions, setPermissions] = useState([]);
-    const [selectedRole, setSelectedRole] = useState(null);
-    const [selectedPermissions, setSelectedPermissions] = useState(new Set());
-    const [isSaving, setIsSaving] = useState(false);
-
-    // Fetch all roles for the dropdown
-    useEffect(() => {
-        const fetchRoles = async () => {
-            try {
-                const response = await fetch(`${BASE_URL}/api/roles`);
-                if (!response.ok) throw new Error("Ажил үүргүүдийг татахад алдаа гарлаа");
-                const data = await response.json();
-                setRoles(data);
-            } catch (error) {
-                showMessage(error.message, "error");
-            }
-        };
-        fetchRoles();
-    }, [showMessage]);
-
-    // Fetch all available permissions
-    useEffect(() => {
-        const fetchPermissions = async () => {
-            try {
-                const response = await fetch(`${BASE_URL}/api/permissions`);
-                if (!response.ok) throw new Error("Эрхүүдийг татахад алдаа гарлаа");
-                const data = await response.json();
-                setPermissions(data);
-            } catch (error) {
-                showMessage(error.message, "error");
-            }
-        };
-        fetchPermissions();
-    }, [showMessage]);
-
-    // Fetch permissions for the selected role
-    const fetchRolePermissions = useCallback(async (roleId) => {
-        setLoading(true);
-        try {
-            const response = await fetch(`${BASE_URL}/api/roles/${roleId}/permissions`);
-            if (!response.ok) throw new Error("Сонгогдсон ажил үүргийн эрхийг татахад алдаа гарлаа");
-            const data = await response.json(); // Assuming returns { permissionIds: [1, 2, ...] }
-            setSelectedPermissions(new Set(data.permissionIds));
-        } catch (error) {
-            showMessage(error.message, "error");
-        } finally {
-            setLoading(false);
-        }
-    }, [setLoading, showMessage]);
-
-    const handleRoleChange = (event, data) => {
-        const roleId = data.optionValue;
-        setSelectedRole(roleId);
-        if (roleId) {
-            fetchRolePermissions(roleId);
-        } else {
-            setSelectedPermissions(new Set());
-        }
-    };
-
-    const handlePermissionChange = (permId, checked) => {
-        setSelectedPermissions(prev => {
-            const newSet = new Set(prev);
-            if (checked) {
-                newSet.add(permId);
-            } else {
-                newSet.delete(permId);
-            }
-            return newSet;
-        });
-    };
-
-    const handleSave = async () => {
-        if (!selectedRole) {
-            showMessage("Эхлээд ажил үүрэг сонгоно уу!", "warning");
-            return;
-        }
-        setIsSaving(true);
-        try {
-            const response = await fetch(`${BASE_URL}/api/roles/${selectedRole}/permissions`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ permissionIds: Array.from(selectedPermissions) }),
-            });
-            if (!response.ok) throw new Error("Эрхийг хадгалахад алдаа гарлаа");
-            showMessage("Эрх амжилттай хадгалагдлаа", "success");
-        } catch (error) {
-            showMessage(error.message, "error");
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
     return (
         <div className={styles.root}>
-            <h2 className={styles.title}>Эрхийн удирдлага</h2>
+            <Title3>Эрхийн удирдлага</Title3>
+            <Body1>Системд ашиглагдах боломжтой бүх үйлдлийн эрхийг энд тодорхойлж, удирдна.</Body1>
             
-            <div className={styles.header}>
-                <Label>Ажил үүрэг сонгох:</Label>
-                <Dropdown
-                    placeholder="Ажил үүрэг сонгоно уу..."
-                    onOptionSelect={handleRoleChange}
-                    style={{ minWidth: "250px" }}
-                >
-                    {roles.map((role) => (
-                        <Option key={role.id} value={role.id}>
-                            {role.name}
-                        </Option>
-                    ))}
-                </Dropdown>
-            </div>
+            <Card className={styles.card}>
+                <CardHeader className={styles.header}>
+                    <div className={styles.form}>
+                        <Input 
+                            placeholder="Эрхийн нэр (жишээ: create_user)"
+                            value={newPermissionName}
+                            onChange={(_, data) => setNewPermissionName(data.value)}
+                        />
+                        <Input 
+                            placeholder="Тайлбар"
+                            value={newPermissionDesc}
+                            onChange={(_, data) => setNewPermissionDesc(data.value)}
+                        />
+                        <Button appearance="primary" onClick={handleAddPermission}>Нэмэх</Button>
+                    </div>
+                </CardHeader>
 
-            {selectedRole && (
-                 <div className={styles.permissionsContainer}>
-                    {permissions.length > 0 ? (
-                        permissions.map(perm => (
-                            <Checkbox 
-                                key={perm.id}
-                                label={perm.name}
-                                checked={selectedPermissions.has(perm.id)}
-                                onChange={(e, data) => handlePermissionChange(perm.id, data.checked)}
-                                className={styles.permissionItem}
-                            />
-                        ))
-                    ) : (
-                        <p>Тохируулах боломжтой эрх олдсонгүй.</p>
-                    )}
+                <div className={styles.content}>
+                    <Table arial-label="Эрхийн жагсаалт" size="small">
+                        <TableHeader>
+                            <TableRow>
+                                {columns.map((column) => (
+                                    <TableHeaderCell
+                                        key={column.columnKey}
+                                        sortDirection={getSortDirection(column.columnKey)}
+                                        onClick={() => toggleColumnSort(column.columnKey)}
+                                    >
+                                        {column.label}
+                                    </TableHeaderCell>
+                                ))}
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {sortedRows.map(({ item }) => (
+                                <TableRow key={item.id}>
+                                    <TableCell>{item.name}</TableCell>
+                                    <TableCell>{item.description}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 </div>
-            )}
-
-            <div className={styles.footer}>
-                <Button 
-                    appearance="primary" 
-                    onClick={handleSave} 
-                    disabled={!selectedRole || isSaving}
-                    icon={isSaving ? <Spinner size="tiny" /> : null}
-                >
-                    {isSaving ? "Хадгалж байна..." : "Хадгалах"}
-                </Button>
-            </div>
+            </Card>
         </div>
     );
 };

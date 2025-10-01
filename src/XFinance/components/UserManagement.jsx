@@ -40,19 +40,32 @@ const useStyles = makeStyles({
     }
 });
 
+// Mock data for roles - in a real app, this would be fetched from the API
+const availableRoles = [
+    { id: 1, name: 'Администратор' },
+    { id: 2, name: 'Нягтлан' },
+    { id: 3, name: 'Хянагч' },
+];
+
 const UserManagement = () => {
     const styles = useStyles();
     const { showMessage, setLoading } = useAppContext();
     const [users, setUsers] = useState([]);
     const [isFormOpen, setFormOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
+    // Roles will be fetched or managed here
+    // For now, we use a mock roles mapping
+    const rolesMap = { 1: 'Администратор', 2: 'Нягтлан' }; 
 
     const fetchUsers = async () => {
         setLoading(true);
         try {
+            // In a real app, you might fetch users and roles concurrently
             const response = await fetch(`${BASE_URL}/api/users`);
             if (!response.ok) throw new Error("Хэрэглэгчдийг татахад алдаа гарлаа");
-            const data = await response.json();
+            let data = await response.json();
+            // Add mock role to user data
+            data = data.map(u => ({...u, role_id: u.id % 2 + 1, role_name: rolesMap[u.id % 2 + 1] }))
             setUsers(data);
         } catch (error) {
             showMessage(`Алдаа: ${error.message}`, "error");
@@ -119,6 +132,7 @@ const UserManagement = () => {
                         <TableHeaderCell>Хэрэглэгчийн нэр</TableHeaderCell>
                         <TableHeaderCell>И-мэйл</TableHeaderCell>
                         <TableHeaderCell>Бүтэн нэр</TableHeaderCell>
+                        <TableHeaderCell>Ажил үүрэг</TableHeaderCell>
                         <TableHeaderCell>Үйлдэл</TableHeaderCell>
                     </TableRow>
                 </TableHeader>
@@ -128,6 +142,7 @@ const UserManagement = () => {
                             <TableCell>{user.username}</TableCell>
                             <TableCell>{user.email}</TableCell>
                             <TableCell>{user.full_name}</TableCell>
+                            <TableCell>{user.role_name || "Тодорхойгүй"}</TableCell>
                             <TableCell>
                                 <div className={styles.actionCell}>
                                 <Button icon={<Edit24Regular />} aria-label="Засах" onClick={() => handleEditUser(user)} />
@@ -146,6 +161,7 @@ const UserManagement = () => {
                         onClose={handleFormClose} 
                         onSave={handleFormSave}
                         user={editingUser}
+                        availableRoles={availableRoles} // Pass roles to the form
                     />
                 )}
             </Suspense>

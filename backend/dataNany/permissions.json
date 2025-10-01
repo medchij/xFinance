@@ -1,0 +1,11 @@
+
+[
+  { "id": 1, "name": "view_dashboard", "description": "Хяналтын самбарыг харах" },
+  { "id": 2, "name": "manage_users", "description": "Хэрэглэгч удирдах (нэмэх, устгах, засах)" },
+  { "id": 3, "name": "manage_roles", "description": "Ажил үүрэг удирдах" },
+  { "id": 4, "name": "manage_permissions", "description": "Эрх удирдах" },
+  { "id": 5, "name": "submit_transaction", "description": "Гүйлгээ хийх" },
+  { "id": 6, "name": "approve_transaction", "description": "Гүйлгээ батлах" },
+  { "id": 7, "name": "view_reports", "description": "Тайлан харах" },
+  { "id": 8, "name": "view_admin_page", "description": "Админ хуудсыг харах" }
+]

@@ -49,7 +49,7 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
   const [sheetData, setSheetData] = useState();
   const [selectedSheet, setSelectedSheet] = useState(null);
 
-  const { setLoading, showMessage } = useAppContext();
+  const { setLoading, showMessage, hasPermission } = useAppContext();
 
   const handleToggleClick = () => {
     setManualToggle(!manualToggle);
@@ -142,12 +142,14 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
             isOpen={isOpen}
             onClick={() => setSearchOpen(true)}
           />
+          {hasPermission('view_admin_page') && (
             <SidebarItem
-            icon={<ShieldKeyhole24Regular />}
-            text="Админ"
-            isOpen={isOpen}
-            onClick={() => setActivePage("admin")}
-          />
+              icon={<ShieldKeyhole24Regular />}
+              text="Админ"
+              isOpen={isOpen}
+              onClick={() => setActivePage("admin")}
+            />
+          )}
           <SidebarItem
             icon={<Settings24Regular />}
             text="Settings"
