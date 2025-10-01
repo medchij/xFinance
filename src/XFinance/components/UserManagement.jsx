@@ -126,7 +126,7 @@ const UserManagement = () => {
                 </Button>
             </div>
 
-            <Table arial-label="User list table" className={styles.table}>
+            <Table aria-label="User list table" className={styles.table}>
                 <TableHeader>
                     <TableRow>
                         <TableHeaderCell>Хэрэглэгчийн нэр</TableHeaderCell>
