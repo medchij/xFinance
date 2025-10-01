@@ -106,7 +106,7 @@ const UserForm = ({ isOpen, onClose, onSave, user, availableRoles }) => {
                         <Label htmlFor="password-input">Нууц үг {user ? "(солихгүй бол хоосон орхино уу)" : ""}</Label>
                         <Input id="password-input" type="password" value={password} onChange={(_, data) => setPassword(data.value)} required={!user} />
 
-                        <Label htmlFor="role-select">Ажил үүрэг</Glabel>
+                        <Label htmlFor="role-select">Ажил үүрэг</Label>
                         <Select id="role-select" value={roleId} onChange={(_, data) => setRoleId(data.value)}>
                             <option value="">[Сонгоно уу]</option>
                             {(availableRoles || []).map(role => (
