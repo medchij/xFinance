@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt'); // <--- BCRYPT-ИЙГ НЭМСЭН
 const db = require('../db');
 
 // JWT Secret. Үүнийг .env файлд хадгалах нь илүү зөв.
@@ -43,10 +44,9 @@ router.post('/login', async (req, res) => {
 
     const user = rows[0];
     
-    // --- BCRYPT-ГҮЙ ХУВИЛБАР ---
-    // !!! АЮУЛТАЙ !!! Нууц үгийг энгийн текстээр шалгаж байна.
-    // Таны 'password_hash' баганад нууц үг шууд бичигдсэн байх ёстой.
-    const isMatch = (password === user.password_hash);
+    // --- ЗӨВ ХУВИЛБАР ---
+    // Ирсэн нууц үгийг DB дэх hash-тай харьцуулах
+    const isMatch = await bcrypt.compare(password, user.password_hash);
 
     if (isMatch) {
       // JWT payload-д хэрэглэгчийн ID, нэр, үүргийг хийж өгөх
