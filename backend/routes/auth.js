@@ -35,7 +35,7 @@ router.post('/login', async (req, res) => {
 
   try {
     // DB-ээс хэрэглэгч хайх
-    const { rows } = await db.query('SELECT * FROM xf_users WHERE username = $1', [username]);
+    const { rows } = await db.query('SELECT * FROM users WHERE username = $1', [username]);
     
     if (rows.length === 0) {
       return res.status(401).json({ message: 'Нэвтрэх нэр эсвэл нууц үг буруу.' });
@@ -81,7 +81,7 @@ router.get('/me', verifyToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const userQuery = 'SELECT id, username, email, full_name, role_id FROM xf_users WHERE id = $1';
+    const userQuery = 'SELECT id, username, email, full_name, role_id FROM users WHERE id = $1';
     const userResult = await db.query(userQuery, [userId]);
 
     if (userResult.rows.length === 0) {
@@ -92,15 +92,15 @@ router.get('/me', verifyToken, async (req, res) => {
 
     const permissionsQuery = `
       SELECT p.name
-      FROM xf_permissions p
-      JOIN xf_role_permissions rp ON p.id = rp.permission_id
+      FROM permissions p
+      JOIN role_permissions rp ON p.id = rp.permission_id
       WHERE rp.role_id = $1
     `;
     const permissionsResult = await db.query(permissionsQuery, [user.role_id]);
     
     const permissions = permissionsResult.rows.map(row => row.name);
 
-    const roleQuery = 'SELECT name FROM xf_roles WHERE id = $1';
+    const roleQuery = 'SELECT name FROM roles WHERE id = $1';
     const roleResult = await db.query(roleQuery, [user.role_id]);
     const roleName = roleResult.rows.length > 0 ? roleResult.rows[0].name : null;
 
