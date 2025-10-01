@@ -41,7 +41,7 @@ const LoginPage = ({ onLogin, onCompanySelect, onNavigateToPublic }) => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    const defaultCompany = "default"; 
+    const defaultCompany = "Data"; 
     onCompanySelect(defaultCompany); 
     onLogin(username, password, defaultCompany);
   };

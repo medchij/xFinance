@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt'); // <--- BCRYPT-ИЙГ НЭМСЭН
+const bcrypt = require('bcrypt');
 const db = require('../db');
 
 // JWT Secret. Үүнийг .env файлд хадгалах нь илүү зөв.
@@ -20,7 +20,7 @@ const verifyToken = (req, res, next) => {
     if (err) {
       return res.status(403).json({ message: 'Token хүчингүй байна' });
     }
-    req.user = user; // { id: 1, username: 'admin', ... }
+    req.user = user;
     next();
   });
 };
@@ -36,24 +36,26 @@ router.post('/login', async (req, res) => {
 
   try {
     // DB-ээс хэрэглэгч хайх
-    const { rows } = await db.query('SELECT * FROM users WHERE username = $1', [username]);
+    const { rows: users } = await db.query('SELECT * FROM users WHERE username = $1', [username]);
     
-    if (rows.length === 0) {
+    if (users.length === 0) {
       return res.status(401).json({ message: 'Нэвтрэх нэр эсвэл нууц үг буруу.' });
     }
 
-    const user = rows[0];
+    const user = users[0];
     
-    // --- ЗӨВ ХУВИЛБАР ---
     // Ирсэн нууц үгийг DB дэх hash-тай харьцуулах
     const isMatch = await bcrypt.compare(password, user.password_hash);
 
     if (isMatch) {
-      // JWT payload-д хэрэглэгчийн ID, нэр, үүргийг хийж өгөх
+      // *** ЗАСВАРЛАСАН ХЭСЭГ: user_roles-оос role_id-г авах ***
+      const roleRes = await db.query('SELECT role_id FROM user_roles WHERE user_id = $1', [user.id]);
+      const role_id = roleRes.rows.length > 0 ? roleRes.rows[0].role_id : null;
+
       const payload = {
         id: user.id,
         username: user.username,
-        role_id: user.role_id
+        role_id: role_id // Зөв role_id-г payload-д хийх
       };
 
       // Token үүсгэх (1 өдөр хүчинтэй)
@@ -81,7 +83,13 @@ router.get('/me', verifyToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const userQuery = 'SELECT id, username, email, full_name, role_id FROM users WHERE id = $1';
+    // *** ЗАСВАРЛАСАН ХЭСЭГ: JOIN ашиглан role_id-г авах ***
+    const userQuery = `
+      SELECT u.id, u.username, u.email, u.full_name, ur.role_id
+      FROM users u
+      LEFT JOIN user_roles ur ON u.id = ur.user_id
+      WHERE u.id = $1
+    `;
     const userResult = await db.query(userQuery, [userId]);
 
     if (userResult.rows.length === 0) {
@@ -89,6 +97,14 @@ router.get('/me', verifyToken, async (req, res) => {
     }
     
     const user = userResult.rows[0];
+
+    // role_id байхгүй бол эрх хайхгүй
+    if (!user.role_id) {
+      return res.status(200).json({
+        user: { ...user, password_hash: undefined, role: null },
+        permissions: []
+      });
+    }
 
     const permissionsQuery = `
       SELECT p.name
