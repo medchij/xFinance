@@ -48,14 +48,11 @@ router.post('/login', async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password_hash);
 
     if (isMatch) {
-      // *** ЗАСВАРЛАСАН ХЭСЭГ: user_roles-оос role_id-г авах ***
-      const roleRes = await db.query('SELECT role_id FROM user_roles WHERE user_id = $1', [user.id]);
-      const role_id = roleRes.rows.length > 0 ? roleRes.rows[0].role_id : null;
-
+      // JWT payload-д хэрэглэгчийн мэдээллийг оруулах
       const payload = {
         id: user.id,
         username: user.username,
-        role_id: role_id // Зөв role_id-г payload-д хийх
+        role_id: user.role_id // role_id-г шууд user объектоос авах
       };
 
       // Token үүсгэх (1 өдөр хүчинтэй)
