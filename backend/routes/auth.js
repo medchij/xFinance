@@ -84,7 +84,7 @@ router.get('/me', verifyToken, async (req, res) => {
     const userQuery = `
       SELECT u.id, u.username, u.email, u.full_name, ur.role_id
       FROM users u
-      LEFT JOIN user_roles ur ON u.id = ur.user_id
+      LEFT JOIN roles ur ON u.id = ur.user_id
       WHERE u.id = $1
     `;
     const userResult = await db.query(userQuery, [userId]);
