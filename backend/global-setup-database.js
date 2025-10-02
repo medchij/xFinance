@@ -7,7 +7,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const bcrypt = require('bcrypt');
 
-const ROOT_DIR = path.resolve(__dirname, '.');
+const ROOT_DIR = path.resolve(__dirname, './globaldata');
 const readJson = async (fname) => JSON.parse(await fs.readFile(path.join(ROOT_DIR, fname), 'utf8'));
 
 async function ensureTables(client) {
@@ -187,6 +187,34 @@ async function importRolePermissions(client) {
   }
 }
 
+async function importUserRoles(client) {
+  try {
+    const rows = await readJson('user_roles.json');
+    let ok = 0, skipped = 0;
+    for (const rec of rows) {
+      if (rec.user_id != null && rec.role_id != null) {
+        try {
+          await client.sql`
+            INSERT INTO user_roles(user_id, role_id)
+            VALUES (${rec.user_id}, ${rec.role_id})
+            ON CONFLICT DO NOTHING;`;
+          ok++;
+        } catch (e) {
+          skipped++;
+          console.warn(`⚠️ user_roles insert failed (u=${rec.user_id}, r=${rec.role_id}): ${e.message}`);
+        }
+      } else {
+        skipped++;
+        console.warn('⚠️ user_roles record missing numeric user_id/role_id → skipped');
+      }
+    }
+    console.log(`✅ user_roles: inserted=${ok}, skipped=${skipped}`);
+  } catch (e) {
+    if (e.code === 'ENOENT') console.warn('⚠️ user_roles.json not found. Skipped.');
+    else throw e;
+  }
+}
+
 async function run() {
   let client;
   try {
@@ -200,6 +228,7 @@ async function run() {
     await importRoles(client);
     await importUsers(client);
     await importRolePermissions(client);
+    await importUserRoles(client); // Энд нэмэгдсэн
 
     console.log('🎉 Done.');
   } catch (err) {
