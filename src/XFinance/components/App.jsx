@@ -32,7 +32,7 @@ const pagePermissions = {
 const InternalAuthenticatedApp = ({ title }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [activePage, setActivePage] = useState("maincontent");
-  const { hasPermission, showMessage } = useAppContext(); // showNotification-г showMessage болгов
+  const { hasPermission, showMessage} = useAppContext(); 
 
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
@@ -45,7 +45,7 @@ const InternalAuthenticatedApp = ({ title }) => {
     if (requiredPermission && !hasPermission(requiredPermission)) {
       // Эрх байхгүй тохиолдолд
       console.warn(`Permission denied: User tried to access '${page}' without '${requiredPermission}' permission.`);
-      showMessage("❌ Энэ хуудсыг үзэх эрх танд байхгүй байна."); // showNotification-г showMessage болгов
+      showMessage("❌ Энэ хуудсыг үзэх эрх танд байхгүй байна.");
       return; // Хуудас солих үйлдлийг зогсооно
     } 
     

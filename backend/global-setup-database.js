@@ -12,21 +12,23 @@ const readJson = async (fname) => JSON.parse(await fs.readFile(path.join(ROOT_DI
 
 async function ensureTables(client) {
     await client.sql`DROP TABLE IF EXISTS roles, role_permissions, user_roles, permissions, users CASCADE;`;
+ 
   await client.sql`
+    CREATE TABLE IF NOT EXISTS roles(
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(50) UNIQUE NOT NULL,
+      description TEXT
+    );`;
+    await client.sql`
     CREATE TABLE IF NOT EXISTS users(
       id SERIAL PRIMARY KEY,
       username VARCHAR(50) UNIQUE NOT NULL,
       password_hash VARCHAR(255) NOT NULL,
       email VARCHAR(255) UNIQUE NOT NULL,
       full_name VARCHAR(100),
+      role_id INTEGER REFERENCES roles(id) ON DELETE CASCADE,
       created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-    );`;
-  await client.sql`
-    CREATE TABLE IF NOT EXISTS roles(
-      id SERIAL PRIMARY KEY,
-      name VARCHAR(50) UNIQUE NOT NULL,
-      description TEXT
     );`;
   await client.sql`
     CREATE TABLE IF NOT EXISTS permissions(
@@ -138,8 +140,8 @@ async function importUsers(client) {
                 full_name = COALESCE(EXCLUDED.full_name, users.full_name);`;
       } else {
         await client.sql`
-          INSERT INTO users(username, password_hash, email, full_name)
-          VALUES (${username}, ${hash}, ${email}, ${full_name})
+          INSERT INTO users(username, password_hash, email, full_name,role_id)
+          VALUES (${username}, ${hash}, ${email}, ${full_name}, ${u.role_id})
           ON CONFLICT (username) DO UPDATE
             SET password_hash = EXCLUDED.password_hash,
                 email = COALESCE(EXCLUDED.email, users.email),

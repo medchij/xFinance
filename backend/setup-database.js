@@ -25,7 +25,7 @@ const ENTITIES = {
 
 async function createTables(client) {
     console.log('Бүх хүснэгтийг устгаж, шинээр үүсгэж байна...');
-    await client.sql`DROP TABLE IF EXISTS roles, settings, cf_items, gl_accounts, gl_categories, customers, currencies, branches, accounts, companies, role_permissions, user_roles, user_groups, permissions, "groups", users CASCADE;`;
+    await client.sql`DROP TABLE IF EXISTS  settings, cf_items, gl_accounts, gl_categories, customers, currencies, branches, accounts, companies,  permissions CASCADE;`;
 
     console.log('Үндсэн хүснэгтүүдийг үүсгэж байна...');
     await client.sql`CREATE TABLE companies (id VARCHAR(100) PRIMARY KEY, name VARCHAR(255) NOT NULL);`;
@@ -45,7 +45,7 @@ async function createTables(client) {
 async function migrateData(client, companyDirs, adminUserId) {
     console.log('\n--- Өгөгдөл Шилжүүлэлт Эхэллээ ---');
   
-    adminUserId=1
+   
     const now = new Date().toISOString();
 
     for (const [entityName, { table, file }] of Object.entries(ENTITIES)) {
@@ -104,6 +104,7 @@ async function migrateData(client, companyDirs, adminUserId) {
 
 async function setup() {
     let client;
+    let adminUserId = 1;
     try {
         client = await db.connect();
         console.log('--- Мэдээллийн Санг Бүрэн Шинэчлэх Ажиллагаа Эхэллээ ---');
