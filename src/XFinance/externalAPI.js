@@ -201,7 +201,7 @@ export async function fetchKhanbankReceiptFromSheet(setMessage, setLoading) {
 
     const companyId = getCompanyId(); // localStorage-аас ID авах
     const settings = await loadSettings(companyId); // ID-г дамжуулах
-    const token = getSettingValue(settings, "access_token");
+    let token = getSettingValue(settings, "access_token");
 
     const { accountNo, fromDate, toDate } = await Excel.run(async (context) => {
       const sheet = context.workbook.worksheets.getItem("Import");
@@ -211,8 +211,8 @@ export async function fetchKhanbankReceiptFromSheet(setMessage, setLoading) {
 
       const [acc, fromRaw, toRaw] = range.values.map((r) => r[0]);
 
-      if (!token || !acc || !fromRaw || !toRaw) {
-        throw new Error("📌 B2-B5 нүднүүдэд token, accountNo, fromDate, toDate бүгд байх шаардлагатай!");
+      if (!acc || !fromRaw || !toRaw) {
+        throw new Error("📌 B3-B5 нүднүүдэд accountNo, fromDate, toDate бүгд байх шаардлагатай!");
       }
 
       return {
@@ -222,21 +222,31 @@ export async function fetchKhanbankReceiptFromSheet(setMessage, setLoading) {
       };
     });
 
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", `Bearer ${token}`);
-    myHeaders.append("Referer", "https://corp.khanbank.com");
-    myHeaders.append("Origin", "https://corp.khanbank.com");
-    myHeaders.append("Host", "api.khanbank.com:9003");
+    const makeRequest = async (currentToken) => {
+      const myHeaders = new Headers();
+      myHeaders.append("Authorization", `Bearer ${currentToken}`);
+      myHeaders.append("Referer", "https://corp.khanbank.com");
+      myHeaders.append("Origin", "https://corp.khanbank.com");
+      myHeaders.append("Host", "api.khanbank.com:9003");
 
-    const url = `https://api.khanbank.com:9003/v3/omni/accounts/receipt/${accountNo}?transactionDate=%7B%22lt%22:%22${fromDate}T17:42:30%22,%22gt%22:%22${toDate}T09:57:20%22%7D&docType=0&transactionAmount=%7B%22gt%22:%220%22,%22lt%22:%220%22%7D`;
+      const url = `https://api.khanbank.com:9003/v3/omni/accounts/receipt/${accountNo}?transactionDate=%7B%22lt%22:%22${fromDate}T17:42:30%22,%22gt%22:%22${toDate}T09:57:20%22%7D&docType=0&transactionAmount=%7B%22gt%22:%220%22,%22lt%22:%220%22%7D`;
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    });
+      const response = await fetch(url, {
+        method: "GET",
+        headers: myHeaders,
+        redirect: "follow",
+      });
+      const result = await response.json();
+      return { response, result };
+    };
 
-    const result = await response.json();
+    let { response, result } = await makeRequest(token);
+
+    if (response.status === 401) {
+      const tokenResp = await getKhanbankToken(setMessage, setLoading);
+      token = tokenResp.result.access_token;
+      ({ response, result } = await makeRequest(token));
+    }
 
     if (!response.ok) {
       handleHttpError(response, result);
@@ -393,8 +403,8 @@ export async function fetchKhanbankAccountInfo(setMessage, setLoading) {
       await context.sync();
 
       const acc = activeCell.values[0][0];
-      if (!token || !acc) {
-        throw new Error("📌 Идэвхтэй нүдэнд accountNo байх шаардлагатай!");
+      if (!acc) {
+        throw new Error("📌 Идэвхтэй нүдэнд дансны дугаар оруулаагүй байна.");
       }
 
       return {
