@@ -298,15 +298,34 @@ export async function getKhanbankToken(setMessage, setLoading) {
 
     const companyId = getCompanyId(); // localStorage-аас ID авах
     const settings = await loadSettings(companyId); // ID-г дамжуулах
-    const username = getSettingValue(settings, "khanbank_username");
-    const password = getSettingValue(settings, "khanbank_password");
-    const deviceToken = getSettingValue(settings, "device_token");
-    const deviceId = getSettingValue(settings, "device-id");
+    const requiredSettings = {
+      khanbank_username: getSettingValue(settings, "khanbank_username"),
+      khanbank_password: getSettingValue(settings, "khanbank_password"),
+      device_token: getSettingValue(settings, "device_token"),
+      "device-id": getSettingValue(settings, "device-id"),
+    };
+
+    const missingOrEmpty = Object.entries(requiredSettings)
+      .filter(([, value]) => !value)
+      .map(([key]) => key);
+
+    if (missingOrEmpty.length > 0) {
+      throw new Error(
+        `⚠️ Дараах тохиргоо дутуу байна: ${missingOrEmpty.join(
+          ", "
+        )}. Профайл хуудаснаас гүйцэт бөглөнө үү.`
+      );
+    }
+
+    const username = requiredSettings.khanbank_username;
+    const password = requiredSettings.khanbank_password;
+    const deviceToken = requiredSettings.device_token;
+    const deviceId = requiredSettings["device-id"];
     const accessId = getSettingId(settings, "access_token");
     const refreshId = getSettingId(settings, "refresh_token");
 
-    if (!username || !password || !deviceToken || !accessId || !refreshId || !deviceId) {
-      throw new Error("⚠️ Settings.json дээр шаардлагатай мэдээлэл дутуу байна");
+    if (!accessId || !refreshId) {
+      throw new Error("⚠️ access_token эсвэл refresh_token тохиргоо олдсонгүй. Та програм хөгжүүлэгчид хандана уу.");
     }
 
     const myHeaders = new Headers();
