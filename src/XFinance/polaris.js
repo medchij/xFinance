@@ -684,17 +684,11 @@ export async function extractLoanPurposeAndTerm(setMessage) {
 
       const importAccountIndex = importHeaders["ДАНСНЫ ДУГААР"];
       const purposeIndex = importHeaders["ЗОРИУЛАЛТ"];
-      const termIndex = importHeaders["ЗЭЭЛИЙН ХУГАЦАА"];
       const activeAccountIndex = activeHeaders["ДАНС"];
       const activePurposeIndex = activeHeaders["ЗОРИУЛАЛТ"];
-      const activeTermIndex = activeHeaders["ЗЭЭЛИЙН ХУГАЦАА"];
 
-      if (
-        [importAccountIndex, purposeIndex, termIndex, activeAccountIndex, activePurposeIndex, activeTermIndex].includes(
-          undefined
-        )
-      ) {
-        setMessage("⚠️ Шаардлагатай баганууд олдсонгүй (ДАНСНЫ ДУГААР, ЗОРИУЛАЛТ, ЗЭЭЛИЙН ХУГАЦАА).");
+      if ([importAccountIndex, purposeIndex, activeAccountIndex, activePurposeIndex].includes(undefined)) {
+        setMessage("⚠️ Шаардлагатай баганууд олдсонгүй (ДАНСНЫ ДУГААР, ЗОРИУЛАЛТ).");
         return;
       }
 
@@ -713,7 +707,6 @@ export async function extractLoanPurposeAndTerm(setMessage) {
         if (acc) {
           loanMap.set(acc.toString().trim(), {
             purpose: row[purposeIndex],
-            term: row[termIndex],
           });
         }
       });
@@ -722,15 +715,14 @@ export async function extractLoanPurposeAndTerm(setMessage) {
       activeData.forEach((row, i) => {
         const acc = row[activeAccountIndex];
         if (acc && loanMap.has(acc.toString().trim())) {
-          const { purpose, term } = loanMap.get(acc.toString().trim());
+          const { purpose } = loanMap.get(acc.toString().trim());
           activeSheet.getCell(i + 5, activePurposeIndex).values = [[purpose]];
-          activeSheet.getCell(i + 5, activeTermIndex).values = [[term]];
           updatedCount++;
         }
       });
 
       await context.sync();
-      setMessage(`✅ Амжилттай холбоод зорилго ба хугацааг ${updatedCount} мөр дээр орууллаа.`);
+      setMessage(`✅ Амжилттай холбоод зорилгыг ${updatedCount} мөр дээр орууллаа.`);
     });
   } catch (error) {
     console.error("❌ Алдаа:", error);
