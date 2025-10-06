@@ -68,7 +68,6 @@ const InternalAuthenticatedApp = ({ title }) => {
           {activePage === "search" && <SearchAccount />}
           {activePage === "settings" && <SettingsPage isSidebarOpen={isSidebarOpen} />}
           {activePage === "profile" && <Profile isSidebarOpen={isSidebarOpen} />}
-          {activePage === "browser" && <BrowserView isSidebarOpen={isSidebarOpen} />}
           {/* AdminPage-г энд нэмж өгөх. Sidebar-аас 'admin' гэж дуудагдана. */}
           {activePage === "admin" && <AdminPage isSidebarOpen={isSidebarOpen} />}
         </div>
