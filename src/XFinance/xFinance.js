@@ -2,8 +2,27 @@ import {withLoading} from "./apiHelpers"; // туслах функц
 import { BASE_URL } from "../config";
 //Үндсэн функцүүд
 export let lastImportedData = null;
-export async function loadXLSX() {
-   return window.XLSX;
+export function loadXLSX() {
+  return new Promise((resolve, reject) => {
+    const timeout = 5000; // 5 seconds timeout
+    const interval = 100; // check every 100ms
+    let elapsedTime = 0;
+
+    const checkXLSX = () => {
+      if (window.XLSX) {
+        resolve(window.XLSX);
+      } else {
+        elapsedTime += interval;
+        if (elapsedTime >= timeout) {
+          reject(new Error("XLSX library failed to load within 5 seconds."));
+        } else {
+          setTimeout(checkXLSX, interval);
+        }
+      }
+    };
+
+    checkXLSX();
+  });
 }
 
 
