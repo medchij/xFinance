@@ -9,6 +9,7 @@ import {
   Dropdown,
   Option,
   Button,
+  Input,
   Label,
   makeStyles,
 } from "@fluentui/react-components";
@@ -40,6 +41,8 @@ const SheetSelectorDialog = ({ isOpen, onClose, onSelect }) => {
   const classes = useStyles();
   const [sheetNames, setSheetNames] = useState([]);
   const [selectedSheet, setSelectedSheet] = useState(null);
+  const [isNewSheetDialogOpen, setIsNewSheetDialogOpen] = useState(false);
+  const [newSheetName, setNewSheetName] = useState("");
 
   useEffect(() => {
     if (!isOpen) return;
@@ -53,7 +56,8 @@ const SheetSelectorDialog = ({ isOpen, onClose, onSelect }) => {
 
   const handleSelect = async (sheetName) => {
     if (!sheetName) {
-      alert("⚠️ Sheet-ийн нэр хоосон байж болохгүй.");
+      // We should provide better feedback than alert
+      console.error("Sheet-ийн нэр хоосон байж болохгүй.");
       return;
     }
 
@@ -71,7 +75,7 @@ const SheetSelectorDialog = ({ isOpen, onClose, onSelect }) => {
       });
     } catch (error) {
       console.error("❌ Sheet үүсгэх эсвэл шалгахад алдаа гарлаа:", error);
-      alert(`Алдаа: ${error.message}`);
+      // We should provide better feedback than alert
       return;
     }
 
@@ -83,10 +87,7 @@ const SheetSelectorDialog = ({ isOpen, onClose, onSelect }) => {
     const selectedValue = data.optionValue;
 
     if (selectedValue === "__CREATE_NEW__") {
-      const newSheetName = prompt("Шинээр үүсгэх Sheet-ийн нэрийг оруулна уу:");
-      if (newSheetName && newSheetName.trim()) {
-        handleSelect(newSheetName.trim());
-      }
+      setIsNewSheetDialogOpen(true);
     } else if (selectedValue) {
       setSelectedSheet(selectedValue);
     }
@@ -96,48 +97,91 @@ const SheetSelectorDialog = ({ isOpen, onClose, onSelect }) => {
     if (selectedSheet) {
       handleSelect(selectedSheet);
     } else {
-      alert("⚠️ Sheet сонгоно уу.");
+      // We should provide better feedback than alert
+      console.error("Sheet сонгоно уу.");
+    }
+  };
+
+  const handleCreateNewSheet = () => {
+    if (newSheetName && newSheetName.trim()) {
+      handleSelect(newSheetName.trim());
+      setIsNewSheetDialogOpen(false);
+      setNewSheetName("");
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(_, data) => !data.open && onClose()}>
-      <DialogSurface className={classes.dialogSurface}>
-        <DialogBody>
-          <DialogTitle style={{ fontSize: "18px" }}>Sheet сонгох</DialogTitle>
-          <DialogContent>
-            <div className={classes.root}>
-              <div className={classes.field}>
-                <Label htmlFor="sheet-dropdown">Файл оруулах sheet-ээ сонгоно уу.</Label>
-                <Dropdown
-                  id="sheet-dropdown"
-                  placeholder="Жагсаалтаас сонгох..."
-                  onOptionSelect={handleOptionSelect}
-                  value={selectedSheet || ""}
-                >
-                  {sheetNames.map((name) => (
-                    <Option key={name} value={name}>
-                      {name}
+    <>
+      <Dialog open={isOpen} onOpenChange={(_, data) => !data.open && onClose()}>
+        <DialogSurface className={classes.dialogSurface}>
+          <DialogBody>
+            <DialogTitle style={{ fontSize: "18px" }}>Sheet сонгох</DialogTitle>
+            <DialogContent>
+              <div className={classes.root}>
+                <div className={classes.field}>
+                  <Label htmlFor="sheet-dropdown">Файл оруулах sheet-ээ сонгоно уу.</Label>
+                  <Dropdown
+                    id="sheet-dropdown"
+                    placeholder="Жагсаалтаас сонгох..."
+                    onOptionSelect={handleOptionSelect}
+                    value={selectedSheet || ""}
+                  >
+                    {sheetNames.map((name) => (
+                      <Option key={name} value={name}>
+                        {name}
+                      </Option>
+                    ))}
+                    <Option key="__CREATE_NEW__" value="__CREATE_NEW__">
+                      + Шинэ Sheet үүсгэх
                     </Option>
-                  ))}
-                  <Option key="__CREATE_NEW__" value="__CREATE_NEW__">
-                    + Шинэ Sheet үүсгэх
-                  </Option>
-                </Dropdown>
+                  </Dropdown>
+                </div>
               </div>
-            </div>
-          </DialogContent>
-          <DialogActions className={classes.actions}>
-            <Button appearance="primary" size="small" onClick={handleContinue} disabled={!selectedSheet}>
-              Үргэлжлүүлэх
-            </Button>
-            <Button appearance="secondary" size="small" onClick={onClose}>
-              Болих
-            </Button>
-          </DialogActions>
-        </DialogBody>
-      </DialogSurface>
-    </Dialog>
+            </DialogContent>
+            <DialogActions className={classes.actions}>
+              <Button appearance="primary" size="small" onClick={handleContinue} disabled={!selectedSheet}>
+                Үргэлжлүүлэх
+              </Button>
+              <Button appearance="secondary" size="small" onClick={onClose}>
+                Болих
+              </Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
+
+      <Dialog open={isNewSheetDialogOpen} onOpenChange={(_, data) => {
+        if (!data.open) {
+          setIsNewSheetDialogOpen(false);
+          setNewSheetName("");
+        }
+      }}>
+        <DialogSurface>
+          <DialogBody>
+            <DialogTitle>Шинэ Sheet үүсгэх</DialogTitle>
+            <DialogContent>
+              <div className={classes.field} style={{paddingTop: "12px"}}>
+                <Label htmlFor="new-sheet-name-input">Sheet-ийн нэрийг оруулна уу:</Label>
+                <Input
+                  id="new-sheet-name-input"
+                  value={newSheetName}
+                  onChange={(_, data) => setNewSheetName(data.value)}
+                  placeholder="Жш: Import_2025_10_06"
+                />
+              </div>
+            </DialogContent>
+            <DialogActions>
+              <Button appearance="primary" onClick={handleCreateNewSheet} disabled={!newSheetName.trim()}>
+                Үүсгэх
+              </Button>
+              <Button appearance="secondary" onClick={() => setIsNewSheetDialogOpen(false)}>
+                Болих
+              </Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
+    </>
   );
 };
 
