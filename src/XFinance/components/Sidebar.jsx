@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Home24Regular,
   ArrowSwap24Regular,
@@ -47,8 +47,25 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
   const [isSheetDialogOpen, setSheetDialogOpen] = useState(false);
   const [sheetData, setSheetData] = useState();
   const [selectedSheet, setSelectedSheet] = useState(null);
+  const fileInputRef = useRef(null); // Create a ref for the file input
 
   const { setLoading, showMessage, hasPermission } = useAppContext();
+
+  const menuItems = [
+    { icon: <Home24Regular />, text: "Нүүр хуудас", action: () => setActivePage("maincontent") },
+    { icon: <ArrowSwap24Regular />, text: "Гүйлгээ хийх", action: () => setTransactionOpen(true) },
+    { icon: <DocumentArrowDown24Regular />, text: "Import Sheet", action: () => setSheetDialogOpen(true) },
+    { icon: <Wrench24Regular />, text: "Нэмэлтүүд", action: () => setActivePage("CustomTools") },
+    { icon: <Search24Regular />, text: "Дансны хайлт", action: () => setSearchOpen(true) },
+    {
+      icon: <ShieldKeyhole24Regular />,
+      text: "Админ",
+      action: () => setActivePage("admin"),
+      permission: "view_admin_page",
+    },
+    { icon: <Settings24Regular />, text: "Settings", action: () => setActivePage("settings") },
+    { icon: <Chat24Regular />, text: "Messages", action: () => showMessage("Тун удахгүй!", "info") },
+  ];
 
   const handleToggleClick = () => {
     setManualToggle(!manualToggle);
@@ -111,55 +128,22 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
             </Button>
           </li>
 
-          <SidebarItem
-            icon={<Home24Regular />}
-            text="Нүүр хуудас"
-            isOpen={isOpen}
-            onClick={() => setActivePage("maincontent")}
-          />
-          <SidebarItem
-            icon={<ArrowSwap24Regular />}
-            text="Гүйлгээ хийх"
-            isOpen={isOpen}
-            onClick={() => setTransactionOpen(true)}
-          />
-          <SidebarItem
-            icon={<DocumentArrowDown24Regular />}
-            text="Import Sheet"
-            isOpen={isOpen}
-            onClick={() => setSheetDialogOpen(true)}
-          />
-          <SidebarItem
-            icon={<Wrench24Regular />}
-            text="Нэмэлтүүд"
-            isOpen={isOpen}
-            onClick={() => setActivePage("CustomTools")}
-          />
-          <SidebarItem
-            icon={<Search24Regular />}
-            text="Дансны хайлт"
-            isOpen={isOpen}
-            onClick={() => setSearchOpen(true)}
-          />
-          {hasPermission('view_admin_page') && (
-            <SidebarItem
-              icon={<ShieldKeyhole24Regular />}
-              text="Админ"
-              isOpen={isOpen}
-              onClick={() => setActivePage("admin")}
-            />
+          {menuItems.map(
+            (item, index) =>
+              (!item.permission || hasPermission(item.permission)) && (
+                <SidebarItem
+                  key={index}
+                  icon={item.icon}
+                  text={item.text}
+                  isOpen={isOpen}
+                  onClick={item.action}
+                />
+              )
           )}
-          <SidebarItem
-            icon={<Settings24Regular />}
-            text="Settings"
-            isOpen={isOpen}
-            onClick={() => setActivePage("settings")}
-          />
-          
-          <SidebarItem icon={<Chat24Regular />} text="Messages" isOpen={isOpen} />
         </ul>
 
         <input
+          ref={fileInputRef} // Attach the ref to the input element
           type="file"
           id="fileInput"
           accept=".xlsx, .xls"
@@ -215,7 +199,7 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
         onSelect={(sheetName) => {
           setSelectedSheet(sheetName);
           setSheetDialogOpen(false);
-          document.getElementById("fileInput").click();
+          fileInputRef.current.click(); // Use the ref to trigger the click
         }}
       />
     </>
