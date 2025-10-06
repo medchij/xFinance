@@ -246,7 +246,7 @@ async function performCalculation(sheet, headers, keyField) {
 
     const angilalSum = (val) =>
       filtered
-        .filter((r) => (r[headers["ANGILAL1"]] || "").toString().trim() === val)
+        .filter((r) => (r[headers["ANGILАЛ1"]] || "").toString().trim() === val)
         .reduce((s, r) => s + (+r[headers["ҮНДСЭН ЗЭЭЛ"]] || 0), 0);
 
     const zeel = filtered.reduce((s, r) => s + (+r[headers["ҮНДСЭН ЗЭЭЛ"]] || 0), 0);
@@ -382,7 +382,7 @@ export async function processLoanPrepData(setMessage, setLoading) {
 
         if (zor.startsWith("06")) row[buteegdehuunIdx] = "ҮЛ ХӨДЛӨХ ХӨРӨНГӨ";
         else if (seg === "81" && zor.startsWith("21")) row[buteegdehuunIdx] = "ХЭРЭГЛЭЭНИЙ ЗЭЭЛ";
-        else if (seg === "81" && zor.startsWith("18")) row[buteegdehuunIdx] = "БУСАД";
+        else if (seg === "81" && zor.startsWith("18")) row[buteegdeхуунIdx] = "БУСАД";
         else row[buteegdehuunIdx] = baseName;
       }
 
@@ -511,34 +511,23 @@ export async function loanpaymentData(setMessage, setLoading) {
 
       await unmergeAllCells(sheet); // Merge арилгах
 
-      const headerLabels = [
-        "ДАНС",
-        "ЗЭЭЛДЭГЧ",
-        "ТӨЛӨГДСӨН ОГНОО",
-        "ВАЛЮТ",
-        "ҮНДСЭН ХҮҮ",
-        "ТОГУУЛИЙН ХҮҮ",
-        "УРЬДЧИЛЖ ТӨЛСӨН",
-        "ЗЭЭЛ",
-        "НИЙТ",
-        "ХАНШ",
-        "НИЙТ ДҮН",
-        "ЗАЛРУУЛГА ЗЭЭЛ",
-        "МАШИН",
-        "ХҮҮНИЙ ДҮН",
-        "1",
-        "АНГИЛАЛ",
-        "СЕГМЕНТ",
-        "ХАРИУЦАГЧ",
-        "ДАНСНЫ ТӨЛӨВ",
-        "ТЕЛЛЕР",
-        "BUTEEGDEHUUNII_NER",
-        "ЗОРИУЛАЛТ",
-        "ЗЭЭЛИЙН ХУГАЦАА",
-        "0",
-        "BUTEEGDEHUUN1",
-        "HUGATSAANII INTERVAL",
-      ];
+      // 6, 7-р мөрнөөс толгой мэдээллийг унших
+      const headerSourceRange = sheet.getRange("A6:X7");
+      headerSourceRange.load("values");
+      await context.sync();
+
+      const row6 = headerSourceRange.values[0];
+      const row7 = headerSourceRange.values[1];
+      
+      const headerLabels = [];
+      for (let i = 0; i < row6.length; i++) {
+        const headerValue = (row6[i] || "").toString().trim();
+        const fallbackValue = (row7[i] || "").toString().trim();
+        headerLabels.push(headerValue || fallbackValue);
+      }
+
+      // Хүсэлтийн дагуу шинэ багануудыг нэмэх
+      headerLabels.push("BUTEEGDEHUUN1", "HUGATSAANII INTERVAL");
 
       for (let col = 0; col < headerLabels.length; col++) {
         sheet.getCell(4, col).values = [[headerLabels[col]]];
