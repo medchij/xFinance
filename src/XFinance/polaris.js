@@ -382,7 +382,7 @@ export async function processLoanPrepData(setMessage, setLoading) {
 
         if (zor.startsWith("06")) row[buteegdehuunIdx] = "ҮЛ ХӨДЛӨХ ХӨРӨНГӨ";
         else if (seg === "81" && zor.startsWith("21")) row[buteegdehuunIdx] = "ХЭРЭГЛЭЭНИЙ ЗЭЭЛ";
-        else if (seg === "81" && zor.startsWith("18")) row[buteegdeхуунIdx] = "БУСАД";
+        else if (seg === "81" && zor.startsWith("18")) row[buteegdehuunIdx] = "БУСАД";
         else row[buteegdehuunIdx] = baseName;
       }
 
@@ -518,16 +518,16 @@ export async function loanpaymentData(setMessage, setLoading) {
 
       const row6 = headerSourceRange.values[0];
       const row7 = headerSourceRange.values[1];
-      
+
       const headerLabels = [];
       for (let i = 0; i < row6.length; i++) {
-        const headerValue = (row6[i] || "").toString().trim();
-        const fallbackValue = (row7[i] || "").toString().trim();
+        const headerValue = (row6[i] || "").toString().trim().toUpperCase();
+        const fallbackValue = (row7[i] || "").toString().trim().toUpperCase();
         headerLabels.push(headerValue || fallbackValue);
       }
 
       // Хүсэлтийн дагуу шинэ багануудыг нэмэх
-      headerLabels.push("BUTEEGDEHUUN1", "HUGATSAANII INTERVAL");
+      headerLabels.push("BUTEEGDEHUUN1", "HUGATSAANII INTERVAL", "ЗОРИУЛАЛТ");
 
       for (let col = 0; col < headerLabels.length; col++) {
         sheet.getCell(4, col).values = [[headerLabels[col]]];
@@ -543,7 +543,6 @@ export async function loanpaymentData(setMessage, setLoading) {
       const buteegdehuunIdx = headers["BUTEEGDEHUUN1"];
       const buteegdehuunnii1Idx = headers["BUTEEGDEHUUNII_NER"];
       const zoriulaltIdx = headers["ЗОРИУЛАЛТ"];
-      const regIdx = headers["РЕГИСТЕР"];
       const sarIdx = headers["ЗЭЭЛИЙН ХУГАЦАА"];
 
       for (let i = 5; i < data.length; i++) {
@@ -561,16 +560,16 @@ export async function loanpaymentData(setMessage, setLoading) {
             sar <= 1
               ? "1 сар хүртэл хугацаатай"
               : sar <= 3
-                ? "1-3 сар хүртэл хугацаатай"
-                : sar <= 6
-                  ? "3-6 сар хүртэл хугацаатай"
-                  : sar <= 12
-                    ? "6-12 сар хүртэл хугацаатай"
-                    : sar <= 30
-                      ? "12-30 сар хүртэл хугацаатай"
-                      : sar <= 60
-                        ? "30-60 сар хүртэл хугацаатай"
-                        : "60-с дээш сар хүртэл хугацаатай";
+              ? "1-3 сар хүртэл хугацаатай"
+              : sar <= 6
+              ? "3-6 сар хүртэл хугацаатай"
+              : sar <= 12
+              ? "6-12 сар хүртэл хугацаатай"
+              : sar <= 30
+              ? "12-30 сар хүртэл хугацаатай"
+              : sar <= 60
+              ? "30-60 сар хүртэл хугацаатай"
+              : "60-с дээш сар хүртэл хугацаатай";
         }
 
         const zor = (row[zoriulaltIdx] || "").toString();
@@ -601,7 +600,6 @@ export async function loanpaymentData(setMessage, setLoading) {
       await hideEmptyColumns(setMessage);
 
       setMessage("✅ BL1-ийг шалгах Зээл төлөлт complete.");
-      console.log("✅ Import нэртэй Sheet-нд зээлийн үлдэгдэл болон хаагдсан зээлийн тайланг оруулаарай.");
     });
   });
 }
