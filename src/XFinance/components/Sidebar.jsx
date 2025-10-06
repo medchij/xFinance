@@ -4,7 +4,6 @@ import {
   ArrowSwap24Regular,
   DocumentArrowDown24Regular,
   Search24Regular,
-  Globe24Regular,
   Settings24Regular,
   Chat24Regular,
   PersonCircle24Regular,
@@ -156,12 +155,7 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
             isOpen={isOpen}
             onClick={() => setActivePage("settings")}
           />
-          <SidebarItem
-            icon={<Globe24Regular />}
-            text="browser"
-            isOpen={isOpen}
-            onClick={() => setActivePage("browser")}
-          />
+          
           <SidebarItem icon={<Chat24Regular />} text="Messages" isOpen={isOpen} />
         </ul>
 

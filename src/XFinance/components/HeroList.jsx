@@ -38,13 +38,13 @@ const HeroList = (props) => {
   const styles = useStyles();
 
   const listItems = items.map((item, index) => (
-    <li className={styles.listItem} key={index}>
+    <li className={styles.listItem + " fluent-HeroList-listItem"} key={index}>
       <i className={styles.icon}>{item.icon}</i>
-      <span className={styles.itemText}>{item.primaryText}</span>
+      <span className={styles.itemText + " fluent-HeroList-itemText"}>{item.primaryText}</span>
     </li>
   ));
   return (
-    <div className={styles.welcome__main}>
+    <div className={styles.welcome__main + " fluent-HeroList-welcome__main"}>
       <h2 className={styles.message}>{message}</h2>
       <ul className={styles.list}>{listItems}</ul>
     </div>

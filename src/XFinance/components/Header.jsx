@@ -35,19 +35,19 @@ const Header = ({ title, logo, message, isPublic, onNavigateToLogin }) => {
   const styles = useStyles();
 
   return (
-    <section className={styles.headerContainer}>
+    <section className={styles.headerContainer + " fluent-Header-headerContainer"}>
       {isPublic && (
         <Button 
           appearance="primary"
-          className={styles.loginButton} 
+          className={styles.loginButton}
           onClick={onNavigateToLogin}
         >
           Нэвтрэх
         </Button>
       )}
-      <div className={styles.welcome__header}>
+      <div className={styles.welcome__header + " fluent-Header-welcome__header"}>
         <Image width="90" height="90" src={logo} alt={title} />
-        <h1 className={styles.message}>{message}</h1>
+        <h1 className={styles.message + " fluent-Header-message"}>{message}</h1>
       </div>
     </section>
   );
