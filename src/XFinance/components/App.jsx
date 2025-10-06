@@ -15,7 +15,7 @@ const CustomTools = lazy(() => import(/* webpackChunkName: "page-tools" */ "./Cu
 const SettingsPage = lazy(() => import(/* webpackChunkName: "page-settings" */ "./SettingsPage"));
 const SearchAccount = lazy(() => import(/* webpackChunkName: "page-search" */ "./SearchAccount"));
 const Profile = lazy(() => import(/* webpackChunkName: "page-profile" */ "./Profile"));
-const BrowserView = lazy(() => import(/* webpackChunkName: "page-browser" */ "./BrowserView"));
+
 // AdminPage-г lazy load хийхээр нэмэв
 const AdminPage = lazy(() => import(/* webpackChunkName: "page-admin" */ "./AdminPage"));
 
