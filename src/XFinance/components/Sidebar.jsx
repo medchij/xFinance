@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import {
   Home24Regular,
   ArrowSwap24Regular,
@@ -47,7 +47,6 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
   const [isSheetDialogOpen, setSheetDialogOpen] = useState(false);
   const [sheetData, setSheetData] = useState();
   const [selectedSheet, setSelectedSheet] = useState(null);
-  const fileInputRef = useRef(null); // Create a ref for the file input
 
   const { setLoading, showMessage, hasPermission } = useAppContext();
 
@@ -143,7 +142,6 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
         </ul>
 
         <input
-          ref={fileInputRef} // Attach the ref to the input element
           type="file"
           id="fileInput"
           accept=".xlsx, .xls"
@@ -199,7 +197,7 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
         onSelect={(sheetName) => {
           setSelectedSheet(sheetName);
           setSheetDialogOpen(false);
-          fileInputRef.current.click(); // Use the ref to trigger the click
+          document.getElementById("fileInput").click(); // Use the ref to trigger the click
         }}
       />
     </>
