@@ -1,5 +1,5 @@
 /* Responsive styles for the unauthenticated (welcome/login) screen */
-@media (max-width: 600px) {
+@media (max-width: 400px) {
   .fluent-Header-headerContainer {
     padding-top: 20px !important;
     padding-bottom: 16px !important;
