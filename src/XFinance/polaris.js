@@ -255,8 +255,8 @@ export async function processLoanPrepData(setMessage, setLoading) {
       // Хүсэлтийн дагуу шинэ багануудыг нэмэх
       headerLabels.push("BUTEEGDEHUUN1", "JDH_DUN", "HUGATSAANII INTERVAL", "SEGMENT1");
 
-      for (let col = 2; col < headerLabels.length + 2; col++) {
-        sheet.getCell(4, col).values = [[headerLabels[col - 2]]];
+      for (let col = 0; col < headerLabels.length + 2; col++) {
+        sheet.getCell(4, col).values = [[headerLabels[col]]];
       }
       await context.sync();
 
