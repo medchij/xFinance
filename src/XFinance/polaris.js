@@ -1,69 +1,6 @@
 // ✅ Loan Report Processor - Converted from VBA to Office.js (Excel JavaScript API)
 // ⚠️ Note: Complex calculations like SUMIFS/COUNTIFS are replaced with manual filtering and aggregation
-import { loadSettings, getSettingValue, withLoading, hideEmptyColumns } from "./apiHelpers";
-import { lastImportedData } from "./xFinance";
-export const writeFromImportedSameColumn = async ({
-  setLoading,
-  showMessage,
-  settingKey = "PD_ALL",
-  caseSensitive = false,
-}) => {
-  try {
-    await withLoading(setLoading, showMessage, async () => {
-      // ⚙️ PD_ALL -> targetColIndex
-      const settings = await loadSettings();
-      const targetColNumber = parseInt(getSettingValue(settings, settingKey), 10);
-      if (!Number.isInteger(targetColNumber) || targetColNumber < 1) {
-        throw new Error(`⚠️ Тохиргоо '${settingKey}' буруу байна (эерэг бүхэл тоо).`);
-      }
-      const targetColIndex = targetColNumber - 1;
-
-      // 🧩 Импорт өгөгдөл шалгах
-      if (!Array.isArray(lastImportedData) || lastImportedData.length === 0) {
-        throw new Error("⚠️ Импортын дата олдсонгүй. Эхлээд файл импортоороо уншуулна уу.");
-      }
-
-      await Excel.run(async (context) => {
-        const wb = context.workbook;
-        const activeCell = wb.getActiveCell();
-        activeCell.load(["rowIndex", "columnIndex", "values"]);
-        await context.sync();
-
-        const activeRow = activeCell.rowIndex;
-        const activeCol = activeCell.columnIndex;
-        const rawKey = (activeCell.values?.[0]?.[0] ?? "").toString().trim();
-        if (!rawKey) throw new Error("⚠️ Идэвхтэй нүд хоосон байна.");
-
-        // 🔎 Ижил БАГАНА (activeCol) дээр түлхүүр тааруулах
-        const norm = (v) => (v ?? "").toString().trim();
-        const keyCmp = caseSensitive ? rawKey : rawKey.toLowerCase();
-
-        let matchRowIndex = -1;
-        for (let r = 0; r < lastImportedData.length; r++) {
-          const cell = norm(lastImportedData[r]?.[activeCol]);
-          const cmp = caseSensitive ? cell : cell.toLowerCase();
-          if (cmp === keyCmp) { matchRowIndex = r; break; }
-        }
-        if (matchRowIndex === -1) {
-          throw new Error(`⚠️ Импортын массивын ${activeCol + 1}-р баганад "${rawKey}" олдсонгүй.`);
-        }
-
-        // 📤 Олдсон мөрийн PD_ALL баганын утгыг баруун талд бичих
-        const valueToWrite = lastImportedData[matchRowIndex]?.[targetColIndex] ?? "";
-        const sheet = wb.worksheets.getActiveWorksheet();
-        sheet.getCell(activeRow, activeCol + 1).values = [[valueToWrite]];
-        await context.sync();
-      });
-
-      showMessage?.("✅ Импортын массивтай амжилттай тааруулж, баруун талд бичлээ.");
-    });
-  } catch (err) {
-    console.error(err);
-    showMessage?.(`❌ Алдаа: ${err?.message || err}`);
-  }
-};
-
-
+import { withLoading, hideEmptyColumns } from "./apiHelpers";
 
 export function getTermInterval(daysOrMonths) {
   const days = Number(daysOrMonths);
@@ -246,7 +183,7 @@ async function performCalculation(sheet, headers, keyField) {
 
     const angilalSum = (val) =>
       filtered
-        .filter((r) => (r[headers["ANGILАЛ1"]] || "").toString().trim() === val)
+        .filter((r) => (r[headers["ANGILAL1"]] || "").toString().trim() === val)
         .reduce((s, r) => s + (+r[headers["ҮНДСЭН ЗЭЭЛ"]] || 0), 0);
 
     const zeel = filtered.reduce((s, r) => s + (+r[headers["ҮНДСЭН ЗЭЭЛ"]] || 0), 0);
@@ -511,23 +448,25 @@ export async function loanpaymentData(setMessage, setLoading) {
 
       await unmergeAllCells(sheet); // Merge арилгах
 
-      // 6, 7-р мөрнөөс толгой мэдээллийг унших
-      const headerSourceRange = sheet.getRange("A6:X7");
+      // 5, 6, 7-р мөрнөөс толгой мэдээллийг унших
+      const headerSourceRange = sheet.getRange("A5:Y7");
       headerSourceRange.load("values");
       await context.sync();
 
-      const row6 = headerSourceRange.values[0];
-      const row7 = headerSourceRange.values[1];
+      const row5 = headerSourceRange.values[0];
+      const row6 = headerSourceRange.values[1];
+      const row7 = headerSourceRange.values[2];
 
       const headerLabels = [];
-      for (let i = 0; i < row6.length; i++) {
-        const headerValue = (row6[i] || "").toString().trim().toUpperCase();
-        const fallbackValue = (row7[i] || "").toString().trim().toUpperCase();
-        headerLabels.push(headerValue || fallbackValue);
+      for (let i = 0; i < row5.length; i++) {
+        const h5 = (row5[i] || "").toString().trim().toUpperCase();
+        const h6 = (row6[i] || "").toString().trim().toUpperCase();
+        const h7 = (row7[i] || "").toString().trim().toUpperCase();
+        headerLabels.push(h5 || h6 || h7);
       }
 
       // Хүсэлтийн дагуу шинэ багануудыг нэмэх
-      headerLabels.push("BUTEEGDEHUUN1", "HUGATSAANII INTERVAL", "ЗОРИУЛАЛТ");
+      headerLabels.push("BUTEEGDEHUUN1", "JDH_DUN", "HUGATSAANII INTERVAL", "SEGMENT1");
 
       for (let col = 0; col < headerLabels.length; col++) {
         sheet.getCell(4, col).values = [[headerLabels[col]]];
