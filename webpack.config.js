@@ -104,7 +104,6 @@ module.exports = async (env = {}, options = {}) => {
       splitChunks: {
         chunks: "all",
         cacheGroups: {
-          xlsx: { test: /[\\/]node_modules[\\/]xlsx[\\/]/, name: "xlsx", priority: 20, reuseExistingChunk: true },
           fluent: { test: /[\\/]node_modules[\\/]@fluentui[\\/]/, name: "fluent", priority: 15, reuseExistingChunk: true },
           polyfills: { test: /[\\/]node_modules[\\/]core-js[\\/]/, name: "polyfills", priority: 10, reuseExistingChunk: true },
         },
