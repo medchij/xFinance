@@ -4,19 +4,32 @@ import {
   DialogSurface,
   DialogBody,
   DialogTitle,
+  DialogContent,
   DialogActions,
   Dropdown,
   Option,
   Button,
-  Input, // Input-г импортлох
-  makeStyles, // makeStyles-г импортлох
+  Input,
+  Label,
+  makeStyles,
 } from "@fluentui/react-components";
 
 const useStyles = makeStyles({
   root: {
     display: "flex",
     flexDirection: "column",
-    gap: "12px",
+    gap: "16px",
+    paddingTop: "12px",
+  },
+  field: {
+    display: "grid",
+    gridRowGap: "4px",
+  },
+  divider: {
+    textAlign: "center",
+    color: "#666",
+    fontWeight: "bold",
+    margin: "4px 0",
   },
   actions: {
     display: "flex",
@@ -80,44 +93,52 @@ const SheetSelectorDialog = ({ isOpen, onClose, onSelect }) => {
     <Dialog open={isOpen} onOpenChange={(_, data) => !data.open && onClose()}>
       <DialogSurface className={classes.dialogSurface}>
         <DialogBody>
-          <div className={classes.root}>
-            <DialogTitle style={{ fontSize: "16px" }}>📄 Оруулах sheet сонгох</DialogTitle>
+          <DialogTitle style={{ fontSize: "18px" }}>Sheet сонгох эсвэл Шинээр үүсгэх</DialogTitle>
+          <DialogContent>
+            <div className={classes.root}>
+              <div className={classes.field}>
+                <Label htmlFor="sheet-dropdown">Одоо байгаа Sheet-г сонгох</Label>
+                <Dropdown
+                  id="sheet-dropdown"
+                  placeholder="Жагсаалтаас сонгох..."
+                  onOptionSelect={(_, data) => {
+                    setSelectedSheet(data.optionValue);
+                    setNewSheetName(""); // Dropdown-оос сонгоход input-г цэвэрлэх
+                  }}
+                  disabled={!!newSheetName.trim()} // Шинэ нэр бичиж байвал идэвхгүй болгох
+                >
+                  {sheetNames.map((name) => (
+                    <Option key={name} value={name}>
+                      {name}
+                    </Option>
+                  ))}
+                </Dropdown>
+              </div>
 
-            <Dropdown
-              placeholder="Жагсаалтаас сонгох..."
-              onOptionSelect={(_, data) => {
-                setSelectedSheet(data.optionValue);
-                setNewSheetName(""); // Dropdown-оос сонгоход input-г цэвэрлэх
-              }}
-              disabled={!!newSheetName.trim()} // Шинэ нэр бичиж байвал идэвхгүй болгох
-            >
-              {sheetNames.map((name) => (
-                <Option key={name} value={name}>
-                  {name}
-                </Option>
-              ))}
-            </Dropdown>
+              <div className={classes.divider}>ЭСВЭЛ</div>
 
-            <div style={{ textAlign: "center", color: "#666" }}>эсвэл</div>
-
-            <Input
-              placeholder="Шинээр sheet-ийн нэр өгөх..."
-              value={newSheetName}
-              onChange={(_, data) => {
-                setNewSheetName(data.value);
-                setSelectedSheet(null); // Input-д бичихэд dropdown сонголтыг цэвэрлэх
-              }}
-            />
-
-            <DialogActions className={classes.actions}>
-              <Button appearance="primary" size="small" onClick={handleImport}>
-                Үргэлжлүүлэх
-              </Button>
-              <Button appearance="secondary" size="small" onClick={onClose}>
-                Болих
-              </Button>
-            </DialogActions>
-          </div>
+              <div className={classes.field}>
+                <Label htmlFor="new-sheet-input">Шинэ Sheet үүсгэх</Label>
+                <Input
+                  id="new-sheet-input"
+                  placeholder="Шинээр sheet-ийн нэр өгөх..."
+                  value={newSheetName}
+                  onChange={(_, data) => {
+                    setNewSheetName(data.value);
+                    setSelectedSheet(null); // Input-д бичихэд dropdown сонголтыг цэвэрлэх
+                  }}
+                />
+              </div>
+            </div>
+          </DialogContent>
+          <DialogActions className={classes.actions}>
+            <Button appearance="primary" size="small" onClick={handleImport}>
+              Сонгох
+            </Button>
+            <Button appearance="secondary" size="small" onClick={onClose}>
+              Болих
+            </Button>
+          </DialogActions>
         </DialogBody>
       </DialogSurface>
     </Dialog>
