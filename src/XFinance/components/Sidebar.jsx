@@ -17,7 +17,7 @@ import TransactionModal from "./TransactionModal";
 import ConfirmationDialog from "./ConfirmationDialog";
 import SearchAccount from "./SearchAccount";
 import SheetSelectorDialog from "./SheetSelectorDialog";
-import { writeToImportSheet, handleFileImport } from "../xFinance";
+import { writeToImportSheet, handleFileImport, loadXLSX } from "../xFinance";
 import { useAppContext } from "./AppContext";
 
 const SidebarItem = ({ icon, text, isOpen, onClick }) => (
@@ -71,11 +71,12 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
     toggleSidebar(!isOpen);
   };
 
-  const handleImportClick = (event) => {
+  const handleImportClick = async (event) => {
     if (!selectedSheet) {
       showMessage("⚠️ Эхлээд sheet сонгоно уу!");
       return;
     }
+    await loadXLSX(); // Ensure XLSX is loaded before processing the file
     handleFileImport(event, {
       sheetName: selectedSheet,
       setLoading,
