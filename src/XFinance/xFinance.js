@@ -2,7 +2,7 @@ import {withLoading} from "./apiHelpers"; // туслах функц
 import { BASE_URL } from "../config";
 //Үндсэн функцүүд
 export let lastImportedData = null;
- async function loadXLSX() {
+export async function loadXLSX() {
    return window.XLSX;
 }
 

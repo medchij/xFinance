@@ -10,12 +10,13 @@ const title = "XFinance";
 const rootElement = document.getElementById("container");
 const root = rootElement ? createRoot(rootElement) : undefined;
 
-/* Render application directly */
-root?.render(
-  <FluentProvider theme={webLightTheme}>
-    <App title={title} />
-  </FluentProvider>
-);
+Office.onReady(() => {
+  root?.render(
+    <FluentProvider theme={webLightTheme}>
+      <App title={title} />
+    </FluentProvider>
+  );
+});
 
 if (module.hot) {
   module.hot.accept("./components/App", () => {
