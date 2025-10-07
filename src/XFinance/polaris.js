@@ -253,7 +253,7 @@ export async function processLoanPrepData(setMessage, setLoading) {
       }
 
       // Хүсэлтийн дагуу шинэ багануудыг нэмэх
-      headerLabels.push("BUTEEGDEHUUN1", "JDH_DUN", "HUGATSAANII INTERVAL", "SEGMENT1");
+      headerLabels.push("BUTEEGDEHUUNII_NER","BUTEEGDEHUUN1", "JDH_DUN", "HUGATSAANII INTERVAL", "SEGMENT1");
 
       for (let col = 0; col < headerLabels.length + 2; col++) {
         sheet.getCell(4, col).values = [[headerLabels[col]]];
@@ -402,7 +402,7 @@ async function summarizeGrantData(sheet, headers, categoryField, useSegment = tr
       return category === value && (exclude ? segment !== segmentCode : segment === segmentCode);
     });
 
-    const totalAmount = filtered.reduce((sum, row) => sum + (+row[headers["ОЛГОСОН ДҮН"]] || 0), 0);
+    const totalAmount = filtered.reduce((sum, row) => sum + (+row[headers["ТӨГРӨГ"]] || 0), 0); //Олгосон дүн
     const totalInterest = filtered.reduce((sum, row) => sum + (+row[headers["JDH_DUN"]] || 0), 0);
     const interestRates = filtered.map((row) => +row[headers["ХҮҮ"]]).filter((n) => !isNaN(n));
     const uniqueRegisterCount = new Set(filtered.map((row) => row[headers["РЕГИСТЕР"]]).filter(Boolean)).size;
