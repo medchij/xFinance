@@ -334,7 +334,7 @@ async function zeeldegchiinTooCalc(sheet, headers) {
   const headerRow1 = sheet.getRangeByIndexes(0, 81, 1, 8); // BL1:BS1
   headerRow1.values = [["НИЙТ", "", "ЭР", "", "ЭМ", "", "ХУУЛИЙН ЭТГЭЭД", ""]];
   const headerRow2 = sheet.getRangeByIndexes(1, 81, 1, 10); // BL2:BU2
-  headerRow2.values = [["ДҮН", "ТОО", "ДҮН", "ТОО", "ДҮН", "ТОО", "ДҮН", "ТОО"]];
+  headerRow2.values = [["ДҮН", "ТОО", "ДҮН", "ТОО", "ДҮН", "ТОО", "ДҮН", "ТОО", "ДҮН", "ТОО"]];
 
   sheet.getRangeByIndexes(startRow + 1, 80, results.length, results[0].length).values = results;
   sheet.getRangeByIndexes(startRow + results.length + 1, 80, nasResults.length, nasResults[0].length).values =
