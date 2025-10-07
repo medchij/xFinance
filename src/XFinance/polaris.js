@@ -266,14 +266,14 @@ export async function processLoanPrepData(setMessage, setLoading) {
       await context.sync();
 
       const data = usedRange.values;
-      const toogooIdx = headers["ОЛГОСОН ДҮН"];
+      const toogooIdx = headers["ТӨГРӨГ"]; //Олгосон дүн
       const dateIdx = headers["ЗЭЭЛ ОЛГОСОН ОГНОО"];
       const buteegdehuunIdx = headers["BUTEEGDEHUUN1"];
       const buteegdehuunnii1Idx = headers["BUTEEGDEHUUNII_NER"];
       const zoriulaltIdx = headers["ЗОРИУЛАЛТ"];
       const huuIdx = headers["ХҮҮ"];
       const regIdx = headers["РЕГИСТЕР"];
-      const sarIdx = headers["ХУГАЦАА"];
+      const sarIdx = headers["ХУГАЦАА (САРААР)"];//Зээлийн хугацаа
 
       for (let i = 5; i < data.length; i++) {
         const row = data[i];
