@@ -212,7 +212,7 @@ async function zeeldegchiinTooCalc(sheet, headers) {
   const data = usedRange.values;
 
   const uldegdelCol = headers["ҮНДСЭН ЗЭЭЛ"];
-  const angilalCol = headers["ANGILAL1"];
+  const angilalCol = headers["ANGILAL11"];
   const hariltsagchCol = headers["HARILTSAGCH1"];
   const khuisCol = headers["KHUIS1"];
   const nasIntervalCol = headers["NASNII_INTERVAL1"];
