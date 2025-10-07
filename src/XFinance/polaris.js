@@ -341,7 +341,7 @@ async function zeeldegchiinTooCalc(sheet, headers) {
   sheet.getRangeByIndexes(startRow + results.length + 3, 80, nasResults.length, nasResults[0].length).values =
     nasResults;
   sheet
-    .getRangeByIndexes(startRow + results.length + nasResults.length + 3, 80, bolovsrolResults.length, bolovsrolResults[0].length)
+    .getRangeByIndexes(startRow + results.length + nasResults.length + 6, 80, bolovsrolResults.length, bolovsrolResults[0].length)
     .values = bolovsrolResults;
 
   await sheet.context.sync();
