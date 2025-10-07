@@ -111,7 +111,7 @@ export async function runLoanReportProcessor(setMessage, setLoading) {
         }
         hariltsagch1Data.push([hariltsagch1]);
 
-        const khuis = row[headers["ХҮЙС"]]?.toString().substring(0, 2) || "";
+        const khuis = (row[headers["ХҮЙС"]]?.toString().substring(0, 2) || "").toUpperCase();
         khuis1Data.push([khuis]);
 
         const nas = Number(row[headers["НАС"]]);
@@ -124,10 +124,10 @@ export async function runLoanReportProcessor(setMessage, setLoading) {
 
         let bolovsrol = row[headers["БОЛОВСРОЛ"]]?.toString() || "";
         bolovsrol = bolovsrol
-          .replace("BUREN BUS DUND", "DUND")
-          .replace("BUREN DUND /11-12 angi/", "BUREN DUND")
-          .replace("DUND BOLOVSROL /6-8 angi/", "DUND")
-          .replace("TUSGAI MERGEJLIIN BOLOVSROL", "TUSGAI DUND");
+          .replace("БҮРЭН БУС ДУНД", "ДУНД")
+          .replace("БҮРЭН ДУНД /11-12 анги/", "БҮРЭН ДУНД")
+          .replace("ДУНД БОЛОВСРОЛ /6-8 анги/", "ДУНД")
+          .replace("ТУСГАЙ МЭРГЭЖЛИЙН БОЛОВСРОЛ", "ТУСГАЙ ДУНД");
         bolovsrol1Data.push([bolovsrol]);
         // --- VBA-с хөрвүүлсэн логик төгсгөл ---
 
