@@ -285,7 +285,17 @@ async function zeeldegchiinTooCalc(sheet, headers) {
       [nasIntervalCol, category],
       [khuisCol, "ЭМ"],
     ]);
-    nasResults.push([category, totalUldegdel, totalHariltsagch, erUldegdel, erHariltsagch, emUldegdel, emHariltsagch]);
+    nasResults.push([
+      category,
+      totalUldegdel,
+      totalHariltsagch,
+      erUldegdel,
+      erHariltsagch,
+      emUldegdel,
+      emHariltsagch,
+      null,
+      null,
+    ]);
   }
 
   // Боловсролоор нэгтгэх
@@ -309,20 +319,22 @@ async function zeeldegchiinTooCalc(sheet, headers) {
       erHariltsagch,
       emUldegdel,
       emHariltsagch,
+      null,
+      null,
     ]);
   }
 
   // Excel-д бичих
-  const headerRow1 = sheet.getRangeByIndexes(0, 63, 1, 8); // BL1:BS1
+  const headerRow1 = sheet.getRangeByIndexes(0, 81, 1, 8); // BL1:BS1
   headerRow1.values = [["NIIT", "", "ER", "", "EM", "", "HUULIIN ETGEED", ""]];
-  const headerRow2 = sheet.getRangeByIndexes(1, 63, 1, 9); // BL2:BT2
+  const headerRow2 = sheet.getRangeByIndexes(1, 81, 1, 10); // BL2:BU2
   headerRow2.values = [["DUN", "TOO", "DUN", "TOO", "DUN", "TOO", "DUN", "TOO", "DUN", "TOO"]];
 
-  sheet.getRangeByIndexes(startRow - 1, 62, results.length, results[0].length).values = results;
-  sheet.getRangeByIndexes(startRow + results.length + 1, 62, nasResults.length, nasResults[0].length).values =
+  sheet.getRangeByIndexes(startRow - 1, 80, results.length, results[0].length).values = results;
+  sheet.getRangeByIndexes(startRow + results.length + 1, 80, nasResults.length, nasResults[0].length).values =
     nasResults;
   sheet
-    .getRangeByIndexes(startRow + results.length + nasResults.length + 3, 62, bolovsrolResults.length, bolovsrolResults[0].length)
+    .getRangeByIndexes(startRow + results.length + nasResults.length + 3, 80, bolovsrolResults.length, bolovsrolResults[0].length)
     .values = bolovsrolResults;
 
   await sheet.context.sync();
