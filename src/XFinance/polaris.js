@@ -45,7 +45,22 @@ export async function runLoanReportProcessor(setMessage, setLoading) {
       const lastRow = await getLastRow(sheet, 0); // A баганын дагуу
 
       // Толгойн багана бичих
-      writeHeaders(sheet, 4, ["HUGATSAANII INTERVAL", "SEGMENT1", "ANGILAL1", "BUTEEGDEHUUN1"], 54);
+      writeHeaders(
+        sheet,
+        4,
+        [
+          "HUGATSAANII INTERVAL",
+          "SEGMENT1",
+          "ANGILAL1",
+          "BUTEEGDEHUUN1",
+          "HARILTSAGCH1",
+          "KHUIS1",
+          "NASNII_INTERVAL1",
+          "BOLOVSROL1",
+          "AX_TEMP", // Давхцаагүйг шалгах түр багана
+        ],
+        54
+      );
       await context.sync();
 
       const headers = await getHeaderMap(sheet);
@@ -67,6 +82,13 @@ export async function runLoanReportProcessor(setMessage, setLoading) {
         angilalData = [],
         buteeData = [],
         intervalData = [];
+      // VBA-с хөрвүүлсэн шинэ баганын массив
+      const hariltsagch1Data = [],
+        khuis1Data = [],
+        nasniiInterval1Data = [],
+        bolovsrol1Data = [],
+        axData = [];
+      const seenCustomer = new Set();
 
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
@@ -76,6 +98,38 @@ export async function runLoanReportProcessor(setMessage, setLoading) {
           ?.toString()
           .substring(4)
           .replace(/МУУ|ХЭВИЙН БУС|ЭРГЭЛЗЭЭТЭЙ/g, "ЧАНАРГҮЙ");
+
+        // --- VBA-с хөрвүүлсэн логик эхлэл ---
+        const rd = row[headers["РД"]];
+        const axValue = `${angilal}${rd}`;
+        axData.push([axValue]);
+
+        let hariltsagch1 = 0;
+        if (!seenCustomer.has(axValue)) {
+          hariltsagch1 = 1;
+          seenCustomer.add(axValue);
+        }
+        hariltsagch1Data.push([hariltsagch1]);
+
+        const khuis = row[headers["ХҮЙС"]]?.toString().substring(0, 2) || "";
+        khuis1Data.push([khuis]);
+
+        const nas = Number(row[headers["НАС"]]);
+        let nasniiInterval = "";
+        if (nas > 17 && nas <= 35) nasniiInterval = "18-35 nasnii";
+        else if (nas > 35 && nas <= 45) nasniiInterval = "36-45 nasnii";
+        else if (nas > 45 && nas <= 55) nasniiInterval = "46-55 nasnii";
+        else if (nas > 55) nasniiInterval = "55-s deesh";
+        nasniiInterval1Data.push([nasniiInterval]);
+
+        let bolovsrol = row[headers["БОЛОВСРОЛ"]]?.toString() || "";
+        bolovsrol = bolovsrol
+          .replace("BUREN BUS DUND", "DUND")
+          .replace("BUREN DUND /11-12 angi/", "BUREN DUND")
+          .replace("DUND BOLOVSROL /6-8 angi/", "DUND")
+          .replace("TUSGAI MERGEJLIIN BOLOVSROL", "TUSGAI DUND");
+        bolovsrol1Data.push([bolovsrol]);
+        // --- VBA-с хөрвүүлсэн логик төгсгөл ---
 
         let bname = "";
         if (zoriulalt === "06") bname = "Үл хөдлөх хөрөнгө";
@@ -101,6 +155,13 @@ export async function runLoanReportProcessor(setMessage, setLoading) {
       sheet.getRangeByIndexes(5, headers["BUTEEGDEHUUN1"], rows.length, 1).values = buteeData;
       sheet.getRangeByIndexes(5, headers["HUGATSAANII INTERVAL"], rows.length, 1).values = intervalData;
 
+      // VBA-с хөрвүүлсэн багануудыг бичих
+      sheet.getRangeByIndexes(5, headers["HARILTSAGCH1"], rows.length, 1).values = hariltsagch1Data;
+      sheet.getRangeByIndexes(5, headers["KHUIS1"], rows.length, 1).values = khuis1Data;
+      sheet.getRangeByIndexes(5, headers["NASNII_INTERVAL1"], rows.length, 1).values = nasniiInterval1Data;
+      sheet.getRangeByIndexes(5, headers["BOLOVSROL1"], rows.length, 1).values = bolovsrol1Data;
+      sheet.getRangeByIndexes(5, headers["AX_TEMP"], rows.length, 1).values = axData; // Түр багана
+
       await context.sync();
 
       // Тохиргоотой тооцоололууд
@@ -110,6 +171,7 @@ export async function runLoanReportProcessor(setMessage, setLoading) {
       await calc4(sheet, headers);
       await calc91(sheet, headers);
       await calc1001(sheet, headers);
+      await zeeldegchiinTooCalc(sheet, headers); // Шинэ тооцоолол
 
       setMessage("✅ Loan report pre-calculation complete.");
     });
@@ -135,6 +197,135 @@ async function calc4(sheet, headers) {
 }
 async function calc91(sheet, headers) {
   await performCalculation(sheet, headers, "МАШИН", false);
+}
+
+async function zeeldegchiinTooCalc(sheet, headers) {
+  const usedRange = sheet.getUsedRange();
+  usedRange.load("values");
+  await sheet.context.sync();
+  const data = usedRange.values;
+
+  const uldegdelCol = headers["ҮНДСЭН ЗЭЭЛ"];
+  const angilalCol = headers["ANGILAL1"];
+  const hariltsagchCol = headers["HARILTSAGCH1"];
+  const khuisCol = headers["KHUIS1"];
+  const nasIntervalCol = headers["NASNII_INTERVAL1"];
+  const bolovsrolCol = headers["BOLOVSROL1"];
+
+  const sumIfs = (conditions) => {
+    let sumUldegdel = 0;
+    let sumHariltsagch = 0;
+    const filteredData = data.slice(5).filter((row) => {
+      return conditions.every((cond) => {
+        const [col, value] = cond;
+        return row[col] === value;
+      });
+    });
+
+    filteredData.forEach((row) => {
+      sumUldegdel += Number(row[uldegdelCol]) || 0;
+      sumHariltsagch += Number(row[hariltsagchCol]) || 0;
+    });
+    return [sumUldegdel, sumHariltsagch];
+  };
+
+  const lastRowBK = await getLastRow(sheet, 62); // BK is col 63 (0-indexed 62)
+  const startRow = lastRowBK + 2;
+
+  // Ангилалаар нэгтгэх
+  const angilalCategories = ["ХЭВИЙН", "ХУГАЦАА ХЭТЭРСЭН", "ЧАНАРГҮЙ", "ХЭВИЙН БУС", "ЭРГЭЛЗЭЭТЭЙ", "МУУ"];
+  const results = [];
+  for (let i = 0; i < angilalCategories.length; i++) {
+    const category = angilalCategories[i];
+    const [totalUldegdel, totalHariltsagch] = sumIfs([[angilalCol, category]]);
+    const [erUldegdel, erHariltsagch] = sumIfs([
+      [angilalCol, category],
+      [khuisCol, "ЭР"],
+    ]);
+    const [emUldegdel, emHariltsagch] = sumIfs([
+      [angilalCol, category],
+      [khuisCol, "ЭМ"],
+    ]);
+    const [huuliUldegdel, huuliHariltsagch] = sumIfs([
+      [angilalCol, category],
+      [khuisCol, "-"],
+    ]);
+    results.push([
+      category,
+      totalUldegdel,
+      totalHariltsagch,
+      erUldegdel,
+      erHariltsagch,
+      emUldegdel,
+      emHariltsagch,
+      huuliUldegdel,
+      huuliHariltsagch,
+    ]);
+  }
+
+  // "ЧАНАРГҮЙ" мөрийг дараагийн 3 мөрийн нийлбэрээр шинэчлэх
+  const chanarguiIdx = results.findIndex((r) => r[0] === "ЧАНАРГҮЙ");
+  if (chanarguiIdx !== -1 && chanarguiIdx + 3 < results.length) {
+    for (let j = 1; j < results[chanarguiIdx].length; j++) {
+      results[chanarguiIdx][j] =
+        results[chanarguiIdx + 1][j] + results[chanarguiIdx + 2][j] + results[chanarguiIdx + 3][j];
+    }
+  }
+
+  // Насны ангилалаар нэгтгэх
+  const nasCategories = ["18-35 nasnii", "36-45 nasnii", "46-55 nasnii", "55-s deesh"];
+  const nasResults = [];
+  for (const category of nasCategories) {
+    const [totalUldegdel, totalHariltsagch] = sumIfs([[nasIntervalCol, category]]);
+    const [erUldegdel, erHariltsagch] = sumIfs([
+      [nasIntervalCol, category],
+      [khuisCol, "ЭР"],
+    ]);
+    const [emUldegdel, emHariltsagch] = sumIfs([
+      [nasIntervalCol, category],
+      [khuisCol, "ЭМ"],
+    ]);
+    nasResults.push([category, totalUldegdel, totalHariltsagch, erUldegdel, erHariltsagch, emUldegdel, emHariltsagch]);
+  }
+
+  // Боловсролоор нэгтгэх
+  const bolovsrolCategories = ["DEED", "TUSGAI DUND", "BUREN DUND", "DUND", "BAGA"];
+  const bolovsrolResults = [];
+  for (const category of bolovsrolCategories) {
+    const [totalUldegdel, totalHariltsagch] = sumIfs([[bolovsrolCol, category]]);
+    const [erUldegdel, erHariltsagch] = sumIfs([
+      [bolovsrolCol, category],
+      [khuisCol, "ЭР"],
+    ]);
+    const [emUldegdel, emHariltsagch] = sumIfs([
+      [bolovsrolCol, category],
+      [khuisCol, "ЭМ"],
+    ]);
+    bolovsrolResults.push([
+      category,
+      totalUldegdel,
+      totalHariltsagch,
+      erUldegdel,
+      erHariltsagch,
+      emUldegdel,
+      emHariltsagch,
+    ]);
+  }
+
+  // Excel-д бичих
+  const headerRow1 = sheet.getRangeByIndexes(0, 63, 1, 8); // BL1:BS1
+  headerRow1.values = [["NIIT", "", "ER", "", "EM", "", "HUULIIN ETGEED", ""]];
+  const headerRow2 = sheet.getRangeByIndexes(1, 63, 1, 9); // BL2:BT2
+  headerRow2.values = [["DUN", "TOO", "DUN", "TOO", "DUN", "TOO", "DUN", "TOO", "DUN", "TOO"]];
+
+  sheet.getRangeByIndexes(startRow - 1, 62, results.length, results[0].length).values = results;
+  sheet.getRangeByIndexes(startRow + results.length + 1, 62, nasResults.length, nasResults[0].length).values =
+    nasResults;
+  sheet
+    .getRangeByIndexes(startRow + results.length + nasResults.length + 3, 62, bolovsrolResults.length, bolovsrolResults[0].length)
+    .values = bolovsrolResults;
+
+  await sheet.context.sync();
 }
 
 
