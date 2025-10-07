@@ -52,6 +52,7 @@ export async function runLoanReportProcessor(setMessage, setLoading) {
           "HUGATSAANII INTERVAL",
           "SEGMENT1",
           "ANGILAL1",
+          "ANGILAL11",
           "BUTEEGDEHUUN1",
           "HARILTSAGCH1",
           "KHUIS1",
@@ -59,7 +60,7 @@ export async function runLoanReportProcessor(setMessage, setLoading) {
           "BOLOVSROL1",
           "AX_TEMP", // Давхцаагүйг шалгах түр багана
         ],
-        54
+        52
       );
       await context.sync();
 
@@ -72,7 +73,7 @@ export async function runLoanReportProcessor(setMessage, setLoading) {
       const dateFromCell = new Date(Date.parse(b3Cell.values[0][0].toString().substring(9)));
 
       // Бүх мөрийг нэг дор татах
-      const dataRange = sheet.getRangeByIndexes(5, 0, lastRow - 5, 55);
+      const dataRange = sheet.getRangeByIndexes(5, 0, lastRow - 5, 53);
       dataRange.load("values");
       await context.sync();
       const rows = dataRange.values;
@@ -98,7 +99,9 @@ export async function runLoanReportProcessor(setMessage, setLoading) {
           ?.toString()
           .substring(4)
           .replace(/МУУ|ХЭВИЙН БУС|ЭРГЭЛЗЭЭТЭЙ/g, "ЧАНАРГҮЙ");
-
+        const angilal11 = row[headers["АНГИЛАЛ"]]
+          ?.toString()
+          .substring(4);
         // --- VBA-с хөрвүүлсэн логик эхлэл ---
         const rd = row[headers["РД"]];
         const axValue = `${angilal}${rd}`;
@@ -145,6 +148,7 @@ export async function runLoanReportProcessor(setMessage, setLoading) {
 
         segData.push([segCode]);
         angilalData.push([angilal]);
+        angilal11Data.push([angilal11]);
         buteeData.push([bname]);
         intervalData.push([interval]);
       }
@@ -152,6 +156,7 @@ export async function runLoanReportProcessor(setMessage, setLoading) {
       // Нэг дор бичих
       sheet.getRangeByIndexes(5, headers["SEGMENT1"], rows.length, 1).values = segData;
       sheet.getRangeByIndexes(5, headers["ANGILAL1"], rows.length, 1).values = angilalData;
+      sheet.getRangeByIndexes(5, headers["ANGILAL11"], rows.length, 1).values = angilal11Data;
       sheet.getRangeByIndexes(5, headers["BUTEEGDEHUUN1"], rows.length, 1).values = buteeData;
       sheet.getRangeByIndexes(5, headers["HUGATSAANII INTERVAL"], rows.length, 1).values = intervalData;
 
