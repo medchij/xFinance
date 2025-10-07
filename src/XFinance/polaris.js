@@ -299,7 +299,7 @@ async function zeeldegchiinTooCalc(sheet, headers) {
   }
 
   // Боловсролоор нэгтгэх
-  const bolovsrolCategories = ["DEED", "TUSGAI DUND", "BUREN DUND", "DUND", "BAGA"];
+  const bolovsrolCategories = ["ДЭЭД", "ТУСГАЙ ДУНД", "БҮРЭН ДУНД", "ДУНД", "БАГА"];
   const bolovsrolResults = [];
   for (const category of bolovsrolCategories) {
     const [totalUldegdel, totalHariltsagch] = sumIfs([[bolovsrolCol, category]]);
@@ -326,9 +326,9 @@ async function zeeldegchiinTooCalc(sheet, headers) {
 
   // Excel-д бичих
   const headerRow1 = sheet.getRangeByIndexes(0, 81, 1, 8); // BL1:BS1
-  headerRow1.values = [["NIIT", "", "ER", "", "EM", "", "HUULIIN ETGEED", ""]];
+  headerRow1.values = [["НИЙТ", "", "ЭР", "", "ЭМ", "", "ХУУЛИЙН ЭТГЭЭД", ""]];
   const headerRow2 = sheet.getRangeByIndexes(1, 81, 1, 10); // BL2:BU2
-  headerRow2.values = [["DUN", "TOO", "DUN", "TOO", "DUN", "TOO", "DUN", "TOO", "DUN", "TOO"]];
+  headerRow2.values = [["ДҮН", "ТОО", "ДҮН", "ТОО", "ДҮН", "ТОО", "ДҮН", "ТОО", "ДҮН", "ТОО"]];
 
   sheet.getRangeByIndexes(startRow - 1, 80, results.length, results[0].length).values = results;
   sheet.getRangeByIndexes(startRow + results.length + 1, 80, nasResults.length, nasResults[0].length).values =
