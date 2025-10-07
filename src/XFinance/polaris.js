@@ -229,7 +229,7 @@ async function zeeldegchiinTooCalc(sheet, headers) {
     return [sumUldegdel, sumHariltsagch];
   };
 
-  const lastRowBK = await getLastRow(sheet, 62); // BK is col 63 (0-indexed 62)
+  const lastRowBK = await getLastRow(sheet, 81); // BK is col 63 (0-indexed 62)
   const startRow = lastRowBK + 2;
 
   // Ангилалаар нэгтгэх
