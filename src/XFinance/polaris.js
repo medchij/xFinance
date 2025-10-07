@@ -276,10 +276,19 @@ export async function processLoanPrepData(setMessage, setLoading) {
       const sarIdx = headers["ХУГАЦАА (САРААР)"];//Зээлийн хугацаа
 
       for (let i = 5; i < data.length; i++) {
-        const row = data[i];
-        const valT = row[buteegdehuunnii1Idx - 1];
-        const valUprev = data[i - 1]?.[buteegdehuunnii1Idx];
-        const valDprev = data[i - 1]?.[3];
+                // Тухайн мөрийн мэдээллийг авна
+        const row = data[i]; 
+        
+        // 1. "Бүтээгдэхүүний нэр" баганын зүүн талын нүдний утгыг авна (buteegdehuunnii1Idx - 1)
+        const valT = row[buteegdehuunnii1Idx - 5]; 
+        
+        // 2. Дээд мөрний "Бүтээгдэхүүний нэр" баганын утгыг авна
+        const valUprev = data[i - 1]?.[buteegdehuunnii1Idx]; 
+        
+        // 3. Дээд мөрний D баганын (индекс 3) утгыг авна
+        const valDprev = data[i - 1]?.[3]; 
+        
+        // 4. "Бүтээгдэхүүний нэр" баганын одоогийн мөрний утгыг шинэчилнэ
         row[buteegdehuunnii1Idx] =
           valT === "" || valT === undefined ? "" : valUprev === "" || valUprev === undefined ? valDprev : valUprev;
 
