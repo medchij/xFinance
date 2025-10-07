@@ -81,6 +81,7 @@ export async function runLoanReportProcessor(setMessage, setLoading) {
       // Бичих массивууд
       const segData = [],
         angilalData = [],
+        angilal11Data = [],
         buteeData = [],
         intervalData = [];
       // VBA-с хөрвүүлсэн шинэ баганын массив
