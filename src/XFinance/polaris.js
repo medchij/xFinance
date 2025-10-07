@@ -120,9 +120,10 @@ export async function runLoanReportProcessor(setMessage, setLoading) {
 
         const nas = Number(row[headers["НАС"]]);
         let nasniiInterval = "";
-        if (nas > 17 && nas <= 35) nasniiInterval = "18-35 nasnii";
-        else if (nas > 35 && nas <= 45) nasniiInterval = "36-45 nasnii";
-        else if (nas > 45 && nas <= 55) nasniiInterval = "46-55 nasnii";
+        if (nas > 17 && nas <= 25) nasniiInterval = "18-25 nasnii";
+          else if (nas > 25 && nas <= 35) nasniiInterval = "26-35 nasnii";
+          else if (nas > 35 && nas <= 45) nasniiInterval = "36-45 nasnii";
+          else if (nas > 45 && nas <= 55) nasniiInterval = "46-55 nasnii";
         else if (nas > 55) nasniiInterval = "55-s deesh";
         nasniiInterval1Data.push([nasniiInterval]);
 
@@ -279,7 +280,7 @@ async function zeeldegchiinTooCalc(sheet, headers) {
   }
 
   // Насны ангилалаар нэгтгэх
-  const nasCategories = ["18-35 nasnii", "36-45 nasnii", "46-55 nasnii", "55-s deesh"];
+  const nasCategories = ["18-25 nasnii", "26-35 nasnii", "36-45 nasnii", "46-55 nasnii", "55-s deesh"];
   const nasResults = [];
   for (const category of nasCategories) {
     const [totalUldegdel, totalHariltsagch] = sumIfs([[nasIntervalCol, category]]);
@@ -337,7 +338,7 @@ async function zeeldegchiinTooCalc(sheet, headers) {
   headerRow2.values = [["ДҮН", "ТОО", "ДҮН", "ТОО", "ДҮН", "ТОО", "ДҮН", "ТОО", "ДҮН", "ТОО"]];
 
   sheet.getRangeByIndexes(startRow + 1, 80, results.length, results[0].length).values = results;
-  sheet.getRangeByIndexes(startRow + results.length + 1, 80, nasResults.length, nasResults[0].length).values =
+  sheet.getRangeByIndexes(startRow + results.length + 3, 80, nasResults.length, nasResults[0].length).values =
     nasResults;
   sheet
     .getRangeByIndexes(startRow + results.length + nasResults.length + 3, 80, bolovsrolResults.length, bolovsrolResults[0].length)
