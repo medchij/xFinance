@@ -679,7 +679,7 @@ export async function loanpaymentData(setMessage, setLoading) {
       }
 
       // Хүсэлтийн дагуу шинэ багануудыг нэмэх
-      headerLabels.push("BUTEEGDEHUUN1", "JDH_DUN", "HUGATSAANII INTERVAL", "SEGMENT1");
+      headerLabels.push("BUTEEGDEHUUNII_NER","BUTEEGDEHUUN1", "HUGATSAANII INTERVAL");
 
       for (let col = 0; col < headerLabels.length; col++) {
         sheet.getCell(4, col).values = [[headerLabels[col]]];
@@ -737,7 +737,7 @@ export async function loanpaymentData(setMessage, setLoading) {
 
       for (let i = 5; i < data.length; i++) {
         const row = data[i];
-        ["BUTEEGDEHUUNII_NER", "BUTEEGDEHUUN1", "ЗОРИУЛАЛТ", "HUGATSAANII INTERVAL", "СЕГМЕНТ"].forEach((key) => {
+        ["BUTEEGDEHUUN1", "ЗОРИУЛАЛТ", "HUGATSAANII INTERVAL"].forEach((key) => {
           if (row[headers[key]]) {
             sheet.getCell(i, headers[key]).values = [[row[headers[key]]]];
           }
