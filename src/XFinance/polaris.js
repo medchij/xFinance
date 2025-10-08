@@ -679,7 +679,7 @@ export async function loanpaymentData(setMessage, setLoading) {
       }
 
       // Хүсэлтийн дагуу шинэ багануудыг нэмэх
-      headerLabels.push("BUTEEGDEHUUNII_NER","BUTEEGDEHUUN1", "HUGATSAANII INTERVAL");
+      headerLabels.push("BUTEEGDEHUUN1", "HUGATSAANII INTERVAL","ЗОРИУЛАЛТ");
 
       for (let col = 0; col < headerLabels.length; col++) {
         sheet.getCell(4, col).values = [[headerLabels[col]]];
@@ -693,18 +693,18 @@ export async function loanpaymentData(setMessage, setLoading) {
       const data = usedRange.values;
 
       const buteegdehuunIdx = headers["BUTEEGDEHUUN1"];
-      const buteegdehuunnii1Idx = headers["BUTEEGDEHUUNII_NER"];
+      const buteegdehuunnii1Idx = headers["БҮТЭЭГДЭХҮҮН"];
       const zoriulaltIdx = headers["ЗОРИУЛАЛТ"];
       const sarIdx = headers["ЗЭЭЛИЙН ХУГАЦАА"];
 
       for (let i = 5; i < data.length; i++) {
         const row = data[i];
 
-        const valT = row[buteegdehuunnii1Idx - 1];
-        const valUprev = data[i - 1]?.[buteegdehuunnii1Idx];
-        const valDprev = data[i - 1]?.[1];
-        row[buteegdehuunnii1Idx] =
-          valT === "" || valT === undefined ? "" : valUprev === "" || valUprev === undefined ? valDprev : valUprev;
+        // const valT = row[buteegdehuunnii1Idx - 1];
+        // const valUprev = data[i - 1]?.[buteegdehuunnii1Idx];
+        // const valDprev = data[i - 1]?.[1];
+        // row[buteegdehuunnii1Idx] =
+        //   valT === "" || valT === undefined ? "" : valUprev === "" || valUprev === undefined ? valDprev : valUprev;
 
         const sar = parseFloat(row[sarIdx]);
         if (!isNaN(sar)) {
