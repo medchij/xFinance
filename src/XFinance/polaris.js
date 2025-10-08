@@ -874,7 +874,7 @@ export async function processTop40LoanReport(setMessage, setLoading) {
 
       // 2. Copy sheet
       setMessage("⏳ Тайлангийн хуудсыг хувилж байна...");
-      const newSheet = originalSheet.copy(Excel.WorksheetPosition.after);
+      const newSheet = originalSheet.copy(Excel.WorksheetPositionType.after);
       newSheet.activate();
       await context.sync();
 
