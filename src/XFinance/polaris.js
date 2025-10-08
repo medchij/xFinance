@@ -3,9 +3,6 @@
 import { loadSettings, getSettingValue, withLoading, hideEmptyColumns } from "./apiHelpers";
 import { lastImportedData } from "./xFinance";
 
-
-
-
 export function getTermInterval(daysOrMonths) {
   const days = Number(daysOrMonths);
   if (isNaN(days)) return "";
