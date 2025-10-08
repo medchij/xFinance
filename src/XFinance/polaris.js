@@ -874,7 +874,7 @@ export async function processTop40LoanReport(setMessage, setLoading) {
 
       // 2. Copy sheet
       setMessage("⏳ Тайлангийн хуудсыг хувилж байна...");
-      const newSheet = originalSheet.copy(Excel.WorksheetPosition.after, originalSheet);
+      const newSheet = originalSheet.copy(Excel.WorksheetPosition.after);
       newSheet.activate();
       await context.sync();
 
@@ -900,22 +900,32 @@ export async function processTop40LoanReport(setMessage, setLoading) {
 
       // 5. Delete unnecessary columns
       setMessage("⏳ Илүүдэл багануудыг устгаж байна...");
-      // VBA: "C:G, J:J, M:N, Q:R, T:U, W:AC, AF:AG, AI:AS, BG:CC"
-      // This is complex to map directly. Deleting one by one from the end is safer.
-      const colsToDelete = [
-        "CC", "CB", "CA", "BZ", "BY", "BX", "BW", "BV", "BU", "BT", "BS", "BR", "BQ", "BP", "BO", "BN", "BM", "BL",
-        "AS", "AR", "AQ", "AP", "AO", "AN", "AM", "AL", "AK", "AJ", "AI",
-        "AG", "AF", "AC", "AB", "AA", "Z", "Y", "X", "W",
-        "U", "T", "R", "Q", "N", "M", "J", "G", "F", "E", "D", "C"
+      
+      const columnsToKeep = [
+        "ДАНСНЫ ДУГААР", "ВАЛЮТ", "ОЛГОСОН ОГНОО", "ДУУСАХ ОГНОО", "ХАРИЛЦАГЧ", "РД", "УТАС1", 
+        "АЖИЛ ЭРХЛЭЛТ", "АНГИЛАЛ", "ОЛГОСОН ДҮН", "ЗОРИУЛАЛТ", "ҮНДСЭН ЗЭЭЛ", "ХҮҮНИЙ ХУВЬ", 
+        "БАРЬЦАА ХӨРӨНГИЙН НИЙТ ДҮН", "БАРЬЦАА ХӨРӨНГИЙН ТӨРӨЛ"
       ];
-       for (const col of colsToDelete) {
-         try {
-            newSheet.getRange(col + ":" + col).delete(Excel.DeleteShiftDirection.left);
-            await context.sync();
-         } catch(e) {
-            console.log(`Could not delete column ${col}. It might not exist.`, e);
-         }
-       }
+
+      const newSheetHeadersRange = newSheet.getRange("A5:ZZ5");
+      newSheetHeadersRange.load("values, columnCount");
+      await context.sync();
+
+      const newSheetHeaders = newSheetHeadersRange.values[0];
+      const columnsToDelete = [];
+
+      for (let i = newSheetHeaders.length - 1; i >= 0; i--) {
+        const header = newSheetHeaders[i];
+        if (header && !columnsToKeep.includes(header.toString().trim())) {
+          columnsToDelete.push(i);
+        }
+      }
+
+      // Delete columns from right to left to avoid shifting issues
+      for (const colIndex of columnsToDelete) {
+        newSheet.getRangeByIndexes(0, colIndex, 1, 1).getEntireColumn().delete(Excel.DeleteShiftDirection.left);
+      }
+      await context.sync();
 
 
       // 6. Data transformation (CurrencyChange, angilalChange etc.)
