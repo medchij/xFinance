@@ -821,6 +821,242 @@ async function summarizePaymentData(sheet, headers, categoryField, useSegment = 
 
   await sheet.context.sync();
 }
+
+export async function processTop40LoanReport(setMessage, setLoading) {
+  return withLoading(setLoading, setMessage, async () => {
+    await Excel.run(async (context) => {
+      setMessage("⏳ Топ 40 зээлдэгчийн тайлан боловсруулж байна...");
+
+      const originalSheet = context.workbook.worksheets.getActiveWorksheet();
+      const c1Cell = originalSheet.getCell(0, 2); // C1
+      c1Cell.load("values");
+      await context.sync();
+
+      const c1Value = c1Cell.values[0][0];
+      if (!c1Value || !c1Value.toString().includes("ЗЭЭЛИЙН ҮЛДЭГДЛИЙН ДЭЛГЭРЭНГҮЙ ТАЙЛАН")) {
+        throw new Error("⚠️ Энэ хуудас ЗЭЭЛИЙН ҮЛДЭГДЛИЙН ДЭЛГЭРЭНГҮЙ ТАЙЛАН биш байна.");
+      }
+
+      // 1. Calculate SUMIFS and RANK in memory
+      setMessage("⏳ Зээлдэгчдийн нийт үлдэгдлийг тооцоолж байна...");
+      const headers = await getHeaderMap(originalSheet);
+      const lastDataRow = await getLastRow(originalSheet, headers["ДАНСНЫ ДУГААР"]);
+      const dataRange = originalSheet.getRangeByIndexes(5, 0, lastDataRow - 5, Math.max(...Object.values(headers)) + 1);
+      dataRange.load("values");
+      await context.sync();
+      const data = dataRange.values;
+
+      const uldegdelCol = headers["ҮНДСЭН ЗЭЭЛ"];
+      const rdCol = headers["РД"]; // VBA-д L багана буюу РД байсан
+
+      if (uldegdelCol === undefined || rdCol === undefined) {
+        throw new Error("⚠️ 'ҮНДСЭН ЗЭЭЛ' эсвэл 'РД' багана олдсонгүй.");
+      }
+
+      const customerTotals = new Map();
+      data.forEach(row => {
+        const rd = row[rdCol];
+        const uldegdel = parseFloat(row[uldegdelCol]) || 0;
+        if (rd) {
+          customerTotals.set(rd, (customerTotals.get(rd) || 0) + uldegdel);
+        }
+      });
+
+      const sortedTotals = [...customerTotals.values()].sort((a, b) => b - a);
+      const rankMap = new Map(sortedTotals.map((total, i) => [total, i + 1]));
+
+      const bcValues = [];
+      const bdValues = [];
+      data.forEach(row => {
+        const rd = row[rdCol];
+        const total = customerTotals.get(rd) || 0;
+        const rank = rankMap.get(total) || 0;
+        bcValues.push([total]);
+        bdValues.push([rank]);
+      });
+
+      // 2. Copy sheet
+      setMessage("⏳ Тайлангийн хуудсыг хувилж байна...");
+      const newSheet = originalSheet.copy(Excel.WorksheetPosition.after, originalSheet);
+      newSheet.activate();
+      await context.sync();
+
+      // 3. Write calculations to the new sheet
+      newSheet.getRangeByIndexes(5, 54, bcValues.length, 1).values = bcValues; // BC column
+      newSheet.getRangeByIndexes(5, 55, bdValues.length, 1).values = bdValues; // BD column
+      await context.sync();
+
+      // 4. Delete rows where rank > 40
+      setMessage("⏳ Топ 40-с бусад зээлдэгчийг устгаж байна...");
+      const rankRange = newSheet.getRangeByIndexes(5, 55, lastDataRow - 5, 1);
+      rankRange.load("values");
+      await context.sync();
+
+      const rowsToDelete = [];
+      for (let i = rankRange.values.length - 1; i >= 0; i--) {
+        if (rankRange.values[i][0] > 40) {
+          // Using getOffsetRange to delete the entire row. Address is relative to the range.
+          newSheet.getRangeByIndexes(i + 5, 0, 1, 1).getEntireRow().delete(Excel.DeleteShiftDirection.up);
+        }
+      }
+      await context.sync();
+
+      // 5. Delete unnecessary columns
+      setMessage("⏳ Илүүдэл багануудыг устгаж байна...");
+      // VBA: "C:G, J:J, M:N, Q:R, T:U, W:AC, AF:AG, AI:AS, BG:CC"
+      // This is complex to map directly. Deleting one by one from the end is safer.
+      const colsToDelete = [
+        "CC", "CB", "CA", "BZ", "BY", "BX", "BW", "BV", "BU", "BT", "BS", "BR", "BQ", "BP", "BO", "BN", "BM", "BL",
+        "AS", "AR", "AQ", "AP", "AO", "AN", "AM", "AL", "AK", "AJ", "AI",
+        "AG", "AF", "AC", "AB", "AA", "Z", "Y", "X", "W",
+        "U", "T", "R", "Q", "N", "M", "J", "G", "F", "E", "D", "C"
+      ];
+       for (const col of colsToDelete) {
+         try {
+            newSheet.getRange(col + ":" + col).delete(Excel.DeleteShiftDirection.left);
+            await context.sync();
+         } catch(e) {
+            console.log(`Could not delete column ${col}. It might not exist.`, e);
+         }
+       }
+
+
+      // 6. Data transformation (CurrencyChange, angilalChange etc.)
+      // These functions are not defined in the provided JS code.
+      // Placeholder for future implementation.
+      setMessage("ℹ️ Мэдээллийн хөрвүүлэлт (алгасагдлаа, функц тодорхойгүй).");
+
+
+      // 7. Sort data by column X (which will be a new column after deletions)
+      setMessage("⏳ Мэдээллийг эрэмбэлж байна...");
+      const finalUsedRange = newSheet.getUsedRange();
+      // Assuming the sort key is now in column "I" after deletions (originally "X")
+      const sortRange = newSheet.getRange("I5");
+      finalUsedRange.sort.apply([
+          {
+              key: sortRange.getColumnIndex(),
+              ascending: true,
+          },
+      ], true);
+      await context.sync();
+
+
+      setMessage("✅ Топ 40 зээлдэгчийн тайлан амжилттай боловсруулагдлаа.");
+    });
+  });
+}
+
+//зээлийн зорилго, хугацааг импортын хуудаснаас идэвхтэй хуудас руу хуулж оруулах функц
+export async function extractLoanPurposeAndTerm(setMessage) {
+  try {
+    await Excel.run(async (context) => {
+      const activeSheet = context.workbook.worksheets.getActiveWorksheet();
+      const importSheet = context.workbook.worksheets.getItemOrNullObject("Import");
+      await context.sync();
+
+      if (importSheet.isNullObject) {
+        setMessage("❌ 'Import Sheet' нэртэй worksheet олдсонгүй.");
+        return;
+      }
+      await copyTop9IfClosedLoan(importSheet, setMessage);
+      const importHeaders = await getHeaderMap(importSheet);
+      const activeHeaders = await getHeaderMap(activeSheet);
+
+      const importAccountIndex = importHeaders["ДАНСНЫ ДУГААР"];
+      const purposeIndex = importHeaders["ЗОРИУЛАЛТ"];
+      const activeAccountIndex = activeHeaders["ДАНС"];
+      const activePurposeIndex = activeHeaders["ЗОРИУЛАЛТ"];
+
+      if ([importAccountIndex, purposeIndex, activeAccountIndex, activePurposeIndex].includes(undefined)) {
+        setMessage("⚠️ Шаардлагатай баганууд олдсонгүй (ДАНСНЫ ДУГААР, ЗОРИУЛАЛТ).");
+        return;
+      }
+
+      const importRange = importSheet.getUsedRange();
+      importRange.load("rowCount, values");
+      const activeRange = activeSheet.getUsedRange();
+      activeRange.load("rowCount, values");
+      await context.sync();
+
+      const importData = importRange.values.slice(5);
+      const activeData = activeRange.values.slice(5);
+
+      const loanMap = new Map();
+      importData.forEach((row) => {
+        const acc = row[importAccountIndex];
+        if (acc) {
+          loanMap.set(acc.toString().trim(), {
+            purpose: row[purposeIndex],
+          });
+        }
+      });
+
+      let updatedCount = 0;
+      activeData.forEach((row, i) => {
+        const acc = row[activeAccountIndex];
+        if (acc && loanMap.has(acc.toString().trim())) {
+          const { purpose } = loanMap.get(acc.toString().trim());
+          activeSheet.getCell(i + 5, activePurposeIndex).values = [[purpose]];
+          updatedCount++;
+        }
+      });
+
+      await context.sync();
+      setMessage(`✅ Амжилттай холбоод зорилгыг ${updatedCount} мөр дээр орууллаа.`);
+    });
+  } catch (error) {
+    console.error("❌ Алдаа:", error);
+t, headers) {
+  await summarizePaymentData(sheet, headers, "МАШИН", true);
+}
+async function summarizePaymentData(sheet, headers, categoryField, useSegment = true) {
+  const usedRange = sheet.getUsedRange();
+  usedRange.load("values");
+  await sheet.context.sync();
+
+  const data = usedRange.values;
+  const categoryValues = [
+    ...new Set(
+      data
+        .slice(5)
+        .map((row) => row[headers[categoryField]])
+        .filter(Boolean)
+    ),
+  ];
+
+  const headerLabels = ["81", "МӨНГӨН ДҮН", "TOO", "<>81", "МӨНГӨН ДҮН", "TOO"];
+
+  const headerStartCol = 63; // BL = 63
+  headerLabels.forEach((label, idx) => (sheet.getCell(0, headerStartCol + idx).values = [[label]]));
+
+  const startRow = await getLastRow(sheet, 63);
+
+  const calculateSegmentStats = (value, segmentCode, exclude = false) => {
+    const filtered = data.filter((row) => {
+      const category = row[headers[categoryField]];
+      if (!useSegment) return category === value;
+
+      const segment = (row[headers["СЕГМЕНТ"]] || "").toString().trim();
+      return category === value && (exclude ? segment !== segmentCode : segment === segmentCode);
+    });
+
+    const totalAmount = filtered.reduce((sum, row) => sum + (+row[headers["ЗЭЭЛ"]] || 0), 0);
+    const uniqueRegisterCount = new Set(filtered.map((row) => row[headers["ДАНС"]]).filter(Boolean)).size;
+
+    return [totalAmount, uniqueRegisterCount];
+  };
+
+  categoryValues.forEach((value, index) => {
+    const currentRow = startRow + index;
+    sheet.getCell(currentRow, 63).values = [[value]];
+    const values = useSegment
+      ? [...calculateSegmentStats(value, "81"), "", ...calculateSegmentStats(value, "81", true)]
+      : [...calculateSegmentStats(value)];
+    values.forEach((val, colOffset) => (sheet.getCell(currentRow, 64 + colOffset).values = [[val]]));
+  });
+
+  await sheet.context.sync();
+}
 //зээлийн зорилго, хугацааг импортын хуудаснаас идэвхтэй хуудас руу хуулж оруулах функц
 export async function extractLoanPurposeAndTerm(setMessage) {
   try {

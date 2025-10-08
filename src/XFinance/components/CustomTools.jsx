@@ -34,10 +34,6 @@ import {
 import CalendarDateBoundaries from "./CalendarDateBoundaries";
 import { ExcelIcon, KhanbankIcon } from "../../icons";
 import SearchTableSheet from "./SearchTableSheet";
-import PromptLikeInput from "./PromptLikeInput";
-
-
-
 const groupedTools = [
   {
     title: "Хөрвүүлэх хэрэгсэл",
@@ -96,7 +92,7 @@ const groupedTools = [
       { icon: <Filter16Regular />, label: "PS Зээлийн олголт" },
       { icon: <Filter16Regular />, label: "PS Зээлийн төлөлт" },
       { icon: <Filter16Regular />, label: "PS Зээлийн зориулалт, хугацаа" },
-      { icon: <Filter16Regular />, label: "Өгөгдөл оруулах" },
+      { icon: <Filter16Regular />, label: "Топ 40 зээлийн тайлан" },
       //{ icon: <Filter16Regular />, label: "Өгөгдөл оруулах" },
     ],
   },
@@ -104,22 +100,10 @@ const groupedTools = [
 
 const CustomTools = ({ isSidebarOpen }) => {
   const { setLoading, showMessage } = useAppContext();
-  const [openGL, setOpenGL] = useState(false);
-  const [openAccount, setOpenAccount] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [isSearchTableSheet, setSearchTableSheet] = useState(false);
-  const [isPromptOpen, setPromptOpen] = useState(false);
-   const [isNarrowScreen, setIsNarrowScreen] = useState(false);
-  const fileInputRef = useRef(null);
-const handleImportChange = async (e) => {
-  setSheetData(processedData);
-lastImportedData = processedData;
-  await pfns.writeFromImportedSameColumn( { setLoading, showMessage });
-};
+  const [activeModal, setActiveModal] = useState(null);
+  const [isNarrowScreen, setIsNarrowScreen] = useState(false);
 
-
- useEffect(() => {
+  useEffect(() => {
     const handleResize = () => {
       setIsNarrowScreen(window.innerWidth < 500);
     };
@@ -132,7 +116,7 @@ lastImportedData = processedData;
     "Тоо руу хөрвүүлэх": () => fns.handleNumberConversion(showMessage, setLoading),
     "Текст рүү хөрвүүлэх": () => fns.handleTextConversion(showMessage, setLoading),
     "Тоог сөрөг болгох": () => fns.handleNegativeConversion(showMessage, setLoading),
-    "Динамик хүснэгт": () => setSearchTableSheet(true),
+    "Динамик хүснэгт": () => setActiveModal("searchTableSheet"),
     "Албан ханш татах": () => efns.fetchCurrencyRatesByAPI(showMessage, setLoading),
     "Машины мэдээлэл татах": () => efns.fetchVehicleInfoByPlate(showMessage, setLoading),
     "Хааны token татах": () => efns.getKhanbankToken(showMessage, setLoading),
@@ -141,20 +125,19 @@ lastImportedData = processedData;
     "РД-аар ҮА лавлах": () => bFns.getMerchantCategoryById(showMessage, setLoading),
     "Идэвхитэй нүдээр шүүлт хийх": () => fns.filterByActiveCellValue(showMessage, setLoading),
     "Шүүлт арилгах": () => fns.clearAutoFilter(showMessage, setLoading),
-   // "Өнгөөр ялгах": () => fns.highlightCellsByColor(showMessage, setLoading),
+    // "Өнгөөр ялгах": () => fns.highlightCellsByColor(showMessage, setLoading),
     //"Paste value": () => fns.pasteValuesOnly(showMessage, setLoading),
     "Сонгосон мужийг экпорт хийх": () => fns.exportSelectedRangesToXLSX(showMessage, setLoading),
-    "Идэвхитэй нүдэнд огноо оруулах": () => setIsCalendarOpen(true),
+    "Идэвхитэй нүдэнд огноо оруулах": () => setActiveModal("calendar"),
     "PS Зээлийн баланс": () => pfns.runLoanReportProcessor(showMessage, setLoading),
     "PS Зээлийн олголт": () => pfns.processLoanPrepData(showMessage, setLoading),
     "PS Зээлийн төлөлт": () => pfns.loanpaymentData(showMessage, setLoading),
     "PS Зээлийн зориулалт, хугацаа": () => pfns.extractLoanPurposeAndTerm(showMessage, setLoading),
-    "Өгөгдөл оруулах": () => fileInputRef.current?.click(),
+    "Топ 40 зээлийн тайлан": () => pfns.processTop40LoanReport(showMessage, setLoading),
 
-
-    "ЕДД данс үүсгэх": () => setOpenGL(true),
-    "Данс үүсгэх": () => setOpenAccount(true),
-    "Харилцагч үүсгэх": () => setIsModalOpen(true),
+    "ЕДД данс үүсгэх": () => setActiveModal("createGL"),
+    "Данс үүсгэх": () => setActiveModal("createAccount"),
+    "Харилцагч үүсгэх": () => setActiveModal("createCustomer"),
   };
 
 const handleClick = async (label) => {
@@ -263,20 +246,11 @@ const handleClick = async (label) => {
           </div>
         ))}
       </div>
-  <input
-  ref={fileInputRef}                      // ← Энэ дутуу байсан!
-  type="file"
-  accept=".xlsx,.xls"
-  style={{ display: "none" }}
-  onChange={(e) => pfns.writeFromImportedSameColumn( { setLoading, showMessage })}
-/>
-
-
-      <CreateGL isOpen={openGL} onClose={() => setOpenGL(false)} />
-      <CreateAccount isOpen={openAccount} onClose={() => setOpenAccount(false)} />
-      <CreateCustomer isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
-      <SearchTableSheet isOpen={isSearchTableSheet} onClose={() => setSearchTableSheet(false)} />
-      {isCalendarOpen && (
+      <CreateGL isOpen={activeModal === "createGL"} onClose={() => setActiveModal(null)} />
+      <CreateAccount isOpen={activeModal === "createAccount"} onClose={() => setActiveModal(null)} />
+      <CreateCustomer isOpen={activeModal === "createCustomer"} onClose={() => setActiveModal(null)} />
+      <SearchTableSheet isOpen={activeModal === "searchTableSheet"} onClose={() => setActiveModal(null)} />
+      {activeModal === "calendar" && (
         <div
           style={{
             position: "fixed",
@@ -293,7 +267,7 @@ const handleClick = async (label) => {
           <Button
             icon={<Dismiss24Regular />}
             appearance="subtle"
-            onClick={() => setIsCalendarOpen(false)}
+            onClick={() => setActiveModal(null)}
             style={{ position: "absolute", top: "8px", right: "8px" }}
             aria-label="Close"
           />
