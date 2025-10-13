@@ -2,21 +2,26 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs').promises;
 const path = require('path');
+const os = require('os');
 
 // In-memory log storage (for demo purposes)
 let logs = [];
 const MAX_LOGS = 10000;
 
-// Log file path
-const LOG_FILE = path.join(__dirname, '../logs/frontend.log');
+// Log file path (serverless env like Vercel has read-only FS except /tmp)
+const isServerless = !!process.env.VERCEL || process.env.SERVERLESS_ENV === 'true';
+const LOG_DIR = process.env.LOG_DIR
+  ? path.resolve(process.env.LOG_DIR)
+  : (isServerless ? os.tmpdir() : path.resolve(__dirname, '../logs'));
+const LOG_FILE = path.join(LOG_DIR, 'frontend.log');
 
 // Ensure logs directory exists
 async function ensureLogsDir() {
-  const logsDir = path.dirname(LOG_FILE);
+  const logsDir = LOG_DIR;
   try {
     await fs.mkdir(logsDir, { recursive: true });
   } catch (error) {
-    console.error('Failed to create logs directory:', error);
+    console.warn('Log directory not writable; file logging disabled:', error?.code || error?.message || error);
   }
 }
 
@@ -38,9 +43,18 @@ router.post('/', async (req, res) => {
       logs.shift(); // Remove oldest log
     }
     
-    // Write to file
-    const logLine = JSON.stringify(logEntry) + '\n';
-    await fs.appendFile(LOG_FILE, logLine);
+    // Write to file (best-effort; skip if FS not writable)
+    try {
+      const logLine = JSON.stringify(logEntry) + '\n';
+      await fs.appendFile(LOG_FILE, logLine);
+    } catch (err) {
+      // EROFS or other FS errors in serverless - don't fail request
+      if (err && (err.code === 'EROFS' || err.code === 'EACCES' || err.code === 'ENOSPC')) {
+        console.warn('File logging skipped:', err.code);
+      } else {
+        console.warn('File logging error:', err?.message || err);
+      }
+    }
     
     console.log(`[FRONTEND LOG] ${logEntry.level}: ${logEntry.message}`);
     
