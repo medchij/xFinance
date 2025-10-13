@@ -9,7 +9,7 @@ import {
     TableCell,
     makeStyles,
     tokens,
-    typography,
+    typographyStyles,
 } from "@fluentui/react-components";
 import { Add24Regular, Edit24Regular, Delete24Regular } from "@fluentui/react-icons";
 import { useAppContext } from "./AppContext";
@@ -29,7 +29,7 @@ const useStyles = makeStyles({
         alignItems: "center",
     },
     title: {
-        ...typography.title2,
+        ...typographyStyles.title2,
     },
     table: {
         width: "100%",
@@ -124,7 +124,7 @@ const GroupManagement = () => {
                 </Button>
             </div>
 
-            <Table arial-label="Group list table" className={styles.table}>
+            <Table aria-label="Group list table" className={styles.table}>
                 <TableHeader>
                     <TableRow>
                         <TableHeaderCell>Нэр</TableHeaderCell>

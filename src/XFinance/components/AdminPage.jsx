@@ -4,6 +4,7 @@ import {
   Label,
   makeStyles,
   tokens,
+  typographyStyles,
 } from "@fluentui/react-components";
 
 // Lazily load the sub-page components
@@ -43,7 +44,7 @@ const useStyles = makeStyles({
     gap: "8px",
   },
   menuItem: {
-    ...tokens.body1,
+    ...typographyStyles.body1,
     cursor: "pointer",
     padding: "12px 16px",
     borderRadius: tokens.borderRadiusMedium,
