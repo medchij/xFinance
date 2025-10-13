@@ -1,44 +1,83 @@
 import React, { useState, useEffect } from 'react';
-import logger from '../utils/logger';
 
 const LogViewer = ({ isOpen, onClose }) => {
   const [logs, setLogs] = useState([]);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
-      const allLogs = logger.getLogs();
-      setLogs(allLogs);
+      setLoading(true);
+      setError(null);
+      fetch('/api/logs')
+        .then((res) => {
+          if (!res.ok) throw new Error('Лог татаж чадсангүй');
+          return res.json();
+        })
+        .then((data) => {
+          setLogs(data.logs || []);
+        })
+        .catch((err) => {
+          setError(err.message);
+        })
+        .finally(() => setLoading(false));
     }
   }, [isOpen]);
 
   const refreshLogs = () => {
-    const allLogs = logger.getLogs();
-    setLogs(allLogs);
+    setLoading(true);
+    setError(null);
+    fetch('/api/logs')
+      .then((res) => {
+        if (!res.ok) throw new Error('Лог татаж чадсангүй');
+        return res.json();
+      })
+      .then((data) => {
+        setLogs(data.logs || []);
+      })
+      .catch((err) => {
+        setError(err.message);
+      })
+      .finally(() => setLoading(false));
   };
 
   const clearAllLogs = () => {
-    logger.clearLogs();
-    setLogs([]);
+    setLoading(true);
+    setError(null);
+    fetch('/api/logs', {
+      method: 'DELETE',
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Лог цэвэрлэж чадсангүй');
+        return res.json();
+      })
+      .then(() => {
+        setLogs([]);
+      })
+      .catch((err) => {
+        setError(err.message);
+      })
+      .finally(() => setLoading(false));
   };
 
   const exportLogs = () => {
-    logger.exportLogs();
+    // TODO: implement export if needed
   };
 
   const filteredLogs = logs
-    .filter(log => filter === 'all' || log.level.toLowerCase() === filter)
+    .filter(log => filter === 'all' || (log.level && log.level.toLowerCase() === filter))
     .filter(log => 
       searchTerm === '' || 
-      log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (log.message && log.message.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (log.data && JSON.stringify(log.data).toLowerCase().includes(searchTerm.toLowerCase()))
     )
-    .slice(-100) // Хамгийн сүүлийн 100
-    .reverse(); // Шинэ логийг эхэнд харуулах
+    .slice(-100)
+    .reverse();
 
   const getLevelColor = (level) => {
-    switch (level.toLowerCase()) {
+    switch (level?.toLowerCase()) {
       case 'error': return '#ff4444';
       case 'warn': return '#ffaa00';
       case 'info': return '#4444ff';
@@ -130,7 +169,11 @@ const LogViewer = ({ isOpen, onClose }) => {
           fontFamily: 'monospace',
           fontSize: '12px'
         }}>
-          {filteredLogs.length === 0 ? (
+          {loading ? (
+            <div style={{ textAlign: 'center', marginTop: '2rem' }}>Уншиж байна...</div>
+          ) : error ? (
+            <div style={{ color: 'red', textAlign: 'center', marginTop: '2rem' }}>{error}</div>
+          ) : filteredLogs.length === 0 ? (
             <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
               Лог олдсонгүй
             </div>
@@ -151,18 +194,17 @@ const LogViewer = ({ isOpen, onClose }) => {
                   marginBottom: '4px'
                 }}>
                   <span style={{ color: '#666', minWidth: '140px' }}>
-                    {log.timestamp}
+                    {log.serverTimestamp || log.timestamp || '-'}
                   </span>
                   <span style={{
                     color: getLevelColor(log.level),
                     fontWeight: 'bold',
                     minWidth: '60px'
                   }}>
-                    [{log.level}]
+                    [{log.level || '-'}]
                   </span>
-                  <span>{log.message}</span>
+                  <span>{log.message || '-'}</span>
                 </div>
-                
                 {log.data && (
                   <div style={{
                     marginLeft: '156px',
