@@ -61,6 +61,9 @@ app.use('/api/roles', rolesRouter);
 const permissionsRouter = require('./routes/permissions');
 app.use('/api/permissions', permissionsRouter);
 
+const logsRouter = require('./routes/logs');
+app.use('/api/logs', logsRouter);
+
 
 // Export the app for Vercel
 module.exports = app;
