@@ -20,6 +20,22 @@
   <body style="width: 100%; height: 100%; margin: 0; padding: 0">
     <div id="container"></div>
 
+    <!-- Auto-configure backend URL for GitHub Codespaces (maps -3000 -> -4000) -->
+    <script>
+      (function () {
+        try {
+          var h = window.location.hostname;
+          if (/\.app\.github\.dev$/.test(h)) {
+            var m = h.match(/^(.*)-(\d+)\.app\.github\.dev$/);
+            if (m) {
+              window.__XFINANCE_API_URL = window.location.protocol + '//' + m[1] + '-4000.app.github.dev';
+              // console.debug('XFINANCE API:', window.__XFINANCE_API_URL);
+            }
+          }
+        } catch (e) { /* ignore */ }
+      })();
+    </script>
+
     <!-- 
         Fluent UI React v. 9 uses modern JavaScript syntax that is not supported in
         Trident (Internet Explorer) or EdgeHTML (Edge Legacy), so this add-in won't
