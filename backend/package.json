@@ -26,6 +26,7 @@
     "puppeteer": "^24.10.2",
     "react-toastify": "^11.0.5",
     "serverless-http": "^3.2.0",
+    "winston": "^3.18.3",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

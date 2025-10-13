@@ -1,6 +1,8 @@
 import React, { useState, lazy, Suspense } from "react";
 import PropTypes from "prop-types";
 import { useAppContext } from "./AppContext"; // useAppContext-г импортлох
+import LogViewer from "./LogViewer"; // LogViewer нэмэх
+import logger from "../utils/logger"; // Logger нэмэх
 
 const Sidebar = lazy(() => import(/* webpackChunkName: "page-sidebar" */ "./Sidebar"));
 const MainContent = lazy(() => import(/* webpackChunkName: "page-main" */ "./maincontent"));
@@ -20,7 +22,22 @@ const pagePermissions = {
 const AuthenticatedApp = ({ title }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [activePage, setActivePage] = useState("maincontent");
+  const [isLogViewerOpen, setLogViewerOpen] = useState(false);
   const { hasPermission, showMessage } = useAppContext(); // Context-оос хэрэгтэй функцүүдийг авах
+
+  // Клавиатур shortcut - Ctrl+Shift+L лог харах
+  React.useEffect(() => {
+    const handleKeydown = (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'L') {
+        e.preventDefault();
+        setLogViewerOpen(true);
+        logger.info('Лог харагчийг товчлуураар нээлээ');
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeydown);
+    return () => document.removeEventListener('keydown', handleKeydown);
+  }, []);
 
   const pages = {
     maincontent: { Component: MainContent, props: { title } },
@@ -69,6 +86,30 @@ const AuthenticatedApp = ({ title }) => {
             backgroundColor: "#f3f4f6",
           }}
         >
+          {/* Log харагч товч */}
+          <div style={{
+            position: 'fixed',
+            top: '10px',
+            right: '10px',
+            zIndex: 1000
+          }}>
+            <button
+              onClick={() => setLogViewerOpen(true)}
+              style={{
+                padding: '8px 12px',
+                backgroundColor: '#007acc',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+              title="Програмын лог харах (Ctrl+Shift+L)"
+            >
+              📋 Лог
+            </button>
+          </div>
+
           {ActivePageComponent ? (
             <ActivePageComponent {...pageProps} isSidebarOpen={isSidebarOpen} />
           ) : (
@@ -76,6 +117,12 @@ const AuthenticatedApp = ({ title }) => {
           )}
         </div>
       </Suspense>
+      
+      {/* Log Viewer Modal */}
+      <LogViewer 
+        isOpen={isLogViewerOpen} 
+        onClose={() => setLogViewerOpen(false)} 
+      />
     </div>
   );
 };

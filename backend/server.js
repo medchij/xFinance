@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const { logger, requestLogger, logAPI } = require('./logger');
 
 // Load environment variables from .env.local file in the root directory
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
@@ -12,13 +13,13 @@ require('./db.js');
 const app = express();
 
 // Middleware
-// Enable CORS for all routes, allowing frontend to connect
+app.use(requestLogger); // Logging middleware эхлээд
 app.use(cors()); 
-// Parse incoming JSON requests
 app.use(express.json()); 
 
 // Test route to check if the server is running
 app.get('/api', (req, res) => {
+  logger.info('Health check endpoint accessed');
   res.send('xFinance Express.js backend server is running!');
 });
 

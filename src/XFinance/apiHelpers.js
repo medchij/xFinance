@@ -1,22 +1,31 @@
 import { BASE_URL } from "../config";
+import logger from "../utils/logger";
 
 export async function withLoading(setLoading, setMessage, fn) {
   try {
     setLoading(true);
+    logger.debug("Функц эхлэх", { function: fn.name });
+    
     const output = await fn();
 
     if (output?.response instanceof Response) {
+      logger.apiResponse(output.response.url, output.response.status);
       console.log("📡 HTTP:", output.response.statusText + " " + output.response.status);
       if (!output.response.ok) {
         const text = await output.response.text();
-        throw new Error("❌ Серверийн алдаа: " + text);
+        const errorMsg = "❌ Серверийн алдаа: " + text;
+        logger.error(errorMsg, { status: output.response.status, url: output.response.url });
+        throw new Error(errorMsg);
       }
     }
 
+    logger.debug("Функц амжилттай дууслаа", { function: fn.name });
     return output;
 
   } catch (error) {
-    setMessage("❌ Алдаа гарлаа: " + (error?.message || error));
+    const errorMsg = "❌ Алдаа гарлаа: " + (error?.message || error);
+    setMessage(errorMsg);
+    logger.error("API алдаа", { error: error?.message || error, function: fn.name });
     console.error("API Error:", error?.message || error);
     throw error;
   } finally {
