@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import logger from "../utils/logger";
+import { BASE_URL } from "../../config";
 
 const LogViewer = ({ isOpen, onClose }) => {
   const [logs, setLogs] = useState([]);
@@ -9,55 +10,50 @@ const LogViewer = ({ isOpen, onClose }) => {
   const [error, setError] = useState(null);
 
   // Compute API base (dev: http://localhost:4000, prod: relative)
-  const API_BASE = (() => {
-    // eslint-disable-next-line no-undef
-    const injected = typeof globalThis !== "undefined" && globalThis.__API_BASE__ ? globalThis.__API_BASE__ : "";
-    if (injected) return injected;
-    try {
-      if (typeof window !== "undefined") {
-        const { protocol, hostname, port } = window.location || {};
-        if ((hostname === "localhost" || hostname === "127.0.0.1") && port === "3000") {
-          return `${protocol}//${hostname}:4000`;
-        }
-      }
-    } catch (e) {}
-    return "";
-  })();
+  const API_BASE = BASE_URL || "";
 
   useEffect(() => {
     if (isOpen) {
       setLoading(true);
       setError(null);
-      fetch(`${API_BASE}/api/logs`)
-        .then((res) => {
-          if (!res.ok) throw new Error('Лог татаж чадсангүй');
-          return res.json();
-        })
-        .then((data) => {
-          setLogs(data.logs || []);
-        })
-        .catch((err) => {
-          setError(err.message);
-        })
-        .finally(() => setLoading(false));
+      const load = async () => {
+        try {
+          const res = await fetch(`${API_BASE}/api/logs?limit=100`);
+          if (!res.ok) throw new Error('Серверээс лог татаж чадсангүй');
+          const data = await res.json();
+          if (data && Array.isArray(data.logs) && data.logs.length >= 0) {
+            setLogs(data.logs);
+            return;
+          }
+          // fallback to local logger
+          setLogs(logger.getLogs());
+        } catch (e) {
+          // network or 404 -> fallback to local logger
+          setLogs(logger.getLogs());
+        } finally {
+          setLoading(false);
+        }
+      };
+      load();
     }
   }, [isOpen]);
 
-  const refreshLogs = () => {
+  const refreshLogs = async () => {
     setLoading(true);
     setError(null);
-    fetch(`${API_BASE}/api/logs`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Лог татаж чадсангүй');
-        return res.json();
-      })
-      .then((data) => {
-        setLogs(data.logs || []);
-      })
-      .catch((err) => {
-        setError(err.message);
-      })
-      .finally(() => setLoading(false));
+    try {
+      const res = await fetch(`${API_BASE}/api/logs?limit=100`);
+      if (res.ok) {
+        const data = await res.json();
+        setLogs((data && data.logs) || []);
+      } else {
+        setLogs(logger.getLogs());
+      }
+    } catch (e) {
+      setLogs(logger.getLogs());
+    } finally {
+      setLoading(false);
+    }
   };
 
   const clearAllLogs = () => {

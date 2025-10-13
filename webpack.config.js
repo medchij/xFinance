@@ -81,10 +81,10 @@ module.exports = async (env = {}, options = {}) => {
 
       // Environment variables
       new webpack.DefinePlugin({
-        'process.env.NODE_ENV': JSON.stringify(options.mode),
-        'process.env.REACT_APP_API_URL': JSON.stringify(process.env.REACT_APP_API_URL || ''),
+        "process.env.NODE_ENV": JSON.stringify(options.mode),
+        "process.env.REACT_APP_API_URL": JSON.stringify(process.env.REACT_APP_API_URL || ""),
         // Expose API base to browser code (used by logger)
-        'globalThis.__API_BASE__': JSON.stringify(process.env.REACT_APP_API_URL || '')
+        "globalThis.__API_BASE__": JSON.stringify(process.env.REACT_APP_API_URL || ""),
       }),
 
       ...(useAnalyzer
@@ -106,29 +106,51 @@ module.exports = async (env = {}, options = {}) => {
       splitChunks: {
         chunks: "all",
         cacheGroups: {
-          fluent: { test: /[\\/]node_modules[\\/]@fluentui[\\/]/, name: "fluent", priority: 15, reuseExistingChunk: true },
-          polyfills: { test: /[\\/]node_modules[\\/]core-js[\\/]/, name: "polyfills", priority: 10, reuseExistingChunk: true },
+          fluent: {
+            test: /[\\/]node_modules[\\/]@fluentui[\\/]/,
+            name: "fluent",
+            priority: 15,
+            reuseExistingChunk: true,
+          },
+          polyfills: {
+            test: /[\\/]node_modules[\\/]core-js[\\/]/,
+            name: "polyfills",
+            priority: 10,
+            reuseExistingChunk: true,
+          },
         },
       },
       runtimeChunk: "single",
       usedExports: true,
       sideEffects: true,
     },
-    performance: dev ? false : {
-      hints: "warning",
-      maxEntrypointSize: 700000,
-      maxAssetSize: 700000,
-    },
+    performance:
+      dev
+        ? false
+        : {
+            hints: "warning",
+            maxEntrypointSize: 700000,
+            maxAssetSize: 700000,
+          },
     devServer: {
       hot: true,
       headers: { "Access-Control-Allow-Origin": "*" },
       devMiddleware: { writeToDisk: !!process.env.WRITE_TO_DISK || useAnalyzer },
+      proxy: {
+        "/api": {
+          target: "http://localhost:4000",
+          changeOrigin: true,
+          secure: false,
+          logLevel: "warn",
+        },
+      },
       server: dev
         ? {
             type: "https",
-            options: env.WEBPACK_BUILD || options.https !== undefined
-              ? options.https
-              : await getHttpsOptions(),
+            options:
+              env.WEBPACK_BUILD || options.https !== undefined
+                ? options.https
+                : await getHttpsOptions(),
           }
         : "http",
       port: process.env.npm_package_config_dev_server_port || 3000,

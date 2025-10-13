@@ -1,6 +1,7 @@
 /**
  * Frontend Logger - Browser compatible logging utility
  */
+import { BASE_URL } from "../../config";
 
 class Logger {
   constructor() {
@@ -8,25 +9,10 @@ class Logger {
     this.maxLogs = 1000; // Maximum number of logs to keep in memory
     this.logLevel = 'info'; // Default log level
     this.remoteLevels = new Set(["error", "warn", "info"]); // Levels to send to backend
-    // Use global value injected by webpack or fallback to environment heuristics
-    // eslint-disable-next-line no-undef
-    const injectedBase = (typeof globalThis !== "undefined" && globalThis.__API_BASE__) ? globalThis.__API_BASE__ : "";
-    this.apiBase = injectedBase || this._detectApiBase();
-  }
-
-  _detectApiBase() {
-    try {
-      if (typeof window !== 'undefined') {
-        const { protocol, hostname, port } = window.location || {};
-        // Dev server runs on 3000, backend on 4000 by default
-        if ((hostname === 'localhost' || hostname === '127.0.0.1') && port === '3000') {
-          return `${protocol}//${hostname}:4000`;
-        }
-      }
-    } catch (e) {
-      // ignore
-    }
-    return '';
+  // Use shared BASE_URL (dev: http://localhost:4000), or injected value, else relative
+  // eslint-disable-next-line no-undef
+  const injectedBase = (typeof globalThis !== "undefined" && globalThis.__API_BASE__) ? globalThis.__API_BASE__ : "";
+  this.apiBase = (BASE_URL && BASE_URL.trim()) || injectedBase || "";
   }
 
   // Log levels
@@ -166,6 +152,21 @@ class Logger {
   // Export logs as JSON
   exportLogs() {
     return JSON.stringify(this.logs, null, 2);
+  }
+
+  // Extra helper used by apiHelpers.js
+  apiResponse(url, status, extra = {}) {
+    try {
+      const msg = `HTTP ${status} - ${url}`;
+      const entry = this.formatMessage('info', msg, extra);
+      // Print to console at info level
+      // eslint-disable-next-line no-console
+      console.info(`[${entry.timestamp}] HTTP: ${status} ${url}`);
+      // Send to backend based on level policy
+      this.sendToBackend(entry);
+    } catch (e) {
+      // ignore to avoid cascading errors
+    }
   }
 }
 

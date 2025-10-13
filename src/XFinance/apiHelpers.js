@@ -1,5 +1,5 @@
 import { BASE_URL } from "../config";
-import logger from "../utils/logger";
+import logger from "./utils/logger";
 
 export async function withLoading(setLoading, setMessage, fn) {
   try {
