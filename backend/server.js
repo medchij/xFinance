@@ -22,6 +22,7 @@ app.get('/api', (req, res) => {
   res.send('xFinance Express.js backend server is running!');
 });
 
+
 // API Routes
 const authRouter = require('./routes/auth');
 app.use('/api/auth', authRouter);
@@ -49,6 +50,9 @@ app.use('/api/env', envRouter);
 
 const usersRouter = require('./routes/users.js');
 app.use('/api/users', usersRouter);
+
+const groupsRouter = require('./routes/groups');
+app.use('/api/groups', groupsRouter);
 
 const rolesRouter = require('./routes/roles');
 app.use('/api/roles', rolesRouter);
