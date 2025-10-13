@@ -34,7 +34,8 @@ const useStyles = makeStyles({
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
   },
   title: {
-    ...typography.title3,
+    fontSize: tokens.fontSizeBase300,
+    fontWeight: tokens.fontWeightBold,
     margin: 0,
   },
   menuContainer: {
