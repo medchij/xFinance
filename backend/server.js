@@ -48,7 +48,7 @@ app.use('/api/ping', pingRouter);
 const envRouter = require('./routes/env');
 app.use('/api/env', envRouter);
 
-const usersRouter = require('./routes/users.js');
+const usersRouter = require('./routes/users');
 app.use('/api/users', usersRouter);
 
 const groupsRouter = require('./routes/groups');

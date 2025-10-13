@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { db } = require('../db'); 
+const { query } = require('../db'); 
 const bcrypt = require('bcrypt');
 
 // GET all users
 router.get('/', async (req, res) => {
     try {
-        const { rows } = await db.query('SELECT id, username, email, full_name, created_at FROM users ORDER BY created_at DESC');
+    const { rows } = await query('SELECT id, username, email, full_name, created_at FROM users ORDER BY created_at DESC');
         res.json(rows);
     } catch (err) {
         console.error(err.message);
@@ -25,7 +25,7 @@ router.post('/', async (req, res) => {
         const saltRounds = 10;
         const passwordHash = await bcrypt.hash(password, saltRounds);
 
-        const { rows } = await db.query(
+        const { rows } = await query(
             'INSERT INTO users (username, password_hash, email, full_name) VALUES ($1, $2, $3, $4) RETURNING id, username, email, full_name, created_at',
             [username, passwordHash, email, full_name]
         );
@@ -69,7 +69,7 @@ router.put('/:id', async (req, res) => {
         query += ' WHERE id = $1 RETURNING id, username, email, full_name, created_at';
         values.unshift(id);
 
-        const { rows } = await db.query(query, values);
+    const { rows } = await query(query, values);
 
         if (rows.length === 0) {
             return res.status(404).json({ msg: 'User not found' });
@@ -90,7 +90,7 @@ router.delete('/:id', async (req, res) => {
     const { id } = req.params;
 
     try {
-        const { rowCount } = await db.query('DELETE FROM users WHERE id = $1', [id]);
+    const { rowCount } = await query('DELETE FROM users WHERE id = $1', [id]);
 
         if (rowCount === 0) {
             return res.status(404).json({ msg: 'User not found' });
