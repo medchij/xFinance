@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import logger from "../utils/logger";
 
 const LogViewer = ({ isOpen, onClose }) => {
   const [logs, setLogs] = useState([]);
@@ -7,11 +8,27 @@ const LogViewer = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Compute API base (dev: http://localhost:4000, prod: relative)
+  const API_BASE = (() => {
+    // eslint-disable-next-line no-undef
+    const injected = typeof globalThis !== "undefined" && globalThis.__API_BASE__ ? globalThis.__API_BASE__ : "";
+    if (injected) return injected;
+    try {
+      if (typeof window !== "undefined") {
+        const { protocol, hostname, port } = window.location || {};
+        if ((hostname === "localhost" || hostname === "127.0.0.1") && port === "3000") {
+          return `${protocol}//${hostname}:4000`;
+        }
+      }
+    } catch (e) {}
+    return "";
+  })();
+
   useEffect(() => {
     if (isOpen) {
       setLoading(true);
       setError(null);
-      fetch('/api/logs')
+      fetch(`${API_BASE}/api/logs`)
         .then((res) => {
           if (!res.ok) throw new Error('Лог татаж чадсангүй');
           return res.json();
@@ -29,7 +46,7 @@ const LogViewer = ({ isOpen, onClose }) => {
   const refreshLogs = () => {
     setLoading(true);
     setError(null);
-    fetch('/api/logs')
+    fetch(`${API_BASE}/api/logs`)
       .then((res) => {
         if (!res.ok) throw new Error('Лог татаж чадсангүй');
         return res.json();
@@ -46,7 +63,7 @@ const LogViewer = ({ isOpen, onClose }) => {
   const clearAllLogs = () => {
     setLoading(true);
     setError(null);
-    fetch('/api/logs', {
+    fetch(`${API_BASE}/api/logs`, {
       method: 'DELETE',
     })
       .then((res) => {
@@ -147,6 +164,17 @@ const LogViewer = ({ isOpen, onClose }) => {
             
             <button onClick={exportLogs} style={{ padding: '4px 8px' }}>
               💾 Экспорт
+            </button>
+            <button
+              onClick={() => {
+                logger.info("Тест лог", { now: new Date().toISOString() });
+                // Also optimistically refresh
+                setTimeout(refreshLogs, 300);
+              }}
+              style={{ padding: '4px 8px' }}
+              title="Тест лог үүсгэх"
+            >
+              🧪 Тест лог
             </button>
             
             <button 

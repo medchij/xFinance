@@ -27,6 +27,9 @@ const AuthenticatedApp = ({ title }) => {
 
   // Клавиатур shortcut - Ctrl+Shift+L лог харах
   React.useEffect(() => {
+    // App mounted log
+    logger.info('App UI mounted');
+
     const handleKeydown = (e) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'L') {
         e.preventDefault();

@@ -82,7 +82,9 @@ module.exports = async (env = {}, options = {}) => {
       // Environment variables
       new webpack.DefinePlugin({
         'process.env.NODE_ENV': JSON.stringify(options.mode),
-        'process.env.REACT_APP_API_URL': JSON.stringify(process.env.REACT_APP_API_URL || '')
+        'process.env.REACT_APP_API_URL': JSON.stringify(process.env.REACT_APP_API_URL || ''),
+        // Expose API base to browser code (used by logger)
+        'globalThis.__API_BASE__': JSON.stringify(process.env.REACT_APP_API_URL || '')
       }),
 
       ...(useAnalyzer

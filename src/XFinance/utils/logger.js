@@ -7,6 +7,26 @@ class Logger {
     this.logs = [];
     this.maxLogs = 1000; // Maximum number of logs to keep in memory
     this.logLevel = 'info'; // Default log level
+    this.remoteLevels = new Set(["error", "warn", "info"]); // Levels to send to backend
+    // Use global value injected by webpack or fallback to environment heuristics
+    // eslint-disable-next-line no-undef
+    const injectedBase = (typeof globalThis !== "undefined" && globalThis.__API_BASE__) ? globalThis.__API_BASE__ : "";
+    this.apiBase = injectedBase || this._detectApiBase();
+  }
+
+  _detectApiBase() {
+    try {
+      if (typeof window !== 'undefined') {
+        const { protocol, hostname, port } = window.location || {};
+        // Dev server runs on 3000, backend on 4000 by default
+        if ((hostname === 'localhost' || hostname === '127.0.0.1') && port === '3000') {
+          return `${protocol}//${hostname}:4000`;
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+    return '';
   }
 
   // Log levels
@@ -22,6 +42,15 @@ class Logger {
     this.logLevel = level;
   }
 
+  // Configure which levels go to backend
+  setRemoteLevels(levels = ["error", "warn", "info"]) {
+    this.remoteLevels = new Set(levels.map((l) => String(l).toLowerCase()));
+  }
+
+  setApiBase(base) {
+    this.apiBase = base || "";
+  }
+
   shouldLog(level) {
     return Logger.LEVELS[level] <= Logger.LEVELS[this.logLevel];
   }
@@ -32,7 +61,7 @@ class Logger {
       timestamp,
       level: level.toUpperCase(),
       message,
-      data
+      data,
     };
 
     // Keep logs in memory
@@ -47,8 +76,8 @@ class Logger {
   error(message, data = null) {
     if (!this.shouldLog('error')) return;
     
-    const logEntry = this.formatMessage('error', message, data);
-    console.error(`[${logEntry.timestamp}] ERROR: ${message}`, data || '');
+  const logEntry = this.formatMessage('error', message, data);
+  console.error(`[${logEntry.timestamp}] ERROR: ${message}`, data || '');
     
     // Send to backend if available
     this.sendToBackend(logEntry);
@@ -57,8 +86,8 @@ class Logger {
   warn(message, data = null) {
     if (!this.shouldLog('warn')) return;
     
-    const logEntry = this.formatMessage('warn', message, data);
-    console.warn(`[${logEntry.timestamp}] WARN: ${message}`, data || '');
+  const logEntry = this.formatMessage('warn', message, data);
+  console.warn(`[${logEntry.timestamp}] WARN: ${message}`, data || '');
     
     this.sendToBackend(logEntry);
   }
@@ -66,8 +95,8 @@ class Logger {
   info(message, data = null) {
     if (!this.shouldLog('info')) return;
     
-    const logEntry = this.formatMessage('info', message, data);
-    console.info(`[${logEntry.timestamp}] INFO: ${message}`, data || '');
+  const logEntry = this.formatMessage('info', message, data);
+  console.info(`[${logEntry.timestamp}] INFO: ${message}`, data || '');
     
     this.sendToBackend(logEntry);
   }
@@ -93,9 +122,10 @@ class Logger {
   // Send log to backend server
   async sendToBackend(logEntry) {
     try {
-      // Only send important logs to backend (error, warn)
-      if (logEntry.level === 'ERROR' || logEntry.level === 'WARN') {
-        const response = await fetch('/api/logs', {
+      const levelLower = String(logEntry.level || '').toLowerCase();
+      if (this.remoteLevels.has(levelLower)) {
+            const url = `${this.apiBase}/api/logs`;
+        const response = await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
