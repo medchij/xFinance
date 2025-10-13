@@ -8,8 +8,11 @@ import {
     TableRow,
     TableCell,
     makeStyles,
+    shorthands,
     tokens,
-    typography,
+    Title3,
+    Body1,
+    Card,
 } from "@fluentui/react-components";
 import { Add24Regular, Edit24Regular, Delete24Regular } from "@fluentui/react-icons";
 import { useAppContext } from "./AppContext";
@@ -21,22 +24,29 @@ const useStyles = makeStyles({
     root: {
         display: "flex",
         flexDirection: "column",
-        gap: "20px",
+        ...shorthands.gap("20px"),
+    },
+    card: {
+        ...shorthands.flex(1),
+        display: "flex",
+        flexDirection: "column",
     },
     header: {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
+        ...shorthands.padding("0", "16px"),
+        ...shorthands.margin("0", "0", "16px", "0"),
     },
-    title: {
-        ...typography.title2,
+    content: {
+        ...shorthands.overflow("auto"),
     },
     table: {
         width: "100%",
     },
     actionCell: {
         display: "flex",
-        gap: tokens.spacingHorizontalS,
+        ...shorthands.gap(tokens.spacingHorizontalS),
     }
 });
 
@@ -119,40 +129,46 @@ const UserManagement = () => {
 
     return (
         <div className={styles.root}>
-            <div className={styles.header}>
-                <h2 className={styles.title}>Хэрэглэгчийн удирдлага</h2>
-                <Button icon={<Add24Regular />} appearance="primary" onClick={handleAddUser}>
-                    Шинэ хэрэглэгч
-                </Button>
-            </div>
+            <Title3>Хэрэглэгчийн удирдлага</Title3>
+            <Body1>Системийн хэрэглэгчдийг удирдах, нэмэх, засах, устгах үйлдлүүдийг гүйцэтгэнэ.</Body1>
 
-            <Table aria-label="User list table" className={styles.table}>
-                <TableHeader>
-                    <TableRow>
-                        <TableHeaderCell>Хэрэглэгчийн нэр</TableHeaderCell>
-                        <TableHeaderCell>И-мэйл</TableHeaderCell>
-                        <TableHeaderCell>Бүтэн нэр</TableHeaderCell>
-                        <TableHeaderCell>Ажил үүрэг</TableHeaderCell>
-                        <TableHeaderCell>Үйлдэл</TableHeaderCell>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {users.map((user) => (
-                        <TableRow key={user.id}>
-                            <TableCell>{user.username}</TableCell>
-                            <TableCell>{user.email}</TableCell>
-                            <TableCell>{user.full_name}</TableCell>
-                            <TableCell>{user.role_name || "Тодорхойгүй"}</TableCell>
-                            <TableCell>
-                                <div className={styles.actionCell}>
-                                <Button icon={<Edit24Regular />} aria-label="Засах" onClick={() => handleEditUser(user)} />
-                                <Button icon={<Delete24Regular />} aria-label="Устгах" onClick={() => handleDeleteUser(user.id)} />
-                                </div>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+            <Card className={styles.card}>
+                <div className={styles.header}>
+                    <Button icon={<Add24Regular />} appearance="primary" onClick={handleAddUser}>
+                        Шинэ хэрэглэгч
+                    </Button>
+                </div>
+
+                <div className={styles.content}>
+                    <Table aria-label="User list table" className={styles.table}>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHeaderCell>Хэрэглэгчийн нэр</TableHeaderCell>
+                                <TableHeaderCell>И-мэйл</TableHeaderCell>
+                                <TableHeaderCell>Бүтэн нэр</TableHeaderCell>
+                                <TableHeaderCell>Ажил үүрэг</TableHeaderCell>
+                                <TableHeaderCell>Үйлдэл</TableHeaderCell>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {users.map((user) => (
+                                <TableRow key={user.id}>
+                                    <TableCell>{user.username}</TableCell>
+                                    <TableCell>{user.email}</TableCell>
+                                    <TableCell>{user.full_name}</TableCell>
+                                    <TableCell>{user.role_name || "Тодорхойгүй"}</TableCell>
+                                    <TableCell>
+                                        <div className={styles.actionCell}>
+                                        <Button icon={<Edit24Regular />} aria-label="Засах" onClick={() => handleEditUser(user)} />
+                                        <Button icon={<Delete24Regular />} aria-label="Устгах" onClick={() => handleDeleteUser(user.id)} />
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            </Card>
             
             <Suspense fallback={<div>Ачааллаж байна...</div>}>
                 {isFormOpen && (
