@@ -1,6 +1,6 @@
 import * as React from "react";
 import PropTypes from "prop-types";
-import { Image, tokens, makeStyles, Button } from "@fluentui/react-components";
+import { Image, tokens, makeStyles, Button, Badge } from "@fluentui/react-components";
 
 const useStyles = makeStyles({
   headerContainer: {
@@ -19,6 +19,11 @@ const useStyles = makeStyles({
     top: "15px",
     right: "15px",
   },
+  envBadge: {
+    position: "absolute",
+    top: "15px",
+    left: "15px",
+  },
   message: {
     fontSize: tokens.fontSizeHero900,
     fontWeight: tokens.fontWeightRegular,
@@ -33,9 +38,22 @@ const useStyles = makeStyles({
 
 const Header = ({ title, logo, message, isPublic, onNavigateToLogin }) => {
   const styles = useStyles();
+  
+  // Detect environment
+  const isLocalHost = typeof window !== "undefined" && /^localhost$|^127(\.\d+){3}$/.test(window.location.hostname);
+  const isDevelopment = isLocalHost || (typeof window !== "undefined" && window.location.port === "3000");
 
   return (
     <section className={styles.headerContainer + " fluent-Header-headerContainer"}>
+      {isDevelopment && (
+        <Badge 
+          appearance="filled"
+          color="danger"
+          className={styles.envBadge}
+        >
+          🔧 Development
+        </Badge>
+      )}
       {isPublic && (
         <Button 
           appearance="primary"
