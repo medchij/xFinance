@@ -1,13 +1,8 @@
 import React, { useState } from "react";
-import PropTypes from 'prop-types';
-import {
-  Input,
-  Button,
-  Link,
-  makeStyles,
-  shorthands,
-} from "@fluentui/react-components";
+import PropTypes from "prop-types";
+import { Input, Button, Link, makeStyles, shorthands } from "@fluentui/react-components";
 import Header from "./Header";
+import { useActivityTracking } from "../hooks/useActivityTracking";
 
 const useStyles = makeStyles({
   root: {
@@ -31,7 +26,7 @@ const useStyles = makeStyles({
   navigationLink: {
     marginTop: "16px", // Add some space
     textAlign: "center",
-  }
+  },
 });
 
 const LoginPage = ({ onLogin, onCompanySelect, onNavigateToPublic }) => {
@@ -39,11 +34,18 @@ const LoginPage = ({ onLogin, onCompanySelect, onNavigateToPublic }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
+  // Activity tracking
+  const { trackFormStart, trackFieldChange, trackSubmit } = useActivityTracking("LoginPage");
+
   const handleLogin = (e) => {
     e.preventDefault();
-    const defaultCompany = "data"; 
-    onCompanySelect(defaultCompany); 
+    trackFormStart();
+
+    const defaultCompany = "data";
+    onCompanySelect(defaultCompany);
     onLogin(username, password, defaultCompany);
+
+    trackSubmit(true);
   };
 
   return (
@@ -54,17 +56,25 @@ const LoginPage = ({ onLogin, onCompanySelect, onNavigateToPublic }) => {
           type="text"
           placeholder="Нэвтрэх нэр"
           value={username}
-          onChange={(e, data) => setUsername(data.value)}
+          onChange={(e, data) => {
+            setUsername(data.value);
+            trackFieldChange("username", data.value);
+          }}
           required
         />
         <Input
           type="password"
           placeholder="Нууц үг"
           value={password}
-          onChange={(e, data) => setPassword(data.value)}
+          onChange={(e, data) => {
+            setPassword(data.value);
+            trackFieldChange("password", "***");
+          }}
           required
         />
-        <Button appearance="primary" type="submit">Нэвтрэх</Button>
+        <Button appearance="primary" type="submit">
+          Нэвтрэх
+        </Button>
       </form>
 
       {/* Link to go back to the public main page */}

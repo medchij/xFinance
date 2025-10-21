@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "./AppContext";
 import { BASE_URL } from "../../config";
+import { useActivityTracking } from "../hooks/useActivityTracking";
+import { withModalTracking, withFormTracking } from "./ActivityTrackingHOC";
 
 const CreateAccount = ({ isOpen, onClose }) => {
   const { showMessage, setLoading, selectedCompany, fetchSearchData } = useAppContext();
+  const { trackFormStart, trackFieldChange, trackSubmit, trackApiCall, trackError } =
+    useActivityTracking("CreateAccount");
   const [edd, setEdd] = useState("");
   const [dansniiNer, setDansniiNer] = useState("");
   const [currency, setCurrency] = useState("");
@@ -46,9 +50,7 @@ const CreateAccount = ({ isOpen, onClose }) => {
     }
 
     if (edd) {
-      const selectedAccount = glAccounts.find(
-        (account) => account.account_number === edd
-      );
+      const selectedAccount = glAccounts.find((account) => account.account_number === edd);
 
       if (selectedAccount) {
         setDansniiNer(selectedAccount.account_name);
@@ -66,9 +68,7 @@ const CreateAccount = ({ isOpen, onClose }) => {
 
   // ЗАСВАР: Англи түлхүүр үгс ашиглах
   const generateAccountNumber = () => {
-    const selectedAccount = glAccounts.find(
-      (account) => account.account_number === edd
-    );
+    const selectedAccount = glAccounts.find((account) => account.account_number === edd);
 
     if (selectedAccount && salbar) {
       const eddDugaar = selectedAccount.account_number;
@@ -82,26 +82,43 @@ const CreateAccount = ({ isOpen, onClose }) => {
   };
 
   const handleCreate = async () => {
+    trackFormStart();
+
     if (!selectedCompany) {
+      trackError(new Error("Компани сонгогдоогүй"), { action: "create_account" });
       showMessage("⚠️ Эхлээд компани сонгоно уу.");
       return;
     }
     if (!dansniiDugaar || !dansniiNer || !currency || !salbar || !edd) {
+      const missingFields = [];
+      if (!dansniiDugaar) missingFields.push("account_number");
+      if (!dansniiNer) missingFields.push("account_name");
+      if (!currency) missingFields.push("currency");
+      if (!salbar) missingFields.push("branch");
+      if (!edd) missingFields.push("gl_account");
+
+      trackError(new Error("Дутуу мэдээлэл"), { missingFields });
       showMessage("⚠️ Бүх талбарыг бөглөнө үү");
       return;
     }
 
     try {
       setLoading(true);
+
       const companyQuery = `?company_id=${selectedCompany.id}`;
       const companyBody = { company_id: selectedCompany.id };
 
-      const res = await fetch(`${BASE_URL}/api/account${companyQuery}`);
-      const allAccounts = await res.json();
-      // ЗАСВАР: Англи түлхүүр үг ашиглах
+      // Check for duplicates
+      const allAccounts = await trackApiCall(
+        () => fetch(`${BASE_URL}/api/account${companyQuery}`).then((res) => res.json()),
+        `/api/account${companyQuery}`,
+        "GET"
+      );
+
       const duplicate = allAccounts.find((acc) => acc.account_number === dansniiDugaar);
 
       if (duplicate) {
+        trackError(new Error("Давхардсан дансны дугаар"), { accountNumber: dansniiDugaar });
         showMessage("⚠️ Ижил дансны дугаар аль хэдийн үүссэн байна");
         return;
       }
@@ -114,34 +131,49 @@ const CreateAccount = ({ isOpen, onClose }) => {
         branch: branches.find((b) => b.code === salbar)?.name || salbar,
       };
 
-      const saveRes = await fetch(`${BASE_URL}/api/account`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newAccount),
-      });
+      // Save account
+      await trackApiCall(
+        async () => {
+          const saveRes = await fetch(`${BASE_URL}/api/account`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newAccount),
+          });
+          const saveResult = await saveRes.json();
+          if (!saveRes.ok) {
+            throw new Error(saveResult.message || "Хадгалах үед алдаа гарлаа");
+          }
+          return saveResult;
+        },
+        "/api/account",
+        "POST"
+      );
 
-      const saveResult = await saveRes.json();
+      // Update counter
+      await trackApiCall(
+        async () => {
+          const counterRes = await fetch(`${BASE_URL}/api/gl-tooluurchange`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ edd, ...companyBody }),
+          });
+          const counterResult = await counterRes.json();
+          if (!counterRes.ok) {
+            throw new Error(counterResult.message || "Тоолуур шинэчлэхэд алдаа гарлаа");
+          }
+          return counterResult;
+        },
+        "/api/gl-tooluurchange",
+        "PUT"
+      );
 
-      if (!saveRes.ok) {
-        throw new Error(saveResult.message || "Хадгалах үед алдаа гарлаа");
-      }
-
-      const counterRes = await fetch(`${BASE_URL}/api/gl-tooluurchange`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ edd, ...companyBody }),
-      });
-
-      const counterResult = await counterRes.json();
-
-      if (!counterRes.ok) {
-        throw new Error(counterResult.message || "Тоолуур шинэчлэхэд алдаа гарлаа");
-      }
-
+      trackSubmit(true);
       showMessage("✅ Данс амжилттай үүслээ");
       fetchSearchData(true);
       handleClose();
     } catch (err) {
+      trackSubmit(false, [err.message]);
+      trackError(err, { action: "create_account" });
       console.error("Данс үүсгэхэд алдаа гарлаа:", err);
       showMessage("❌ " + (err.message || "Сервертэй холбогдоход алдаа гарлаа"));
     } finally {
@@ -166,7 +198,9 @@ const CreateAccount = ({ isOpen, onClose }) => {
         <div style={styles.modal}>
           <p>⚠️ Данс үүсгэхийн тулд эхлээд Профайл хуудаснаас компани сонгоно уу.</p>
           <div style={styles.buttonRow}>
-            <button style={styles.cancelButton} onClick={onClose}>Хаах</button>
+            <button style={styles.cancelButton} onClick={onClose}>
+              Хаах
+            </button>
           </div>
         </div>
       </div>
@@ -181,7 +215,10 @@ const CreateAccount = ({ isOpen, onClose }) => {
           <label>ЕДД</label>
           <select
             value={edd}
-            onChange={(e) => setEdd(e.target.value)}
+            onChange={(e) => {
+              setEdd(e.target.value);
+              trackFieldChange("edd", e.target.value);
+            }}
             style={styles.input}
           >
             <option value="">ЕДД сонгох</option>
@@ -197,7 +234,10 @@ const CreateAccount = ({ isOpen, onClose }) => {
           <label>Салбар</label>
           <select
             value={salbar}
-            onChange={(e) => setSalbar(e.target.value)}
+            onChange={(e) => {
+              setSalbar(e.target.value);
+              trackFieldChange("salbar", e.target.value);
+            }}
             style={styles.input}
           >
             <option value="">Салбар сонгох</option>
@@ -220,21 +260,11 @@ const CreateAccount = ({ isOpen, onClose }) => {
         </div>
         <div style={styles.row}>
           <label>Дансны дугаар</label>
-          <input
-            type="text"
-            value={dansniiDugaar}
-            readOnly
-            style={{ ...styles.input, background: "#f9f9f9" }}
-          />
+          <input type="text" value={dansniiDugaar} readOnly style={{ ...styles.input, background: "#f9f9f9" }} />
         </div>
         <div style={styles.row}>
           <label>Валют</label>
-          <input
-            type="text"
-            value={currency}
-            readOnly
-            style={{ ...styles.input, background: "#f9f9f9" }}
-          />
+          <input type="text" value={currency} readOnly style={{ ...styles.input, background: "#f9f9f9" }} />
         </div>
         <div style={styles.buttonRow}>
           <button style={styles.submitButton} onClick={handleCreate}>

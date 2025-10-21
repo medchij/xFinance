@@ -2,7 +2,7 @@ import React, { useState, lazy, Suspense } from "react";
 import PropTypes from "prop-types";
 import { useAppContext } from "./AppContext"; // useAppContext-г импортлох
 import LogViewer from "./LogViewer"; // LogViewer нэмэх
-import logger from "../utils/logger"; // Logger нэмэх
+import { useActivityTracking } from "../hooks/useActivityTracking";
 
 const Sidebar = lazy(() => import(/* webpackChunkName: "page-sidebar" */ "./Sidebar"));
 const MainContent = lazy(() => import(/* webpackChunkName: "page-main" */ "./maincontent"));
@@ -14,8 +14,8 @@ const AdminPage = lazy(() => import(/* webpackChunkName: "page-admin" */ "./Admi
 
 // Эрх шалгах тохиргоо
 const pagePermissions = {
-  settings: 'view_settings_page',
-  admin: 'view_admin_page',
+  settings: "view_settings_page",
+  admin: "view_admin_page",
   // Шаардлагатай бол бусад хуудсыг нэмнэ
 };
 
@@ -25,22 +25,22 @@ const AuthenticatedApp = ({ title }) => {
   const [isLogViewerOpen, setLogViewerOpen] = useState(false);
   const { hasPermission, showMessage } = useAppContext(); // Context-оос хэрэгтэй функцүүдийг авах
 
+  // Activity tracking
+  const { trackExcelAction } = useActivityTracking("AuthenticatedApp");
+
   // Клавиатур shortcut - Ctrl+Shift+L лог харах
   React.useEffect(() => {
-    // App mounted log
-    logger.info('App UI mounted');
-
     const handleKeydown = (e) => {
-      if (e.ctrlKey && e.shiftKey && e.key === 'L') {
+      if (e.ctrlKey && e.shiftKey && e.key === "L") {
         e.preventDefault();
         setLogViewerOpen(true);
-        logger.info('Лог харагчийг товчлуураар нээлээ');
+        trackExcelAction("открыт_лог_просмотрщик_клавиатурой");
       }
     };
-    
-    document.addEventListener('keydown', handleKeydown);
-    return () => document.removeEventListener('keydown', handleKeydown);
-  }, []);
+
+    document.addEventListener("keydown", handleKeydown);
+    return () => document.removeEventListener("keydown", handleKeydown);
+  }, [trackExcelAction]);
 
   const pages = {
     maincontent: { Component: MainContent, props: { title } },
@@ -90,22 +90,24 @@ const AuthenticatedApp = ({ title }) => {
           }}
         >
           {/* Log харагч товч */}
-          <div style={{
-            position: 'fixed',
-            top: '10px',
-            right: '10px',
-            zIndex: 1000
-          }}>
+          <div
+            style={{
+              position: "fixed",
+              top: "10px",
+              right: "10px",
+              zIndex: 1000,
+            }}
+          >
             <button
               onClick={() => setLogViewerOpen(true)}
               style={{
-                padding: '8px 12px',
-                backgroundColor: '#007acc',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px'
+                padding: "8px 12px",
+                backgroundColor: "#007acc",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "12px",
               }}
               title="Програмын лог харах (Ctrl+Shift+L)"
             >
@@ -120,12 +122,9 @@ const AuthenticatedApp = ({ title }) => {
           )}
         </div>
       </Suspense>
-      
+
       {/* Log Viewer Modal */}
-      <LogViewer 
-        isOpen={isLogViewerOpen} 
-        onClose={() => setLogViewerOpen(false)} 
-      />
+      <LogViewer isOpen={isLogViewerOpen} onClose={() => setLogViewerOpen(false)} />
     </div>
   );
 };

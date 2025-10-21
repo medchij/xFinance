@@ -150,17 +150,20 @@ const SheetSelectorDialog = ({ isOpen, onClose, onSelect }) => {
         </DialogSurface>
       </Dialog>
 
-      <Dialog open={isNewSheetDialogOpen} onOpenChange={(_, data) => {
-        if (!data.open) {
-          setIsNewSheetDialogOpen(false);
-          setNewSheetName("");
-        }
-      }}>
+      <Dialog
+        open={isNewSheetDialogOpen}
+        onOpenChange={(_, data) => {
+          if (!data.open) {
+            setIsNewSheetDialogOpen(false);
+            setNewSheetName("");
+          }
+        }}
+      >
         <DialogSurface>
           <DialogBody>
             <DialogTitle>Шинэ Sheet үүсгэх</DialogTitle>
             <DialogContent>
-              <div className={classes.field} style={{paddingTop: "12px"}}>
+              <div className={classes.field} style={{ paddingTop: "12px" }}>
                 <Label htmlFor="new-sheet-name-input">Sheet-ийн нэрийг оруулна уу:</Label>
                 <Input
                   id="new-sheet-name-input"

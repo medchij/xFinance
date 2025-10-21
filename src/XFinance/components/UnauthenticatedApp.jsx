@@ -17,11 +17,7 @@ const UnauthenticatedApp = ({ onLogin, onCompanySelect }) => {
   return (
     <div className="unauth-container">
       {showLogin ? (
-        <LoginPage 
-          onLogin={onLogin} 
-          onCompanySelect={onCompanySelect} 
-          onNavigateToPublic={handleNavigateToPublic} 
-        />
+        <LoginPage onLogin={onLogin} onCompanySelect={onCompanySelect} onNavigateToPublic={handleNavigateToPublic} />
       ) : (
         // Pass a function to MainContent to allow it to trigger navigation
         <MainContent isPublic={true} onNavigateToLogin={handleNavigateToLogin} />

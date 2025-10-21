@@ -1,4 +1,4 @@
-import {withLoading} from "./apiHelpers";
+import { withLoading } from "./apiHelpers";
 import { BASE_URL } from "../config";
 export async function getMerchantCategoryById(setMessage, setLoading) {
   return await withLoading(setLoading, setMessage, async () => {
@@ -12,7 +12,6 @@ export async function getMerchantCategoryById(setMessage, setLoading) {
     });
 
     const url = `${BASE_URL}/api/merchant/${id}`;
-    
 
     let response;
     try {
@@ -39,8 +38,8 @@ export async function getMerchantCategoryById(setMessage, setLoading) {
       throw new Error("⚠️ Хүснэгт олдсонгүй.");
     }
 
-     let result = `${pageTitle}\n`;
-    
+    let result = `${pageTitle}\n`;
+
     const rows = table.querySelectorAll("tr");
 
     for (let i = 1; i < rows.length; i++) {
@@ -52,7 +51,6 @@ export async function getMerchantCategoryById(setMessage, setLoading) {
     }
 
     // Excel дээр бичих
-    
 
     setMessage("📋 Үр дүн:\n" + result);
     //console.log("📋 Үр дүн:", result);

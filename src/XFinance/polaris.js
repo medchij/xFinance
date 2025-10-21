@@ -97,9 +97,7 @@ export async function runLoanReportProcessor(setMessage, setLoading) {
           ?.toString()
           .substring(4)
           .replace(/МУУ|ХЭВИЙН БУС|ЭРГЭЛЗЭЭТЭЙ/g, "ЧАНАРГҮЙ");
-        const angilal11 = row[headers["АНГИЛАЛ"]]
-          ?.toString()
-          .substring(4);
+        const angilal11 = row[headers["АНГИЛАЛ"]]?.toString().substring(4);
         // --- VBA-с хөрвүүлсэн логик эхлэл ---
         const rd = row[headers["РД"]];
         const axValue = `${angilal}${rd}`;
@@ -118,9 +116,9 @@ export async function runLoanReportProcessor(setMessage, setLoading) {
         const nas = Number(row[headers["НАС"]]);
         let nasniiInterval = "";
         if (nas > 17 && nas <= 25) nasniiInterval = "18-25 nasnii";
-          else if (nas > 25 && nas <= 35) nasniiInterval = "26-35 nasnii";
-          else if (nas > 35 && nas <= 45) nasniiInterval = "36-45 nasnii";
-          else if (nas > 45 && nas <= 55) nasniiInterval = "46-55 nasnii";
+        else if (nas > 25 && nas <= 35) nasniiInterval = "26-35 nasnii";
+        else if (nas > 35 && nas <= 45) nasniiInterval = "36-45 nasnii";
+        else if (nas > 45 && nas <= 55) nasniiInterval = "46-55 nasnii";
         else if (nas > 55) nasniiInterval = "55-s deesh";
         nasniiInterval1Data.push([nasniiInterval]);
 
@@ -337,13 +335,15 @@ async function zeeldegchiinTooCalc(sheet, headers) {
   sheet.getRangeByIndexes(startRow + 1, 80, results.length, results[0].length).values = results;
   sheet.getRangeByIndexes(startRow + results.length + 3, 80, nasResults.length, nasResults[0].length).values =
     nasResults;
-  sheet
-    .getRangeByIndexes(startRow + results.length + nasResults.length + 6, 80, bolovsrolResults.length, bolovsrolResults[0].length)
-    .values = bolovsrolResults;
+  sheet.getRangeByIndexes(
+    startRow + results.length + nasResults.length + 6,
+    80,
+    bolovsrolResults.length,
+    bolovsrolResults[0].length
+  ).values = bolovsrolResults;
 
   await sheet.context.sync();
 }
-
 
 //Зээлийн баланс тайлан тооцоололт
 async function performCalculation(sheet, headers, keyField) {
@@ -401,15 +401,14 @@ async function performCalculation(sheet, headers, keyField) {
     const huu = filtered.map((r) => +r[headers["ХҮҮНИЙ ХУВЬ"]]).filter((n) => !isNaN(n));
     // const uniqueRDCount = new Set(filtered.map((r) => r[headers["РД"]]).filter(Boolean)).size;
     const uniqueRDCount = new Set(
-    filtered.map((r) => r[keyField === "АНГИЛАЛ" ? headers["ДАНСНЫ ДУГААР"] : headers["РД"]])
-             .filter(Boolean)
-  ).size;
+      filtered.map((r) => r[keyField === "АНГИЛАЛ" ? headers["ДАНСНЫ ДУГААР"] : headers["РД"]]).filter(Boolean)
+    ).size;
 
     return [
-      zeel ,
+      zeel,
       uniqueRDCount,
-      angilalSum("ХЭВИЙН") ,
-      angilalSum("ХУГАЦАА ХЭТЭРСЭН") ,
+      angilalSum("ХЭВИЙН"),
+      angilalSum("ХУГАЦАА ХЭТЭРСЭН"),
       angilalSum("ЧАНАРГҮЙ"),
       huu.length ? Math.max(...huu) / 1200 : "",
       huu.length ? Math.min(...huu) / 1200 : "",
@@ -460,7 +459,7 @@ export async function processLoanPrepData(setMessage, setLoading) {
       }
 
       // Хүсэлтийн дагуу шинэ багануудыг нэмэх
-      headerLabels.push("BUTEEGDEHUUNII_NER","BUTEEGDEHUUN1", "JDH_DUN", "HUGATSAANII INTERVAL", "SEGMENT1");
+      headerLabels.push("BUTEEGDEHUUNII_NER", "BUTEEGDEHUUN1", "JDH_DUN", "HUGATSAANII INTERVAL", "SEGMENT1");
 
       for (let col = 0; col < headerLabels.length + 2; col++) {
         sheet.getCell(4, col).values = [[headerLabels[col]]];
@@ -480,21 +479,21 @@ export async function processLoanPrepData(setMessage, setLoading) {
       const zoriulaltIdx = headers["ЗОРИУЛАЛТ"];
       const huuIdx = headers["ХҮҮ"];
       const regIdx = headers["РЕГИСТЕР"];
-      const sarIdx = headers["ХУГАЦАА (САРААР)"];//Зээлийн хугацаа
+      const sarIdx = headers["ХУГАЦАА (САРААР)"]; //Зээлийн хугацаа
 
       for (let i = 5; i < data.length; i++) {
-                // Тухайн мөрийн мэдээллийг авна
-        const row = data[i]; 
-        
+        // Тухайн мөрийн мэдээллийг авна
+        const row = data[i];
+
         // 1. "Бүтээгдэхүүний нэр" баганын зүүн талын нүдний утгыг авна (buteegdehuunnii1Idx - 1)
-        const valT = row[buteegdehuunnii1Idx - 5]; 
-        
+        const valT = row[buteegdehuunnii1Idx - 5];
+
         // 2. Дээд мөрний "Бүтээгдэхүүний нэр" баганын утгыг авна
-        const valUprev = data[i - 1]?.[buteegdehuunnii1Idx]; 
-        
+        const valUprev = data[i - 1]?.[buteegdehuunnii1Idx];
+
         // 3. Дээд мөрний D баганын (индекс 3) утгыг авна
-        const valDprev = data[i - 1]?.[3]; 
-        
+        const valDprev = data[i - 1]?.[3];
+
         // 4. "Бүтээгдэхүүний нэр" баганын одоогийн мөрний утгыг шинэчилнэ
         row[buteegdehuunnii1Idx] =
           valT === "" || valT === undefined ? "" : valUprev === "" || valUprev === undefined ? valDprev : valUprev;
@@ -679,7 +678,7 @@ export async function loanpaymentData(setMessage, setLoading) {
       }
 
       // Хүсэлтийн дагуу шинэ багануудыг нэмэх
-      headerLabels.push("BUTEEGDEHUUN1", "HUGATSAANII INTERVAL","ЗОРИУЛАЛТ");
+      headerLabels.push("BUTEEGDEHUUN1", "HUGATSAANII INTERVAL", "ЗОРИУЛАЛТ");
 
       for (let col = 0; col < headerLabels.length; col++) {
         sheet.getCell(4, col).values = [[headerLabels[col]]];
@@ -712,16 +711,16 @@ export async function loanpaymentData(setMessage, setLoading) {
             sar <= 1
               ? "1 сар хүртэл хугацаатай"
               : sar <= 3
-              ? "1-3 сар хүртэл хугацаатай"
-              : sar <= 6
-              ? "3-6 сар хүртэл хугацаатай"
-              : sar <= 12
-              ? "6-12 сар хүртэл хугацаатай"
-              : sar <= 30
-              ? "12-30 сар хүртэл хугацаатай"
-              : sar <= 60
-              ? "30-60 сар хүртэл хугацаатай"
-              : "60-с дээш сар хүртэл хугацаатай";
+                ? "1-3 сар хүртэл хугацаатай"
+                : sar <= 6
+                  ? "3-6 сар хүртэл хугацаатай"
+                  : sar <= 12
+                    ? "6-12 сар хүртэл хугацаатай"
+                    : sar <= 30
+                      ? "12-30 сар хүртэл хугацаатай"
+                      : sar <= 60
+                        ? "30-60 сар хүртэл хугацаатай"
+                        : "60-с дээш сар хүртэл хугацаатай";
         }
 
         const zor = (row[zoriulaltIdx] || "").toString();
@@ -851,7 +850,7 @@ export async function processTop40LoanReport(setMessage, setLoading) {
       }
 
       const customerTotals = new Map();
-      data.forEach(row => {
+      data.forEach((row) => {
         const rd = row[rdCol];
         const uldegdel = parseFloat(row[uldegdelCol]) || 0;
         if (rd) {
@@ -864,7 +863,7 @@ export async function processTop40LoanReport(setMessage, setLoading) {
 
       const bcValues = [];
       const bdValues = [];
-      data.forEach(row => {
+      data.forEach((row) => {
         const rd = row[rdCol];
         const total = customerTotals.get(rd) || 0;
         const rank = rankMap.get(total) || 0;
@@ -893,18 +892,33 @@ export async function processTop40LoanReport(setMessage, setLoading) {
       for (let i = rankRange.values.length - 1; i >= 0; i--) {
         if (rankRange.values[i][0] > 40) {
           // Using getOffsetRange to delete the entire row. Address is relative to the range.
-          newSheet.getRangeByIndexes(i + 5, 0, 1, 1).getEntireRow().delete(Excel.DeleteShiftDirection.up);
+          newSheet
+            .getRangeByIndexes(i + 5, 0, 1, 1)
+            .getEntireRow()
+            .delete(Excel.DeleteShiftDirection.up);
         }
       }
       await context.sync();
 
       // 5. Delete unnecessary columns
       setMessage("⏳ Илүүдэл багануудыг устгаж байна...");
-      
+
       const columnsToKeep = [
-        "ДАНСНЫ ДУГААР", "ВАЛЮТ", "ОЛГОСОН ОГНОО", "ДУУСАХ ОГНОО", "ХАРИЛЦАГЧ", "РД", "УТАС1", 
-        "АЖИЛ ЭРХЛЭЛТ", "АНГИЛАЛ", "ОЛГОСОН ДҮН", "ЗОРИУЛАЛТ", "ҮНДСЭН ЗЭЭЛ", "ХҮҮНИЙ ХУВЬ", 
-        "БАРЬЦАА ХӨРӨНГИЙН НИЙТ ДҮН", "БАРЬЦАА ХӨРӨНГИЙН ТӨРӨЛ"
+        "ДАНСНЫ ДУГААР",
+        "ВАЛЮТ",
+        "ОЛГОСОН ОГНОО",
+        "ДУУСАХ ОГНОО",
+        "ХАРИЛЦАГЧ",
+        "РД",
+        "УТАС1",
+        "АЖИЛ ЭРХЛЭЛТ",
+        "АНГИЛАЛ",
+        "ОЛГОСОН ДҮН",
+        "ЗОРИУЛАЛТ",
+        "ҮНДСЭН ЗЭЭЛ",
+        "ХҮҮНИЙ ХУВЬ",
+        "БАРЬЦАА ХӨРӨНГИЙН НИЙТ ДҮН",
+        "БАРЬЦАА ХӨРӨНГИЙН ТӨРӨЛ",
       ];
 
       const newSheetHeadersRange = newSheet.getRange("A5:ZZ5");
@@ -927,26 +941,26 @@ export async function processTop40LoanReport(setMessage, setLoading) {
       }
       await context.sync();
 
-
       // 6. Data transformation (CurrencyChange, angilalChange etc.)
       // These functions are not defined in the provided JS code.
       // Placeholder for future implementation.
       setMessage("ℹ️ Мэдээллийн хөрвүүлэлт (алгасагдлаа, функц тодорхойгүй).");
-
 
       // 7. Sort data by column X (which will be a new column after deletions)
       setMessage("⏳ Мэдээллийг эрэмбэлж байна...");
       const finalUsedRange = newSheet.getUsedRange();
       // Assuming the sort key is now in column "I" after deletions (originally "X")
       const sortRange = newSheet.getRange("I5");
-      finalUsedRange.sort.apply([
+      finalUsedRange.sort.apply(
+        [
           {
-              key: sortRange.getColumnIndex(),
-              ascending: true,
+            key: sortRange.getColumnIndex(),
+            ascending: true,
           },
-      ], true);
+        ],
+        true
+      );
       await context.sync();
-
 
       setMessage("✅ Топ 40 зээлдэгчийн тайлан амжилттай боловсруулагдлаа.");
     });

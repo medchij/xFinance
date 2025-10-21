@@ -1,11 +1,5 @@
 import React, { useState, lazy, Suspense } from "react";
-import {
-  Switch,
-  Label,
-  makeStyles,
-  tokens,
-  typographyStyles,
-} from "@fluentui/react-components";
+import { Switch, Label, makeStyles, tokens, typographyStyles } from "@fluentui/react-components";
 
 // Lazily load the sub-page components
 const UserManagement = lazy(() => import(/* webpackChunkName: "admin-users" */ "./UserManagement"));
@@ -52,17 +46,17 @@ const useStyles = makeStyles({
       backgroundColor: tokens.colorSubtleBackgroundHover,
     },
     "&[data-active='true']": {
-        backgroundColor: tokens.colorBrandBackground,
-        color: tokens.colorBrandForegroundOnLight,
-        fontWeight: tokens.fontWeightSemiBold,
-        "&:hover": {
-            backgroundColor: tokens.colorBrandBackgroundHover,
-        }
+      backgroundColor: tokens.colorBrandBackground,
+      color: tokens.colorBrandForegroundOnLight,
+      fontWeight: tokens.fontWeightSemiBold,
+      "&:hover": {
+        backgroundColor: tokens.colorBrandBackgroundHover,
+      },
     },
     "&[aria-disabled]": {
-        cursor: "not-allowed",
-        color: tokens.colorNeutralForegroundDisabled,
-        backgroundColor: tokens.colorSubtleBackground,
+      cursor: "not-allowed",
+      color: tokens.colorNeutralForegroundDisabled,
+      backgroundColor: tokens.colorSubtleBackground,
     },
   },
   content: {
@@ -103,48 +97,46 @@ const AdminPage = () => {
     <div className={styles.root}>
       <div className={styles.sidebar}>
         <div className={styles.headerContainer}>
-          <Switch 
-            size="large" 
-            checked={isMaintenanceMode}
-            onChange={handleToggleChange}
-          />
+          <Switch size="large" checked={isMaintenanceMode} onChange={handleToggleChange} />
           <h2 className={styles.title}>{isMaintenanceMode ? "Засварт байгаа" : "Админ"}</h2>
         </div>
         <div className={styles.menuContainer}>
-          <div 
-            className={styles.menuItem} 
+          <div
+            className={styles.menuItem}
             data-active={activeSection === "Users"}
             onClick={() => !isMaintenanceMode && setActiveSection("Users")}
-            aria-disabled={isMaintenanceMode}>
+            aria-disabled={isMaintenanceMode}
+          >
             Хэрэглэгч
           </div>
-          <div 
-            className={styles.menuItem} 
+          <div
+            className={styles.menuItem}
             data-active={activeSection === "Roles"}
             onClick={() => !isMaintenanceMode && setActiveSection("Roles")}
-            aria-disabled={isMaintenanceMode}>
+            aria-disabled={isMaintenanceMode}
+          >
             Ажил үүрэг
           </div>
-          <div 
-            className={styles.menuItem} 
+          <div
+            className={styles.menuItem}
             data-active={activeSection === "UserGroups"}
             onClick={() => !isMaintenanceMode && setActiveSection("UserGroups")}
-            aria-disabled={isMaintenanceMode}>
+            aria-disabled={isMaintenanceMode}
+          >
             Хэрэглэгчийн бүлэг
           </div>
-          <div 
-            className={styles.menuItem} 
+          <div
+            className={styles.menuItem}
             data-active={activeSection === "Permissions"}
             onClick={() => !isMaintenanceMode && setActiveSection("Permissions")}
-            aria-disabled={isMaintenanceMode}>
+            aria-disabled={isMaintenanceMode}
+          >
             Эрхийн удирдлага
           </div>
         </div>
       </div>
       <div className={styles.content}>
-        <Suspense fallback={<div>Ачааллаж байна...</div>}>
-          {renderSection()}
-        </Suspense>
+        <Suspense fallback={<div>Ачааллаж байна...</div>}>{renderSection()}</Suspense>
       </div>
     </div>
   );

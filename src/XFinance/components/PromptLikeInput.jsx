@@ -1,6 +1,14 @@
 // PromptLikeInput.jsx
 import React, { useState } from "react";
-import { Dialog, DialogSurface, DialogBody, DialogTitle, DialogActions, Input, Button } from "@fluentui/react-components";
+import {
+  Dialog,
+  DialogSurface,
+  DialogBody,
+  DialogTitle,
+  DialogActions,
+  Input,
+  Button,
+} from "@fluentui/react-components";
 
 const PromptLikeInput = ({ open, onClose, onSubmit, title = "Утга оруулна уу", placeholder = "..." }) => {
   const [value, setValue] = useState("");
@@ -27,8 +35,12 @@ const PromptLikeInput = ({ open, onClose, onSubmit, title = "Утга оруул
             style={{ margin: "10px 0" }}
           />
           <DialogActions>
-            <Button appearance="secondary" onClick={handleClose}>Болих</Button>
-            <Button appearance="primary" onClick={handleSubmit}>OK</Button>
+            <Button appearance="secondary" onClick={handleClose}>
+              Болих
+            </Button>
+            <Button appearance="primary" onClick={handleSubmit}>
+              OK
+            </Button>
           </DialogActions>
         </DialogBody>
       </DialogSurface>

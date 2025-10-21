@@ -23,6 +23,17 @@ app.get('/api', (req, res) => {
   res.send('xFinance Express.js backend server is running!');
 });
 
+// Root route
+app.get('/', (req, res) => {
+  logger.info('Root endpoint accessed');
+  res.json({
+    message: 'xFinance Backend Server',
+    status: 'running',
+    version: '1.0.0',
+    timestamp: new Date().toISOString()
+  });
+});
+
 
 // API Routes
 const authRouter = require('./routes/auth');

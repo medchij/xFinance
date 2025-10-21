@@ -1,0 +1,4 @@
+{"error":"{\"message\":\"Нэвтрэх нэр эсвэл нууц үг буруу.\"}","level":"error","message":"HTTP Error Response","method":"POST","service":"xfinance-backend","statusCode":401,"timestamp":"2025-10-15 10:45:38","url":"/login"}
+{"error":"{\"message\":\"Нэвтрэх нэр эсвэл нууц үг буруу.\"}","level":"error","message":"HTTP Error Response","method":"POST","service":"xfinance-backend","statusCode":401,"timestamp":"2025-10-15 10:47:09","url":"/login"}
+{"error":"{\"message\":\"Token хүчингүй байна\"}","level":"error","message":"HTTP Error Response","method":"GET","service":"xfinance-backend","statusCode":403,"timestamp":"18.10.2025 12:20:58","url":"/me"}
+{"error":"{\"message\":\"Token хүчингүй байна\"}","level":"error","message":"HTTP Error Response","method":"GET","service":"xfinance-backend","statusCode":403,"timestamp":"21.10.2025 10:03:00","url":"/me"}

@@ -24,9 +24,7 @@ const CreateCustomer = ({ isOpen, onClose }) => {
       const res = await fetch(`${BASE_URL}/api/customer${companyQuery}`);
       const allCustomers = await res.json();
 
-      const duplicate = allCustomers.find(
-        (cus) => cus.name.toLowerCase() === name.trim().toLowerCase()
-      );
+      const duplicate = allCustomers.find((cus) => cus.name.toLowerCase() === name.trim().toLowerCase());
 
       if (duplicate) {
         showMessage("⚠️ Ижил нэртэй харилцагч аль хэдийн үүссэн байна");
@@ -52,7 +50,6 @@ const CreateCustomer = ({ isOpen, onClose }) => {
       showMessage("✅ Харилцагч амжилттай нэмэгдлээ");
       fetchSearchData(true); // ✅ Жагсаалтыг шинэчлэх
       handleClose(); // ✅ Цонхыг хаах
-
     } catch (err) {
       console.error("Харилцагч нэмэхэд алдаа:", err);
       showMessage("❌ " + (err.message || "Сервертэй холбогдоход алдаа гарлаа"));
@@ -76,7 +73,9 @@ const CreateCustomer = ({ isOpen, onClose }) => {
         <div style={styles.modal}>
           <p>⚠️ Харилцагч үүсгэхийн тулд эхлээд Профайл хуудаснаас компани сонгоно уу.</p>
           <div style={styles.buttonRow}>
-            <button style={styles.cancelButton} onClick={onClose}>Хаах</button>
+            <button style={styles.cancelButton} onClick={onClose}>
+              Хаах
+            </button>
           </div>
         </div>
       </div>
@@ -101,11 +100,7 @@ const CreateCustomer = ({ isOpen, onClose }) => {
 
         <div style={styles.row}>
           <label>Төлөв</label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            style={styles.input}
-          >
+          <select value={status} onChange={(e) => setStatus(e.target.value)} style={styles.input}>
             <option value="Идэвхитэй">Идэвхитэй</option>
             <option value="Идэвхгүй">Идэвхгүй</option>
           </select>

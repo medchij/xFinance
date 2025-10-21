@@ -1,32 +1,38 @@
 import { BASE_URL } from "../config";
+import { ActivityTracker } from "./utils/activityTracker";
 import logger from "./utils/logger";
 
-export async function withLoading(setLoading, setMessage, fn) {
+// Initialize activity tracker for API helpers
+const activityTracker = ActivityTracker.getInstance();
+
+export async function withLoading(setLoading, setMessage, fn, functionName = null) {
   try {
     setLoading(true);
-    logger.debug("Функц эхлэх", { function: fn.name });
-    
+
     const output = await fn();
 
-    if (output?.response instanceof Response) {
-      logger.apiResponse(output.response.url, output.response.status);
-      console.log("📡 HTTP:", output.response.statusText + " " + output.response.status);
+    // Only handle HTTP responses for actual API calls
+    if (output?.response && typeof output.response.ok !== "undefined") {
       if (!output.response.ok) {
         const text = await output.response.text();
         const errorMsg = "❌ Серверийн алдаа: " + text;
-        logger.error(errorMsg, { status: output.response.status, url: output.response.url });
         throw new Error(errorMsg);
       }
     }
 
-    logger.debug("Функц амжилттай дууслаа", { function: fn.name });
     return output;
-
   } catch (error) {
     const errorMsg = "❌ Алдаа гарлаа: " + (error?.message || error);
+
+    // Logger-д алдааг бичих
+    logger.error("withLoading функц дээр алдаа гарлаа", {
+      error: error?.message || error,
+      errorType: error?.name || "Unknown",
+      functionName: functionName || "anonymous",
+      stack: error?.stack,
+    });
+
     setMessage(errorMsg);
-    logger.error("API алдаа", { error: error?.message || error, function: fn.name });
-    console.error("API Error:", error?.message || error);
     throw error;
   } finally {
     setLoading(false);
@@ -35,13 +41,13 @@ export async function withLoading(setLoading, setMessage, fn) {
 
 // ЗАСВАР: externalAPI.js-д ашиглахын тулд company_id-аар дууддаг хувилбарыг сэргээв.
 export async function loadSettings(company_id) {
-    if (!company_id) throw new Error("⚠️ Тохиргоог ачаалахын тулд компани ID шаардлагатай.");
-    const res = await fetch(`${BASE_URL}/api/settings?company_id=${company_id}`);
-    if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "⚠️ Тохиргоог татаж чадсангүй.");
-    }
-    return await res.json();
+  if (!company_id) throw new Error("⚠️ Тохиргоог ачаалахын тулд компани ID шаардлагатай.");
+  const res = await fetch(`${BASE_URL}/api/settings?company_id=${company_id}`);
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "⚠️ Тохиргоог татаж чадсангүй.");
+  }
+  return await res.json();
 }
 
 export function getSettingValue(settings, name) {
@@ -121,8 +127,7 @@ export function getRandomPastelColor() {
 export function handleHttpError(response, result) {
   const statusCode = result?.status?.code;
   const httpCode = response.status;
-  const msg =
-    result?.status?.message || result?.message || result?.error || `Серверийн хариу амжилтгүй: ${httpCode}`;
+  const msg = result?.status?.message || result?.message || result?.error || `Серверийн хариу амжилтгүй: ${httpCode}`;
 
   if (httpCode === 401 || statusCode === 401) {
     throw new Error("Token хүчингүй эсвэл хугацаа нь дууссан байна. Дахин нэвтэрнэ үү.");

@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Input, Checkbox } from "@fluentui/react-components";
-import {
-  Search16Regular,
-  ArrowSortUp16Regular,
-  ArrowSortDown16Regular,
-} from "@fluentui/react-icons";
+import { Search16Regular, ArrowSortUp16Regular, ArrowSortDown16Regular } from "@fluentui/react-icons";
 import { getActiveCellFormula, setActiveCellValue } from "../xFinance";
 import { getSettingValue } from "../apiHelpers"; // ЗАСВАР: loadSettings-г устгав
 import { useAppContext } from "./AppContext";
@@ -76,13 +72,7 @@ const SearchTableSheet = ({ isOpen, onClose }) => {
     const lowerCol = columnName.toLowerCase();
     const isDateColumn = lowerCol.includes("огноо") || lowerCol.includes("date");
 
-    if (
-      isDateColumn &&
-      typeof value === "number" &&
-      Number.isInteger(value) &&
-      value >= 1 &&
-      value <= 60000
-    ) {
+    if (isDateColumn && typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 60000) {
       const excelEpoch = new Date(1899, 11, 30);
       const dateObj = new Date(excelEpoch.getTime() + (value + 1) * 86400000);
       return dateObj.toISOString().split("T")[0];
@@ -108,15 +98,12 @@ const SearchTableSheet = ({ isOpen, onClose }) => {
       const existing = prev.find((item) => item.key === key);
       if (existing) {
         const direction = existing.direction === "ascending" ? "descending" : "ascending";
-        return prev.map((item) =>
-          item.key === key ? { ...item, direction } : item
-        );
+        return prev.map((item) => (item.key === key ? { ...item, direction } : item));
       } else {
         return [...prev, { key, direction: "ascending" }];
       }
     });
   };
-
 
   const handleRowClick = async (row) => {
     try {
@@ -170,9 +157,7 @@ const SearchTableSheet = ({ isOpen, onClose }) => {
   };
 
   const filteredData = data.filter((row) => {
-    const textMatch = Object.values(row).some((v) =>
-      v?.toString().toLowerCase().includes(searchText.toLowerCase())
-    );
+    const textMatch = Object.values(row).some((v) => v?.toString().toLowerCase().includes(searchText.toLowerCase()));
     const hideMatch = hideSelected ? row.__lastValue !== "✅ Сонгосон" : true;
     return textMatch && hideMatch;
   });
@@ -240,12 +225,14 @@ const SearchTableSheet = ({ isOpen, onClose }) => {
           onChange={(_, data) => setHideSelected(data.checked)}
           style={{ marginBottom: "10px" }}
         />
-       <button onClick={clearSort}>Сорт арилгах</button>
+        <button onClick={clearSort}>Сорт арилгах</button>
 
         {selectedRow && (
           <div style={styles.selectedRow}>
             <span>✅ Сонгогдсон: {JSON.stringify(selectedRow)}</span>
-            <button style={styles.undoButton} onClick={handleUndo}>Буцаах</button>
+            <button style={styles.undoButton} onClick={handleUndo}>
+              Буцаах
+            </button>
           </div>
         )}
 
@@ -258,24 +245,20 @@ const SearchTableSheet = ({ isOpen, onClose }) => {
                   .map((key) => {
                     const sortIndex = sortConfig.findIndex((c) => c.key === key);
                     const sortItem = sortConfig[sortIndex];
-                    const sortIcon = sortItem
-                      ? sortItem.direction === "ascending"
-                        ? <ArrowSortUp16Regular />
-                        : <ArrowSortDown16Regular />
-                      : null;
+                    const sortIcon = sortItem ? (
+                      sortItem.direction === "ascending" ? (
+                        <ArrowSortUp16Regular />
+                      ) : (
+                        <ArrowSortDown16Regular />
+                      )
+                    ) : null;
 
                     return (
-                      <th
-                        key={key}
-                        style={{ ...styles.th, cursor: "pointer" }}
-                        onClick={() => handleSort(key)}
-                      >
+                      <th key={key} style={{ ...styles.th, cursor: "pointer" }} onClick={() => handleSort(key)}>
                         <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                           <span>{key}</span>
                           {sortIcon}
-                          {sortIndex >= 0 && (
-                            <span style={{ fontSize: "10px", opacity: 0.5 }}>({sortIndex + 1})</span>
-                          )}
+                          {sortIndex >= 0 && <span style={{ fontSize: "10px", opacity: 0.5 }}>({sortIndex + 1})</span>}
                         </div>
                       </th>
                     );
@@ -288,7 +271,9 @@ const SearchTableSheet = ({ isOpen, onClose }) => {
                   {Object.entries(row)
                     .filter(([k]) => !k.startsWith("__"))
                     .map(([k, val], i) => (
-                      <td key={i} style={styles.td}>{val}</td>
+                      <td key={i} style={styles.td}>
+                        {val}
+                      </td>
                     ))}
                 </tr>
               ))}
@@ -297,7 +282,9 @@ const SearchTableSheet = ({ isOpen, onClose }) => {
         </div>
 
         <div style={{ marginTop: "15px", textAlign: "right" }}>
-          <button style={styles.closeButton} onClick={onClose}>Хаах</button>
+          <button style={styles.closeButton} onClick={onClose}>
+            Хаах
+          </button>
         </div>
       </div>
     </div>
@@ -306,39 +293,88 @@ const SearchTableSheet = ({ isOpen, onClose }) => {
 
 const styles = {
   overlay: {
-    position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
-    background: "rgba(0,0,0,0.3)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000,
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100vw",
+    height: "100vh",
+    background: "rgba(0,0,0,0.3)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
   },
   modal: {
-    width: "90%", maxWidth: "1000px", background: "#fff", padding: "20px", borderRadius: "8px",
-    maxHeight: "90vh", overflowY: "auto",
+    width: "90%",
+    maxWidth: "1000px",
+    background: "#fff",
+    padding: "20px",
+    borderRadius: "8px",
+    maxHeight: "90vh",
+    overflowY: "auto",
   },
   title: {
-    fontSize: "14px", marginBottom: "10px", borderBottom: "1px solid #ddd", paddingBottom: "5px",
+    fontSize: "14px",
+    marginBottom: "10px",
+    borderBottom: "1px solid #ddd",
+    paddingBottom: "5px",
   },
   tableContainer: {
-    border: "1px solid #ccc", borderRadius: "4px", maxHeight: "70vh", overflow: "auto",
+    border: "1px solid #ccc",
+    borderRadius: "4px",
+    maxHeight: "70vh",
+    overflow: "auto",
   },
   table: {
-    width: "100%", borderCollapse: "collapse", tableLayout: "auto",
+    width: "100%",
+    borderCollapse: "collapse",
+    tableLayout: "auto",
   },
   th: {
-    background: "#f0f0f0", padding: "8px", border: "1px solid #ccc", fontSize: "12px", position: "sticky", top: 0, zIndex: 1, whiteSpace: "nowrap",
+    background: "#f0f0f0",
+    padding: "8px",
+    border: "1px solid #ccc",
+    fontSize: "12px",
+    position: "sticky",
+    top: 0,
+    zIndex: 1,
+    whiteSpace: "nowrap",
   },
   td: {
-    padding: "6px", border: "1px solid #eee", fontSize: "12px", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+    padding: "6px",
+    border: "1px solid #eee",
+    fontSize: "12px",
+    maxWidth: "200px",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
   },
   tr: {
-    cursor: "pointer", transition: "background 0.2s",
+    cursor: "pointer",
+    transition: "background 0.2s",
   },
   selectedRow: {
-    background: "#e6f7ff", padding: "8px", marginBottom: "10px", borderRadius: "4px", fontSize: "8px",
+    background: "#e6f7ff",
+    padding: "8px",
+    marginBottom: "10px",
+    borderRadius: "4px",
+    fontSize: "8px",
   },
   undoButton: {
-    background: "#e74c3c", color: "#fff", border: "none", padding: "5px 10px", marginLeft: "10px", cursor: "pointer", borderRadius: "4px",
+    background: "#e74c3c",
+    color: "#fff",
+    border: "none",
+    padding: "5px 10px",
+    marginLeft: "10px",
+    cursor: "pointer",
+    borderRadius: "4px",
   },
   closeButton: {
-    background: "#ccc", border: "none", padding: "8px 15px", cursor: "pointer", borderRadius: "4px",
+    background: "#ccc",
+    border: "none",
+    padding: "8px 15px",
+    cursor: "pointer",
+    borderRadius: "4px",
   },
 };
 

@@ -7,13 +7,7 @@ const AppNotification = () => {
 
   if (!message) return null;
 
-  return (
-    <Notification
-      message={message}
-      type={type}
-      onClose={() => setMessage("")}
-    />
-  );
+  return <Notification message={message} type={type} onClose={() => setMessage("")} />;
 };
 
 export default AppNotification;

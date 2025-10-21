@@ -1,4 +1,4 @@
-import React, { useRef, useState,useEffect  } from "react";
+import React, { useRef, useState, useEffect } from "react";
 
 import { Button, Tooltip } from "@fluentui/react-components";
 import * as fns from "../xFinance";
@@ -10,7 +10,7 @@ import CreateGL from "./CreateGL";
 import CreateAccount from "./CreateAccount";
 import CreateCustomer from "./CreateCustomer";
 import { useAppContext } from "./AppContext";
-import LogPanel from "./LogPanel";
+import Calculator from "./Calculator";
 import {
   NumberSymbol16Regular,
   ArrowSort16Regular,
@@ -67,15 +67,11 @@ const groupedTools = [
       { icon: <MoneyHand16Regular />, label: "Хааны token татах" },
       { icon: <KhanbankIcon />, label: "Хааны хуулга татах" },
       { icon: <ReceiptSearchRegular />, label: "Хааны данс лавлах" },
-
     ],
   },
-   {
+  {
     title: "Ebarimt хэрэгслүүд",
-    tools: [
-      { icon: <DocumentTableSearchRegular />, label: "РД-аар ҮА лавлах" },
-      
-    ],
+    tools: [{ icon: <DocumentTableSearchRegular />, label: "РД-аар ҮА лавлах" }],
   },
   {
     title: "Дансны удирдлага",
@@ -140,11 +136,11 @@ const CustomTools = ({ isSidebarOpen }) => {
     "Харилцагч үүсгэх": () => setActiveModal("createCustomer"),
   };
 
-const handleClick = async (label) => {
-  await withLoading(setLoading, showMessage, async () => {
-    await actions[label]?.();
-  });
-};
+  const handleClick = async (label) => {
+    await withLoading(setLoading, showMessage, async () => {
+      await actions[label]?.();
+    });
+  };
 
   return (
     <div
@@ -161,41 +157,39 @@ const handleClick = async (label) => {
         transition: "margin-left 0.3s ease-in-out, width 0.3s ease-in-out",
       }}
     >
-     <div
-  style={{
-    backgroundColor: "#fff",
-    padding: "10px",
-    borderRadius: "4px",
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-    width: isNarrowScreen ? "100%" : "400px",
-    textAlign: "center",
-    borderRight: isNarrowScreen ? "none" : "2px solid #ccc",
-    minHeight: "calc(100vh - 20px)",
-    marginBottom: isNarrowScreen ? "0" : "0",
-    marginRight: isNarrowScreen ? "0" : "20px",
-    order: isNarrowScreen ? 2 : 0, // ⭐️ ЭНЭ ШИНЭ ЗУРААС!
-  }}
->
-  <LogPanel />
-</div>
-
+      <div
+        style={{
+          backgroundColor: "#fff",
+          padding: "10px",
+          borderRadius: "4px",
+          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+          width: isNarrowScreen ? "100%" : "400px",
+          textAlign: "center",
+          borderRight: isNarrowScreen ? "none" : "2px solid #ccc",
+          minHeight: "calc(100vh - 20px)",
+          marginBottom: isNarrowScreen ? "0" : "0",
+          marginRight: isNarrowScreen ? "0" : "20px",
+          order: isNarrowScreen ? 2 : 0, // ⭐️ ЭНЭ ШИНЭ ЗУРААС!
+        }}
+      >
+        <Calculator />
+      </div>
 
       <div
-  style={{
-    backgroundColor: "#e5e7eb",
-    padding: "20px",
-    borderRadius: "4px",
-    minHeight: "calc(100vh - 20px)",
-    width: "100%",
-    maxWidth: isNarrowScreen ? "100%" : "320px",
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    order: isNarrowScreen ? 1 : 0, // ⭐️ ЭНЭ ШИНЭ ЗУРААС!
-  }}
->
-
+        style={{
+          backgroundColor: "#e5e7eb",
+          padding: "20px",
+          borderRadius: "4px",
+          minHeight: "calc(100vh - 20px)",
+          width: "100%",
+          maxWidth: isNarrowScreen ? "100%" : "320px",
+          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          order: isNarrowScreen ? 1 : 0, // ⭐️ ЭНЭ ШИНЭ ЗУРААС!
+        }}
+      >
         {groupedTools.map((group, groupIndex) => (
           <div
             key={groupIndex}

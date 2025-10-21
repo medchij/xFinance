@@ -38,7 +38,7 @@ const useStyles = makeStyles({
 
 const Header = ({ title, logo, message, isPublic, onNavigateToLogin }) => {
   const styles = useStyles();
-  
+
   // Detect environment
   const isLocalHost = typeof window !== "undefined" && /^localhost$|^127(\.\d+){3}$/.test(window.location.hostname);
   const isDevelopment = isLocalHost || (typeof window !== "undefined" && window.location.port === "3000");
@@ -46,20 +46,12 @@ const Header = ({ title, logo, message, isPublic, onNavigateToLogin }) => {
   return (
     <section className={styles.headerContainer + " fluent-Header-headerContainer"}>
       {isDevelopment && (
-        <Badge 
-          appearance="filled"
-          color="danger"
-          className={styles.envBadge}
-        >
+        <Badge appearance="filled" color="danger" className={styles.envBadge}>
           🔧 Development
         </Badge>
       )}
       {isPublic && (
-        <Button 
-          appearance="primary"
-          className={styles.loginButton}
-          onClick={onNavigateToLogin}
-        >
+        <Button appearance="primary" className={styles.loginButton} onClick={onNavigateToLogin}>
           Нэвтрэх
         </Button>
       )}

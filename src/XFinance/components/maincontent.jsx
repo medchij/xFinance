@@ -1,12 +1,22 @@
-import React from "react";
+import React, { useEffect } from "react";
 import PropTypes from "prop-types";
 import Header from "./Header";
 import HeroList from "./HeroList";
 import TextInsertion from "./TextInsertion";
 import { Ribbon24Regular, LockOpen24Regular, DesignIdeas24Regular } from "@fluentui/react-icons";
 import { insertText } from "../xFinance";
+import { useActivityTracking } from "../hooks/useActivityTracking";
 
 const MainContent = ({ title, isSidebarOpen, isPublic = false, onNavigateToLogin }) => {
+  const { trackPageView } = useActivityTracking("MainContent");
+
+  useEffect(() => {
+    trackPageView("MainContent", {
+      isPublic,
+      isSidebarOpen,
+      title,
+    });
+  }, [isPublic, isSidebarOpen, title, trackPageView]);
   const rootStyle = {
     flexGrow: 1,
     transition: "margin-left 0.3s ease-in-out",
@@ -23,12 +33,12 @@ const MainContent = ({ title, isSidebarOpen, isPublic = false, onNavigateToLogin
 
   return (
     <div style={rootStyle}>
-      <Header 
-        logo="assets/logo-filled.png" 
-        title={title} 
-        message="Тавтай морил" 
-        isPublic={isPublic} 
-        onNavigateToLogin={onNavigateToLogin} 
+      <Header
+        logo="assets/logo-filled.png"
+        title={title}
+        message="Тавтай морил"
+        isPublic={isPublic}
+        onNavigateToLogin={onNavigateToLogin}
       />
       <HeroList
         message="Энэ нэмэлт хэрэгсэл нь таны ажиллагааг хялбарчлах болно"

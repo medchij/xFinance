@@ -14,8 +14,7 @@ const codespacesBackendUrl = (() => {
   return `${window.location.protocol}//${base}`;
 })();
 
-const envUrl =
-  (typeof process !== "undefined" && process.env?.REACT_APP_API_URL) || "";
+const envUrl = (typeof process !== "undefined" && process.env?.REACT_APP_API_URL) || "";
 
 /**
  * BASE_URL сонгох логик:
@@ -26,7 +25,6 @@ const envUrl =
  */
 export const BASE_URL = isLocalHost
   ? "http://localhost:4000"
-  : (
-      (isBrowser && window.__XFINANCE_API_URL) ||
-      (codespacesBackendUrl || (envUrl ? envUrl.replace(/\/+$/, "") : (isBrowser ? window.location.origin : "")))
-    );
+  : (isBrowser && window.__XFINANCE_API_URL) ||
+    codespacesBackendUrl ||
+    (envUrl ? envUrl.replace(/\/+$/, "") : isBrowser ? window.location.origin : "");

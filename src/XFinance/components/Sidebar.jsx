@@ -131,13 +131,7 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
           {menuItems.map(
             (item, index) =>
               (!item.permission || hasPermission(item.permission)) && (
-                <SidebarItem
-                  key={index}
-                  icon={item.icon}
-                  text={item.text}
-                  isOpen={isOpen}
-                  onClick={item.action}
-                />
+                <SidebarItem key={index} icon={item.icon} text={item.text} isOpen={isOpen} onClick={item.action} />
               )
           )}
         </ul>

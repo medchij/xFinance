@@ -17,10 +17,10 @@ const getCompanyId = () => {
     throw new Error("⚠️ Компани сонгогдоогүй байна. Профайл хуудаснаас сонголт хийнэ үү.");
   }
   return companyId;
-}
+};
 
 export async function fetchCurrencyRatesByAPI(setMessage, setLoading) {
-  return withLoading(setLoading, setMessage, async () => {
+  return withLoading(setLoading, setMessage, async function fetchCurrencyRatesByAPI() {
     setMessage("⏳ Ханшийн мэдээлэл татаж байна...");
 
     const { startDate, endDate } = await Excel.run(async (context) => {
@@ -108,7 +108,8 @@ export async function fetchCurrencyRatesByAPI(setMessage, setLoading) {
   });
 }
 
-async function getCarToken(company_id) { // company_id-г параметрээр авна
+async function getCarToken(company_id) {
+  // company_id-г параметрээр авна
   const response = await fetch("https://service.transdep.mn/autobox-backend/api/v1/user/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -122,9 +123,9 @@ async function getCarToken(company_id) { // company_id-г параметрээр
 }
 
 export async function fetchVehicleInfoByPlate(setMessage, setLoading) {
-  return withLoading(setLoading, setMessage, async () => {
+  return withLoading(setLoading, setMessage, async function fetchVehicleInfoByPlate() {
     setMessage("⏳ Машины мэдээлэл татаж байна...");
-    
+
     const companyId = getCompanyId(); // localStorage-аас ID авах
     let settings = await loadSettings(companyId); // ID-г дамжуулах
     let car_token = getSettingValue(settings, "car_token");
@@ -158,7 +159,7 @@ export async function fetchVehicleInfoByPlate(setMessage, setLoading) {
 
     if (response.status === 401) {
       car_token = await getCarToken(companyId);
-      await saveSetting("car_token", car_token); 
+      await saveSetting("car_token", car_token);
 
       ({ response, result } = await fetchVehicleData(car_token));
     }
@@ -173,10 +174,23 @@ export async function fetchVehicleInfoByPlate(setMessage, setLoading) {
     }
 
     const fieldsToShow = [
-      "cabin_no", "declaration_no", "mark_name", "build_year", "build_month", "imported_date",
-      "color_name", "country_name", "model_name", "purpose_name", "fuel_type_eco_class_name",
-      "fuel_type_name", "steering_type_name", "vehicle_type_name", "wheel_name",
-      "owner.first_name", "owner.register",
+      "cabin_no",
+      "declaration_no",
+      "mark_name",
+      "build_year",
+      "build_month",
+      "imported_date",
+      "color_name",
+      "country_name",
+      "model_name",
+      "purpose_name",
+      "fuel_type_eco_class_name",
+      "fuel_type_name",
+      "steering_type_name",
+      "vehicle_type_name",
+      "wheel_name",
+      "owner.first_name",
+      "owner.register",
     ];
 
     const popupContent = fieldsToShow
@@ -196,7 +210,7 @@ export async function fetchVehicleInfoByPlate(setMessage, setLoading) {
 }
 
 export async function fetchKhanbankReceiptFromSheet(setMessage, setLoading) {
-  return withLoading(setLoading, setMessage, async () => {
+  return withLoading(setLoading, setMessage, async function fetchKhanbankReceiptFromSheet() {
     setMessage("⏳ Хуулга татаж байна...");
 
     const companyId = getCompanyId(); // localStorage-аас ID авах
@@ -303,7 +317,7 @@ export async function fetchKhanbankReceiptFromSheet(setMessage, setLoading) {
 }
 
 export async function getKhanbankToken(setMessage, setLoading) {
-  return withLoading(setLoading, setMessage, async () => {
+  return withLoading(setLoading, setMessage, async function getKhanbankToken() {
     setMessage("🔐 Access token авч байна...");
 
     const companyId = getCompanyId(); // localStorage-аас ID авах
@@ -321,9 +335,7 @@ export async function getKhanbankToken(setMessage, setLoading) {
 
     if (missingOrEmpty.length > 0) {
       throw new Error(
-        `⚠️ Дараах тохиргоо дутуу байна: ${missingOrEmpty.join(
-          ", "
-        )}. Профайл хуудаснаас гүйцэт бөглөнө үү.`
+        `⚠️ Дараах тохиргоо дутуу байна: ${missingOrEmpty.join(", ")}. Профайл хуудаснаас гүйцэт бөглөнө үү.`
       );
     }
 
@@ -373,24 +385,23 @@ export async function getKhanbankToken(setMessage, setLoading) {
     setMessage("✅ Token амжилттай авлаа.");
 
     await fetch(`${BASE_URL}/api/settings?id=${accessId}&company_id=${companyId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ value: result.access_token }),
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ value: result.access_token }),
     });
 
     await fetch(`${BASE_URL}/api/settings?id=${refreshId}&company_id=${companyId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ value: result.refresh_token }),
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ value: result.refresh_token }),
     });
 
     return { result, response };
   });
 }
 
-
 export async function fetchKhanbankAccountInfo(setMessage, setLoading) {
-  return withLoading(setLoading, setMessage, async () => {
+  return withLoading(setLoading, setMessage, async function fetchKhanbankAccountInfo() {
     setMessage("⏳ Данс лавлаж байна...");
 
     const companyId = getCompanyId(); // localStorage-аас ID авах
@@ -424,7 +435,6 @@ export async function fetchKhanbankAccountInfo(setMessage, setLoading) {
       headers.append("Referer", "https://corp.khanbank.com");
       headers.append("Origin", "https://corp.khanbank.com");
       headers.append("Host", "api.khanbank.com:9003");
-   
 
       const response = await fetch(apiPath, {
         method: "GET",
@@ -462,4 +472,3 @@ export async function fetchKhanbankAccountInfo(setMessage, setLoading) {
     return { result, response, accountDetail, activeCellAddress };
   });
 }
-

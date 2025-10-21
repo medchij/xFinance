@@ -29,7 +29,7 @@ const Notification = ({ message, type = "info", onClose, singleline = false }) =
     >
       <MessageBarGroup animate="both">
         <MessageBar layout={singleline ? "singleline" : "multiline"} intent={type}>
-          <MessageBarBody > 
+          <MessageBarBody>
             {/* style={{ paddingTop: "8px", paddingBottom: "8px" }} */}
             <MessageBarTitle>
               <div
@@ -58,12 +58,7 @@ const Notification = ({ message, type = "info", onClose, singleline = false }) =
           <MessageBarActions
             containerAction={
               type !== "success" ? (
-                <Button
-                  onClick={onClose}
-                  aria-label="dismiss"
-                  appearance="transparent"
-                  icon={<DismissRegular />}
-                />
+                <Button onClick={onClose} aria-label="dismiss" appearance="transparent" icon={<DismissRegular />} />
               ) : null
             }
           />

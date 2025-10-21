@@ -1,25 +1,19 @@
 import React, { useEffect } from "react";
 import { BASE_URL } from "../../config";
-import {
-  Dropdown,
-  Option,
-  Field,
-  tokens,
-  Button,
-} from "@fluentui/react-components";
+import { Dropdown, Option, Field, tokens, Button } from "@fluentui/react-components";
 import { ArrowClockwise16Regular, SignOut24Regular } from "@fluentui/react-icons"; // SignOut24Regular нэмэв
 import { useAppContext } from "./AppContext";
 import Header from "./Header";
 
 const Profile = ({ isSidebarOpen }) => {
-  const { 
-    selectedCompany, 
-    setSelectedCompany, 
-    showMessage, 
-    companies, 
-    fetchCompanies, 
-    loading, 
-    logout // logout-г context-оос авав
+  const {
+    selectedCompany,
+    setSelectedCompany,
+    showMessage,
+    companies,
+    fetchCompanies,
+    loading,
+    logout, // logout-г context-оос авав
   } = useAppContext();
 
   useEffect(() => {
@@ -64,24 +58,19 @@ const Profile = ({ isSidebarOpen }) => {
           margin: "20px",
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: "16px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
           <h2>Компани Сонголт</h2>
-          <Button 
-            icon={<ArrowClockwise16Regular />} 
-            appearance="subtle" 
-            onClick={handleRefresh} 
+          <Button
+            icon={<ArrowClockwise16Regular />}
+            appearance="subtle"
+            onClick={handleRefresh}
             aria-label="Сэргээх"
             disabled={loading}
           />
         </div>
 
-        {loading && companies.length === 0 ? (
-          null
-        ) : (
-          <Field
-            label="Таны ажиллах боломжтой компаниуд"
-            style={{ maxWidth: "400px" }}
-          >
+        {loading && companies.length === 0 ? null : (
+          <Field label="Таны ажиллах боломжтой компаниуд" style={{ maxWidth: "400px" }}>
             <Dropdown
               value={selectedCompany || ""}
               onOptionSelect={handleCompanyChange}
@@ -98,9 +87,7 @@ const Profile = ({ isSidebarOpen }) => {
         )}
 
         {companies.length === 0 && !loading && (
-          <p style={{ color: tokens.colorPaletteRedBackground3 }}>
-            ⚠️ Мэдээллийн санд компани бүртгэгдээгүй байна.
-          </p>
+          <p style={{ color: tokens.colorPaletteRedBackground3 }}>⚠️ Мэдээллийн санд компани бүртгэгдээгүй байна.</p>
         )}
       </div>
 

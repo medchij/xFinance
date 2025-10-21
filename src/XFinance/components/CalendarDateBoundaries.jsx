@@ -26,27 +26,25 @@ const CalendarDateBoundaries = () => {
   const today = new Date();
   const minDate = addMonths(today, -1);
   const maxDate = addYears(today, 1);
-  const restrictedDates = [
-    addDays(today, -2),
-    addDays(today, -8),
-    addDays(today, 2),
-    addDays(today, 8),
-  ];
+  const restrictedDates = [addDays(today, -2), addDays(today, -8), addDays(today, 2), addDays(today, 8)];
 
- const [selectedDate, setSelectedDate] = React.useState(new Date()); // always defined
+  const [selectedDate, setSelectedDate] = React.useState(new Date()); // always defined
   const { setLoading, showMessage } = useAppContext();
 
-  const onSelectDate = React.useCallback(async (date) => {
-    setSelectedDate(date);
+  const onSelectDate = React.useCallback(
+    async (date) => {
+      setSelectedDate(date);
 
-    if (!(date instanceof Date) || isNaN(date.getTime())) {
-      showMessage("❌ Огноо буруу байна.");
-      return;
-    }
+      if (!(date instanceof Date) || isNaN(date.getTime())) {
+        showMessage("❌ Огноо буруу байна.");
+        return;
+      }
 
-    const formatted = date.toLocaleDateString("en-CA");
-    await setActiveCellValue2(formatted, showMessage, setLoading);
-  }, [setLoading, showMessage]);
+      const formatted = date.toLocaleDateString("en-CA");
+      await setActiveCellValue2(formatted, showMessage, setLoading);
+    },
+    [setLoading, showMessage]
+  );
 
   return (
     <div style={{ padding: "20px" }}>
@@ -59,8 +57,6 @@ const CalendarDateBoundaries = () => {
         onSelectDate={onSelectDate}
         value={selectedDate || undefined}
       />
-
- 
     </div>
   );
 };

@@ -9,7 +9,18 @@ const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: winston.format.combine(
     winston.format.timestamp({
-      format: 'YYYY-MM-DD HH:mm:ss'
+      format: () => {
+        // Азийн цагийн бүс (+8) ашиглан DD.MM.YYYY HH:mm:ss форматаар
+        const now = new Date();
+        const asiaTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+        const day = String(asiaTime.getUTCDate()).padStart(2, '0');
+        const month = String(asiaTime.getUTCMonth() + 1).padStart(2, '0');
+        const year = asiaTime.getUTCFullYear();
+        const hours = String(asiaTime.getUTCHours()).padStart(2, '0');
+        const minutes = String(asiaTime.getUTCMinutes()).padStart(2, '0');
+        const seconds = String(asiaTime.getUTCSeconds()).padStart(2, '0');
+        return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`;
+      }
     }),
     winston.format.errors({ stack: true }),
     winston.format.json()
@@ -49,12 +60,27 @@ if (process.env.NODE_ENV !== 'production') {
 const requestLogger = (req, res, next) => {
   const start = Date.now();
   
+  // Хэрэглэгчийн мэдээллийг JWT token-оос авах
+  let user = null;
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const jwt = require('jsonwebtoken');
+      const token = authHeader.substring(7);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+      user = decoded.username || decoded.email || decoded.id;
+    } catch (err) {
+      // JWT invalid эсвэл expired
+    }
+  }
+  
   // Request логлох
   logger.info('HTTP Request', {
     method: req.method,
     url: req.url,
     ip: req.ip || req.connection.remoteAddress,
     userAgent: req.get('User-Agent'),
+    user: user || 'anonymous', // Хэрэглэгчийн нэр нэмэх
     body: req.method === 'POST' || req.method === 'PUT' ? 
       sanitizeBody(req.body) : undefined
   });
@@ -69,6 +95,7 @@ const requestLogger = (req, res, next) => {
       url: req.url,
       statusCode: res.statusCode,
       duration: `${duration}ms`,
+      user: user || 'anonymous', // Хэрэглэгчийн нэр нэмэх
       contentLength: res.get('Content-Length')
     });
 

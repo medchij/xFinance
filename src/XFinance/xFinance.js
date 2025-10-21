@@ -1,5 +1,6 @@
-import {withLoading} from "./apiHelpers"; // туслах функц
+import { withLoading } from "./apiHelpers"; // туслах функц
 import { BASE_URL } from "../config";
+import activityTracker from "./utils/activityTracker"; // Activity tracker нэмэх
 //Үндсэн функцүүд
 export let lastImportedData = null;
 export function loadXLSX() {
@@ -25,7 +26,6 @@ export function loadXLSX() {
   });
 }
 
-
 export const handleFileImport = async (
   event,
   {
@@ -44,7 +44,7 @@ export const handleFileImport = async (
     return;
   }
 
-  await withLoading(setLoading, setErrorMessage, async () => {
+  await withLoading(setLoading, setErrorMessage, async function importExcelData() {
     const reader = new FileReader();
     const buffer = await new Promise((resolve, reject) => {
       reader.onload = (e) => resolve(e.target.result);
@@ -95,7 +95,7 @@ export const handleFileImport = async (
 };
 
 export async function writeToImportSheet(sheetName, sheetData, confirmStatus, setLoading, setMessage) {
-  return withLoading(setLoading, setMessage, async () => {
+  return withLoading(setLoading, setMessage, async function writeToImportSheet() {
     return await Excel.run(async (context) => {
       const workbook = context.workbook;
       let sheet = workbook.worksheets.getItemOrNullObject(sheetName);
@@ -174,12 +174,17 @@ export async function insertText(text) {
       await context.sync();
     });
   } catch (error) {
-    console.log("Error: " + error);
+    // Error handling without console output
   }
 }
 //Тоо руу хөрвүүлэх функц
 export const handleNumberConversion = async (setMessage, setLoading) => {
-  return withLoading(setLoading, setMessage, async () => {
+  // Шууд лог хийх
+  activityTracker.trackAction("excel", "handleNumberConversion", {
+    action: "Тоо руу хөрвүүлэх",
+  });
+
+  return withLoading(setLoading, setMessage, async function handleNumberConversion() {
     await Excel.run(async (context) => {
       const range = context.workbook.getSelectedRange();
       range.load("values");
@@ -192,11 +197,10 @@ export const handleNumberConversion = async (setMessage, setLoading) => {
     });
 
     setMessage("✅ Амжилттай!");
-    console.log("✅ Тоо руу хөрвүүлэлт амжилттай");
   });
 };
 export const handleNegativeConversion = async (setMessage, setLoading) => {
-  return withLoading(setLoading, setMessage, async () => {
+  return withLoading(setLoading, setMessage, async function handleNegativeConversion() {
     await Excel.run(async (context) => {
       const range = context.workbook.getSelectedRange();
       range.load("values");
@@ -207,7 +211,9 @@ export const handleNegativeConversion = async (setMessage, setLoading) => {
       const newValues = originalValues.map((row) =>
         row.map((cell) =>
           typeof cell === "number" && !isNaN(cell)
-            ? (cell > 0 ? -cell : cell) // эерэгийг сөрөг болгоно
+            ? cell > 0
+              ? -cell
+              : cell // эерэгийг сөрөг болгоно
             : cell
         )
       );
@@ -217,13 +223,12 @@ export const handleNegativeConversion = async (setMessage, setLoading) => {
     });
 
     setMessage("✅ Сонгосон тоонуудыг сөрөг болголоо.");
-    console.log("✅ Negative conversion done");
   });
 };
 
 //Текст рүү хөрвүүлэх функц
 export const handleTextConversion = async (setMessage, setLoading) => {
-  return withLoading(setLoading, setMessage, async () => {
+  return withLoading(setLoading, setMessage, async function handleTextConversion() {
     await Excel.run(async (context) => {
       const range = context.workbook.getSelectedRange();
       range.load("values");
@@ -240,13 +245,12 @@ export const handleTextConversion = async (setMessage, setLoading) => {
     });
 
     setMessage("✅ Амжилттай!");
-    console.log("✅ Текст хөрвүүлэлт амжилттай");
   });
 };
 
 // ✅ Excel-ийн идэвхтэй нүдэнд утга оруулах функц
 export const setActiveCellValue = async (value, setMessage, setLoading) => {
-  return withLoading(setLoading, setMessage, async () => {
+  return withLoading(setLoading, setMessage, async function setActiveCellValue() {
     await Excel.run(async (context) => {
       const range = context.workbook.getActiveCell();
       range.values = `'${value}`;
@@ -254,12 +258,11 @@ export const setActiveCellValue = async (value, setMessage, setLoading) => {
     });
 
     setMessage("✅ Амжилттай");
-    console.log("✅ Идэвхтэй нүдэнд утга амжилттай бичигдлээ:", value);
   });
 };
 
 export const setActiveCellValue2 = async (value, setMessage, setLoading) => {
-  return withLoading(setLoading, setMessage, async () => {
+  return withLoading(setLoading, setMessage, async function setActiveCellValue2() {
     await Excel.run(async (context) => {
       const range = context.workbook.getActiveCell();
       range.values = [[value]];
@@ -267,13 +270,12 @@ export const setActiveCellValue2 = async (value, setMessage, setLoading) => {
     });
 
     setMessage("✅ Амжилттай");
-    console.log("✅ Идэвхтэй нүдэнд утга амжилттай бичигдлээ:", value);
   });
 };
 
 // ✅ Excel-ийн идэвхтэй нүдний утгыг авах функц
 export const getActiveCellValue = async (setMessage, setLoading) => {
-  return withLoading(setLoading, setMessage, async () => {
+  return withLoading(setLoading, setMessage, async function getActiveCellValue() {
     const value = await Excel.run(async (context) => {
       const range = context.workbook.getActiveCell();
       range.load("values");
@@ -282,13 +284,12 @@ export const getActiveCellValue = async (setMessage, setLoading) => {
     });
 
     setMessage(`✅ Утга: ${value}`);
-    сonsole.log("✅ Идэвхтэй нүдний утга:", value);
     return value;
   });
 };
 // Идэвхтэй байгаа нүдний formula-г авах функц
 export const getActiveCellFormula = async (setMessage, setLoading) => {
-  return withLoading(setLoading, setMessage, async () => {
+  return withLoading(setLoading, setMessage, async function getActiveCellFormula() {
     const formula = await Excel.run(async (context) => {
       const range = context.workbook.getActiveCell();
       range.load("formulas");
@@ -297,13 +298,12 @@ export const getActiveCellFormula = async (setMessage, setLoading) => {
     });
 
     setMessage(`✅ Formula: ${formula}`);
-    console.log("✅ Идэвхтэй байгаа нүдний formula:", formula);
     return formula;
   });
 };
 // ✅ Идэвхтэй нүдний утгаар шүүх функц
 export const filterByActiveCellValue = async (setMessage, setLoading) => {
-  return withLoading(setLoading, setMessage, async () => {
+  return withLoading(setLoading, setMessage, async function filterByActiveCellValue() {
     let filterRange;
     let filterValue;
 
@@ -343,7 +343,7 @@ export const filterByActiveCellValue = async (setMessage, setLoading) => {
       try {
         sheet.autoFilter.clear();
       } catch (e) {
-        console.warn("AutoFilter байхгүй эсвэл цэвэрлэгдсэн:", e.message);
+        // AutoFilter байхгүй эсвэл цэвэрлэгдсэн
       }
 
       sheet.tables.load("items");
@@ -364,13 +364,12 @@ export const filterByActiveCellValue = async (setMessage, setLoading) => {
 
       const msg = `✅ "${filterValue}" утгаар filter тавигдлаа. FilterRange: ${filterRange.address}`;
       setMessage(msg);
-      console.log(msg);
     });
   });
 };
 
 export const clearAutoFilter = async (setMessage, setLoading) => {
-  return withLoading(setLoading, setMessage, async () => {
+  return withLoading(setLoading, setMessage, async function clearAutoFilter() {
     await Excel.run(async (context) => {
       const sheet = context.workbook.worksheets.getActiveWorksheet();
 
@@ -407,13 +406,11 @@ export const clearAutoFilter = async (setMessage, setLoading) => {
     });
 
     setMessage("✅ FilteredTable амжилттай цэвэрлэгдлээ.");
-    console.log("✅ FilteredTable амжилттай цэвэрлэгдлээ.");
   });
 };
 
-
 export async function fetchAccountBalanceData(setMessage, setLoading) {
-  return withLoading(setLoading, setMessage, async () => {
+  return withLoading(setLoading, setMessage, async function fetchAccountBalanceData() {
     setMessage("⏳ Дансны мэдээллийг татаж байна...");
 
     // Backend-ээс дансны жагсаалт татах (timeout-той)
@@ -439,9 +436,9 @@ export async function fetchAccountBalanceData(setMessage, setLoading) {
       await context.sync();
 
       const headers = headerRow.values[0] || [];
-      const accountNameCol   = headers.indexOf("Дансны нэр");
+      const accountNameCol = headers.indexOf("Дансны нэр");
       const accountNumberCol = headers.indexOf("Дансны дугаар");
-      const currencyCol      = headers.indexOf("Валют");
+      const currencyCol = headers.indexOf("Валют");
 
       if (accountNameCol === -1 || accountNumberCol === -1 || currencyCol === -1) {
         throw new Error("⚠️ A5–C5 мөрөнд 'Дансны нэр', 'Дансны дугаар', 'Валют' баганууд байхгүй байна.");
@@ -458,19 +455,17 @@ export async function fetchAccountBalanceData(setMessage, setLoading) {
       const startRow = 8;
       data.forEach((item, idx) => {
         const rowIdx = startRow + idx;
-        sheet.getCell(rowIdx, accountNameCol).values   = [[item["Дансны нэр"] || ""]];
+        sheet.getCell(rowIdx, accountNameCol).values = [[item["Дансны нэр"] || ""]];
         sheet.getCell(rowIdx, accountNumberCol).values = [[`'${item["Дансны дугаар"] || ""}`]]; // текст болгох
-        sheet.getCell(rowIdx, currencyCol).values      = [[item["Валют"] || ""]];
+        sheet.getCell(rowIdx, currencyCol).values = [[item["Валют"] || ""]];
       });
 
       await context.sync();
     });
 
     setMessage("✅ Амжилттай.");
-    console.log("✅ Дансны мэдээллийг амжилттай орууллаа:", /* Preview */ data.slice(0, 3));
   });
 }
-
 
 // Excel-д ашиглагдаж буй range-ийг export хийх функц
 export async function exportSelectedRangesToXLSX(setMessage) {
@@ -487,7 +482,6 @@ export async function exportSelectedRangesToXLSX(setMessage) {
         throw new Error("⚠️ CurrentRegion-д утга алга.");
       }
 
-      
       const XLSX = await loadXLSX();
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet(values);
@@ -507,7 +501,6 @@ export async function exportSelectedRangesToXLSX(setMessage) {
       setMessage("✅ CurrentRegion экспорт хийгдлээ.");
     });
   } catch (error) {
-    console.error("❌ Export error:", error);
     setMessage("❌ Алдаа гарлаа: " + error.message);
   }
 }

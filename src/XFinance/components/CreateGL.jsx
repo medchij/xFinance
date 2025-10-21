@@ -62,9 +62,7 @@ const CreateGL = ({ isOpen, onClose }) => {
         if (!res.ok) throw new Error("ЕДД жагсаалт татахад алдаа гарлаа.");
         const data = await res.json();
 
-        const filtered = (Array.isArray(data) ? data : []).filter(
-          (a) => a.category === dansniiAngilal
-        );
+        const filtered = (Array.isArray(data) ? data : []).filter((a) => a.category === dansniiAngilal);
         setGlAccounts(filtered);
       } catch (err) {
         console.error("GLAccount fetch error:", err);
@@ -81,9 +79,7 @@ const CreateGL = ({ isOpen, onClose }) => {
     const selectedAccountNumber = e.target.value;
     setEdDugaar(selectedAccountNumber);
 
-    const selected = glAccounts.find(
-      (a) => a.account_number === selectedAccountNumber
-    );
+    const selected = glAccounts.find((a) => a.account_number === selectedAccountNumber);
 
     if (selected) {
       setDansniiNer(selected.account_name);
@@ -166,11 +162,7 @@ const CreateGL = ({ isOpen, onClose }) => {
 
         <div style={styles.row}>
           <label>Дансны ангилал</label>
-          <select
-            value={dansniiAngilal}
-            onChange={(e) => setDansniiAngilal(e.target.value)}
-            style={styles.input}
-          >
+          <select value={dansniiAngilal} onChange={(e) => setDansniiAngilal(e.target.value)} style={styles.input}>
             <option value="">Ангилал сонгох</option>
             {categories.map((category, index) => (
               <option key={index} value={category.name}>
@@ -182,12 +174,7 @@ const CreateGL = ({ isOpen, onClose }) => {
 
         <div style={styles.row}>
           <label>ЕД дугаар</label>
-          <select
-            value={edDugaar}
-            onChange={handleAccountChange}
-            style={styles.input}
-            disabled={!dansniiAngilal}
-          >
+          <select value={edDugaar} onChange={handleAccountChange} style={styles.input} disabled={!dansniiAngilal}>
             <option value="">Дансны дугаар сонгох</option>
             {glAccounts.map((account, index) => (
               <option key={index} value={account.account_number}>
@@ -199,21 +186,12 @@ const CreateGL = ({ isOpen, onClose }) => {
 
         <div style={styles.row}>
           <label>Дансны нэр</label>
-          <input
-            type="text"
-            value={dansniiNer}
-            onChange={(e) => setDansniiNer(e.target.value)}
-            style={styles.input}
-          />
+          <input type="text" value={dansniiNer} onChange={(e) => setDansniiNer(e.target.value)} style={styles.input} />
         </div>
 
         <div style={styles.row}>
           <label>Валют</label>
-          <select
-            value={currency}
-            onChange={(e) => setCurrency(e.target.value)}
-            style={styles.input}
-          >
+          <select value={currency} onChange={(e) => setCurrency(e.target.value)} style={styles.input}>
             {currencies.map((currency, index) => (
               <option key={index} value={currency.code}>
                 {currency.code}

@@ -33,11 +33,11 @@ const useStyles = makeStyles({
   },
   tabList: {
     marginBottom: "16px",
-    overflowX: 'auto', // Make tabs scrollable on small screens
+    overflowX: "auto", // Make tabs scrollable on small screens
   },
   tableContainer: {
-    overflowX: 'auto',
-    width: '100%',
+    overflowX: "auto",
+    width: "100%",
   },
   table: {
     width: "100%",
@@ -62,24 +62,11 @@ const useStyles = makeStyles({
 
 // Check for sensitive keys to mask them
 const isSensitiveKey = (key) =>
-  [
-    "khanbank_password",
-    "access_token",
-    "device_token",
-    "refresh_token",
-    "car_token",
-  ].includes(key);
+  ["khanbank_password", "access_token", "device_token", "refresh_token", "car_token"].includes(key);
 
 const SettingsPage = ({ isSidebarOpen }) => {
   const styles = useStyles();
-  const {
-    selectedCompany,
-    showMessage,
-    setLoading,
-    settings,
-    fetchSettings,
-    loading,
-  } = useAppContext();
+  const { selectedCompany, showMessage, setLoading, settings, fetchSettings, loading } = useAppContext();
 
   const [tabs, setTabs] = useState([]);
   const [activeTab, setActiveTab] = useState(null);
@@ -97,18 +84,18 @@ const SettingsPage = ({ isSidebarOpen }) => {
 
   useEffect(() => {
     if (settings.length > 0) {
-        const uniqueTabs = [...new Set(settings.map((item) => item.tab))].sort((a, b) => {
-            if (a === 'Үндсэн тохиргоо') return -1;
-            if (b === 'Үндсэн тохиргоо') return 1;
-            return a.localeCompare(b);
-        });
-        setTabs(uniqueTabs);
-        if (!activeTab || !uniqueTabs.includes(activeTab)) {
-            setActiveTab(uniqueTabs[0] || null);
-        }
+      const uniqueTabs = [...new Set(settings.map((item) => item.tab))].sort((a, b) => {
+        if (a === "Үндсэн тохиргоо") return -1;
+        if (b === "Үндсэн тохиргоо") return 1;
+        return a.localeCompare(b);
+      });
+      setTabs(uniqueTabs);
+      if (!activeTab || !uniqueTabs.includes(activeTab)) {
+        setActiveTab(uniqueTabs[0] || null);
+      }
     } else {
-        setTabs([]);
-        setActiveTab(null);
+      setTabs([]);
+      setActiveTab(null);
     }
   }, [settings, activeTab]);
 
@@ -131,8 +118,7 @@ const SettingsPage = ({ isSidebarOpen }) => {
         body: JSON.stringify({ value: editValue }),
       });
       const result = await response.json();
-      if (!response.ok)
-        throw new Error(result.message || "Серверийн алдаа");
+      if (!response.ok) throw new Error(result.message || "Серверийн алдаа");
 
       await fetchSettings(true);
       setEditId(null);
@@ -154,10 +140,7 @@ const SettingsPage = ({ isSidebarOpen }) => {
         body: JSON.stringify({ ...newSetting, tab: activeTab }),
       });
       const result = await response.json();
-      if (!response.ok)
-        throw new Error(
-          result.message || "Шинэ тохиргоо нэмэхэд алдаа гарлаа."
-        );
+      if (!response.ok) throw new Error(result.message || "Шинэ тохиргоо нэмэхэд алдаа гарлаа.");
 
       await fetchSettings(true);
       setNewSetting({ name: "", value: "" });
@@ -216,9 +199,7 @@ const SettingsPage = ({ isSidebarOpen }) => {
                 <TableRow>
                   <TableHeaderCell style={{ width: "20%" }}>Нэр</TableHeaderCell>
                   <TableHeaderCell>Утга</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "15%", textAlign: "center" }}>
-                    Үйлдэл
-                  </TableHeaderCell>
+                  <TableHeaderCell style={{ width: "15%", textAlign: "center" }}>Үйлдэл</TableHeaderCell>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -230,7 +211,7 @@ const SettingsPage = ({ isSidebarOpen }) => {
                         <Input
                           fluid
                           value={editValue}
-                          placeholder={isSensitiveKey(row.name) ? 'Шинэ утга оруулна уу' : ''}
+                          placeholder={isSensitiveKey(row.name) ? "Шинэ утга оруулна уу" : ""}
                           onChange={(e, data) => setEditValue(data.value)}
                         />
                       ) : (
@@ -252,24 +233,15 @@ const SettingsPage = ({ isSidebarOpen }) => {
                       {editId === row.id ? (
                         <>
                           <Tooltip content="Хадгалах" relationship="label">
-                            <Button
-                              icon={<CheckmarkCircle24Regular />}
-                              onClick={() => handleSave(row.id)}
-                            />
+                            <Button icon={<CheckmarkCircle24Regular />} onClick={() => handleSave(row.id)} />
                           </Tooltip>
                           <Tooltip content="Болих" relationship="label">
-                            <Button
-                              icon={<DismissCircle24Regular />}
-                              onClick={() => setEditId(null)}
-                            />
+                            <Button icon={<DismissCircle24Regular />} onClick={() => setEditId(null)} />
                           </Tooltip>
                         </>
                       ) : (
                         <Tooltip content="Засах" relationship="label">
-                          <Button
-                            icon={<EditRegular />}
-                            onClick={() => handleEdit(row)}
-                          />
+                          <Button icon={<EditRegular />} onClick={() => handleEdit(row)} />
                         </Tooltip>
                       )}
                     </TableCell>
@@ -279,11 +251,7 @@ const SettingsPage = ({ isSidebarOpen }) => {
             </Table>
           </div>
 
-          <Button
-            appearance="primary"
-            icon={<AddRegular />}
-            onClick={() => setShowNewInput(!showNewInput)}
-          >
+          <Button appearance="primary" icon={<AddRegular />} onClick={() => setShowNewInput(!showNewInput)}>
             {showNewInput ? "Болих" : "Шинэ тохиргоо"}
           </Button>
 
@@ -292,16 +260,12 @@ const SettingsPage = ({ isSidebarOpen }) => {
               <Input
                 placeholder="Нэр"
                 value={newSetting.name}
-                onChange={(e, data) =>
-                  setNewSetting({ ...newSetting, name: data.value })
-                }
+                onChange={(e, data) => setNewSetting({ ...newSetting, name: data.value })}
               />
               <Input
                 placeholder="Утга"
                 value={newSetting.value}
-                onChange={(e, data) =>
-                  setNewSetting({ ...newSetting, value: data.value })
-                }
+                onChange={(e, data) => setNewSetting({ ...newSetting, value: data.value })}
               />
               <Button appearance="primary" onClick={handleAdd}>
                 Хадгалах

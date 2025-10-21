@@ -1,12 +1,5 @@
-import React, { useEffect, useState , useRef } from "react";
-import {
-  Button,
-  Input,
-  Textarea,
-  Field,
-  makeStyles,
-  tokens,
-} from "@fluentui/react-components";
+import React, { useEffect, useState, useRef } from "react";
+import { Button, Input, Textarea, Field, makeStyles, tokens } from "@fluentui/react-components";
 
 const useStyles = makeStyles({
   container: {
@@ -72,8 +65,7 @@ const setupRuntimeLogger = (setLogList) => {
     };
     //setLogList((prev) => [...prev, entry]);
     //setLogList((prev) => [...prev, entry]); // ❌ сүүлд нэмэгдсэн лог доор гардаг
-setLogList((prev) => [entry, ...prev]); // ✅ дээр талд нэмэгдэнэ
-
+    setLogList((prev) => [entry, ...prev]); // ✅ дээр талд нэмэгдэнэ
   };
 
   console.log = (...args) => {
@@ -98,24 +90,19 @@ const LogPanelFluent = () => {
     setupRuntimeLogger(setLogs);
   }, []);
 
-   // 🔸 2. scroll-г дээд тал руу автоматаар хийх useEffect
+  // 🔸 2. scroll-г дээд тал руу автоматаар хийх useEffect
   useEffect(() => {
     if (logContainerRef.current) {
       logContainerRef.current.scrollTop = 0;
     }
   }, [logs]);
 
-  const filteredLogs = logs.filter((log) =>
-    log.message.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredLogs = logs.filter((log) => log.message.toLowerCase().includes(search.toLowerCase()));
 
   const exportLogs = () => {
-    const blob = new Blob(
-      [
-        filteredLogs.map((log) => `[${log.time.toLocaleTimeString()}] ${log.message}`).join("\n"),
-      ],
-      { type: "text/plain;charset=utf-8" }
-    );
+    const blob = new Blob([filteredLogs.map((log) => `[${log.time.toLocaleTimeString()}] ${log.message}`).join("\n")], {
+      type: "text/plain;charset=utf-8",
+    });
 
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -137,31 +124,24 @@ const LogPanelFluent = () => {
             onChange={(e, data) => setSearch(data.value)}
             style={{ flex: 1 }}
           />
-          <Button   size="small" onClick={exportLogs}>📤</Button>
+          <Button size="small" onClick={exportLogs}>
+            📤
+          </Button>
         </div>
       </div>
 
-     <div className={styles.logs} ref={logContainerRef}>
+      <div className={styles.logs} ref={logContainerRef}>
         {filteredLogs.length === 0 && <p style={{ color: "#888" }}>🕒 Хайлтанд тохирсон лог олдсонгүй.</p>}
         {filteredLogs.map((log, i) => (
-          <div
-            key={i}
-            className={styles.logItem}
-            style={{ color: log.type === "error" ? "#cc0000" : "#333" }}
-          >
+          <div key={i} className={styles.logItem} style={{ color: log.type === "error" ? "#cc0000" : "#333" }}>
             [{log.time.toLocaleTimeString()}] {log.message}
           </div>
         ))}
       </div>
 
       <div className={styles.messagePanel}>
-        <Field size="large"label="📝 Message Panel">
-          <Textarea
-            size="large"
-            className={styles.textarea}
-            value={note}
-            onChange={(e, data) => setNote(data.value)}
-          />
+        <Field size="large" label="📝 Message Panel">
+          <Textarea size="large" className={styles.textarea} value={note} onChange={(e, data) => setNote(data.value)} />
         </Field>
       </div>
     </div>
