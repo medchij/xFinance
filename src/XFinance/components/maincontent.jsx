@@ -25,8 +25,8 @@ const MainContent = ({ title, isSidebarOpen, isPublic = false, onNavigateToLogin
 
   // If it's not a public page, calculate the margin for the sidebar
   if (!isPublic) {
-    rootStyle.marginLeft = isSidebarOpen ? "250px" : "50px";
-    rootStyle.width = isSidebarOpen ? "calc(100% - 250px)" : "calc(100% - 50px)";
+    rootStyle.marginLeft = isSidebarOpen ? "180px" : "50px";
+    rootStyle.width = isSidebarOpen ? "calc(100% - 180px)" : "calc(100% - 50px)";
   }
   // The margin and width calculations are removed from here to prevent double-spacing.
   // The parent component (`AuthenticatedApp`) is now responsible for this layout.

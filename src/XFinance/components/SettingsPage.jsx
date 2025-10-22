@@ -155,7 +155,7 @@ const SettingsPage = ({ isSidebarOpen }) => {
     <div
       className={styles.container}
       style={{
-        marginLeft: isSidebarOpen ? 250 : 50,
+        marginLeft: isSidebarOpen ? 180 : 50,
         transition: "margin-left 0.3s ease-in-out",
       }}
     >

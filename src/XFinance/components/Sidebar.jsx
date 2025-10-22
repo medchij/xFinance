@@ -94,7 +94,7 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage, onOpenLogViewer }) => {
     <>
       <div
         style={{
-          width: isOpen ? "250px" : "50px",
+          width: isOpen ? "180px" : "50px",
           height: "100vh",
           background: "#f3f3f3",
           display: "flex",

@@ -13,6 +13,8 @@ import { useAppContext } from "./AppContext";
 import Calculator from "./Calculator";
 import {
   NumberSymbol16Regular,
+  TextField16Regular,
+  ArrowSwap16Regular,
   ArrowSort16Regular,
   Filter16Regular,
   Eraser24Regular,
@@ -41,8 +43,8 @@ const groupedTools = [
     title: "Хөрвүүлэх хэрэгсэл",
     tools: [
       { icon: <NumberSymbol16Regular />, label: "Тоо руу хөрвүүлэх" },
-      { icon: <NumberSymbol16Regular />, label: "Текст рүү хөрвүүлэх" },
-      { icon: <NumberSymbol16Regular />, label: "Тоог сөрөг болгох" },
+      { icon: <TextField16Regular />, label: "Текст рүү хөрвүүлэх" },
+      { icon: <ArrowSwap16Regular />, label: "Тоог сөрөг болгох" },
       { icon: <ArrowSort16Regular />, label: "Хааны хуулга янзлах" },
       { icon: <ExcelIcon />, label: "Сонгосон мужийг экпорт хийх" },
     ],
@@ -154,8 +156,8 @@ const CustomTools = ({ isSidebarOpen }) => {
         minHeight: "100vh",
         backgroundColor: "#f3f4f6",
         padding: "12px",
-        width: isSidebarOpen ? "calc(100% - 250px)" : "calc(85% - 50px)",
-        marginLeft: isSidebarOpen ? "250px" : "50px",
+        width: isSidebarOpen ? "calc(100% - 180px)" : "calc(85% - 50px)",
+        marginLeft: isSidebarOpen ? "180px" : "50px",
         transition: "margin-left 0.3s ease-in-out, width 0.3s ease-in-out",
       }}
     >

@@ -37,7 +37,7 @@ const Profile = ({ isSidebarOpen }) => {
         flexGrow: 1,
         backgroundColor: tokens.colorNeutralBackground1,
         minHeight: "100vh",
-        marginLeft: isSidebarOpen ? 250 : 50,
+        marginLeft: isSidebarOpen ? 180 : 50,
         transition: "margin-left 0.3s ease-in-out",
         display: "flex",
         flexDirection: "column",
