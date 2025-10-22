@@ -34,6 +34,8 @@ import {
 import CalendarDateBoundaries from "./CalendarDateBoundaries";
 import { ExcelIcon, KhanbankIcon } from "../../icons";
 import SearchTableSheet from "./SearchTableSheet";
+import { useActivityTracking} from "../hooks/useActivityTracking";
+
 const groupedTools = [
   {
     title: "Хөрвүүлэх хэрэгсэл",
@@ -98,7 +100,7 @@ const CustomTools = ({ isSidebarOpen }) => {
   const { setLoading, showMessage } = useAppContext();
   const [activeModal, setActiveModal] = useState(null);
   const [isNarrowScreen, setIsNarrowScreen] = useState(false);
-
+  const activity = useActivityTracking();
   useEffect(() => {
     const handleResize = () => {
       setIsNarrowScreen(window.innerWidth < 500);
@@ -122,7 +124,7 @@ const CustomTools = ({ isSidebarOpen }) => {
     "Идэвхитэй нүдээр шүүлт хийх": () => fns.filterByActiveCellValue(showMessage, setLoading),
     "Шүүлт арилгах": () => fns.clearAutoFilter(showMessage, setLoading),
     // "Өнгөөр ялгах": () => fns.highlightCellsByColor(showMessage, setLoading),
-    //"Paste value": () => fns.pasteValuesOnly(showMessage, setLoading),
+    "Paste value": () => fns.pasteValuesOnly(showMessage, setLoading),
     "Сонгосон мужийг экпорт хийх": () => fns.exportSelectedRangesToXLSX(showMessage, setLoading),
     "Идэвхитэй нүдэнд огноо оруулах": () => setActiveModal("calendar"),
     "PS Зээлийн баланс": () => pfns.runLoanReportProcessor(showMessage, setLoading),

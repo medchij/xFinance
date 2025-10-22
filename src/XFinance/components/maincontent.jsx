@@ -7,7 +7,7 @@ import { Ribbon24Regular, LockOpen24Regular, DesignIdeas24Regular } from "@fluen
 import { insertText } from "../xFinance";
 import { useActivityTracking } from "../hooks/useActivityTracking";
 
-const MainContent = ({ title, isSidebarOpen, isPublic = false, onNavigateToLogin }) => {
+const MainContent = ({ title, isSidebarOpen, isPublic = false, onNavigateToLogin, currentUser, onNavigateToProfile }) => {
   const { trackPageView } = useActivityTracking("MainContent");
 
   useEffect(() => {
@@ -39,6 +39,8 @@ const MainContent = ({ title, isSidebarOpen, isPublic = false, onNavigateToLogin
         message="Тавтай морил"
         isPublic={isPublic}
         onNavigateToLogin={onNavigateToLogin}
+        currentUser={currentUser}
+        onNavigateToProfile={onNavigateToProfile}
       />
       <HeroList
         message="Энэ нэмэлт хэрэгсэл нь таны ажиллагааг хялбарчлах болно"
@@ -58,6 +60,8 @@ MainContent.propTypes = {
   isSidebarOpen: PropTypes.bool,
   isPublic: PropTypes.bool,
   onNavigateToLogin: PropTypes.func,
+  currentUser: PropTypes.object,
+  onNavigateToProfile: PropTypes.func,
 };
 
 export default MainContent;

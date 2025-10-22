@@ -4,17 +4,17 @@ import { tokens, makeStyles } from "@fluentui/react-components";
 
 const useStyles = makeStyles({
   list: {
-    marginTop: "20px",
+    marginTop: "12px", // Зайг багасгав
   },
   listItem: {
-    paddingBottom: "20px",
+    paddingBottom: "12px", // Зайг багасгав
     display: "flex",
   },
   icon: {
     marginRight: "10px",
   },
   itemText: {
-    fontSize: tokens.fontSizeBase300,
+    fontSize: tokens.fontSizeBase400, 
     fontColor: tokens.colorNeutralBackgroundStatic,
   },
   welcome__main: {

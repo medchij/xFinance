@@ -179,11 +179,6 @@ export async function insertText(text) {
 }
 //Тоо руу хөрвүүлэх функц
 export const handleNumberConversion = async (setMessage, setLoading) => {
-  // Шууд лог хийх
-  activityTracker.trackAction("excel", "handleNumberConversion", {
-    action: "Тоо руу хөрвүүлэх",
-  });
-
   return withLoading(setLoading, setMessage, async function handleNumberConversion() {
     await Excel.run(async (context) => {
       const range = context.workbook.getSelectedRange();
@@ -195,7 +190,6 @@ export const handleNumberConversion = async (setMessage, setLoading) => {
 
       await context.sync();
     });
-
     setMessage("✅ Амжилттай!");
   });
 };
@@ -504,3 +498,35 @@ export async function exportSelectedRangesToXLSX(setMessage) {
     setMessage("❌ Алдаа гарлаа: " + error.message);
   }
 }
+export const pasteValuesOnly = async (setMessage, setLoading) => {
+  return withLoading(setLoading, setMessage, async function pasteValuesOnly() {
+    await Excel.run(async (context) => {
+      let text = "";
+      try {
+        text = await navigator.clipboard.readText();
+      } catch (err) {
+        throw new Error("Clipboard-оос уншиж чадсангүй: " + err);
+      }
+      if (!text) throw new Error("Clipboard-д утга алга!");
+
+      const range = context.workbook.getSelectedRange();
+      range.load(["rowCount", "columnCount"]);
+      await context.sync();
+
+      const rows = text.split(/\r?\n/).map(row => row.split('\t'));
+      // Range-ийн хэмжээнд тааруулна
+      const normalizedRows = [];
+      for (let i = 0; i < range.rowCount; i++) {
+        const row = rows[i] || [];
+        const normalizedRow = [];
+        for (let j = 0; j < range.columnCount; j++) {
+          normalizedRow.push(row[j] !== undefined ? row[j] : "");
+        }
+        normalizedRows.push(normalizedRow);
+      }
+      range.values = normalizedRows;
+      await context.sync();
+    });
+    setMessage("✅ Clipboard утгыг зөвхөн value хэлбэрээр буулгалаа.");
+  });
+};

@@ -6,8 +6,8 @@ import PropTypes from "prop-types";
 const useStyles = makeStyles({
   instructions: {
     fontWeight: tokens.fontWeightSemibold,
-    marginTop: "20px",
-    marginBottom: "10px",
+    marginTop: "12px", // Зайг багасгав
+    marginBottom: "8px", // Зайг багасгав
   },
   textPromptAndInsertion: {
     display: "flex",
@@ -15,11 +15,11 @@ const useStyles = makeStyles({
     alignItems: "center",
   },
   textAreaField: {
-    marginLeft: "20px",
-    marginTop: "30px",
-    marginBottom: "20px",
-    marginRight: "20px",
-    maxWidth: "50%",
+    marginLeft: "16px", // Зайг багасгав
+    marginTop: "16px", // Зайг багасгав
+    marginBottom: "12px", // Зайг багасгав
+    marginRight: "16px", // Зайг багасгав
+    maxWidth: "60%", // Өргөнийг бага зэрэг нэмэв
   },
 });
 

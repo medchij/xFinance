@@ -23,7 +23,7 @@ const AuthenticatedApp = ({ title }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [activePage, setActivePage] = useState("maincontent");
   const [isLogViewerOpen, setLogViewerOpen] = useState(false);
-  const { hasPermission, showMessage } = useAppContext(); // Context-оос хэрэгтэй функцүүдийг авах
+  const { hasPermission, showMessage, currentUser } = useAppContext(); // currentUser нэмэв
 
   // Activity tracking
   const { trackExcelAction } = useActivityTracking("AuthenticatedApp");
@@ -43,7 +43,7 @@ const AuthenticatedApp = ({ title }) => {
   }, [trackExcelAction]);
 
   const pages = {
-    maincontent: { Component: MainContent, props: { title } },
+    maincontent: { Component: MainContent, props: { title, currentUser, onNavigateToProfile: () => setActivePage("profile") } },
     CustomTools: { Component: CustomTools, props: {} },
     search: { Component: SearchAccount, props: {} },
     settings: { Component: SettingsPage, props: {} },
@@ -78,43 +78,18 @@ const AuthenticatedApp = ({ title }) => {
         <Sidebar
           isOpen={isSidebarOpen}
           toggleSidebar={toggleSidebar}
-          setActivePage={handlePageChange} // setActivePage-ийн оронд шинэ функцээ дамжуулна
+          setActivePage={handlePageChange}
+          onOpenLogViewer={() => setLogViewerOpen(true)} // Лог товч функц нэмэв
         />
         <div
           style={{
             flexGrow: 1,
             transition: "margin-left 0.3s ease-in-out",
             //marginLeft: isSidebarOpen ? 250 : 50,
-            padding: "24px",
+            padding: "8px", // Зайг эрс багасгав
             backgroundColor: "#f3f4f6",
           }}
         >
-          {/* Log харагч товч */}
-          <div
-            style={{
-              position: "fixed",
-              top: "10px",
-              right: "10px",
-              zIndex: 1000,
-            }}
-          >
-            <button
-              onClick={() => setLogViewerOpen(true)}
-              style={{
-                padding: "8px 12px",
-                backgroundColor: "#007acc",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                fontSize: "12px",
-              }}
-              title="Програмын лог харах (Ctrl+Shift+L)"
-            >
-              📋 Лог
-            </button>
-          </div>
-
           {ActivePageComponent ? (
             <ActivePageComponent {...pageProps} isSidebarOpen={isSidebarOpen} />
           ) : (

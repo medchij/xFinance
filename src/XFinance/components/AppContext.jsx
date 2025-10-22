@@ -16,7 +16,7 @@ export const AppProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [permissions, setPermissions] = useState(new Set()); // Use a Set for efficient lookups
   const [actionLog, setActionLog] = useState([]);
-  const [selectedCompany, setSelectedCompany] = useState(() => localStorage.getItem("selectedCompany") || "data");
+  const [selectedCompany, setSelectedCompany] = useState(() => localStorage.getItem("selectedCompany") || "dataNany");
 
   // --- CACHED DATA STATES ---
   const [companies, setCompanies] = useState([]);

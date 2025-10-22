@@ -11,6 +11,7 @@ import {
   ChevronLeft24Regular,
   Apps24Regular, // Icon for the new logo/toggle
   ShieldKeyhole24Regular, // Icon for Admin
+  DocumentText24Regular, // Лог харах icon
 } from "@fluentui/react-icons";
 import { Button } from "@fluentui/react-components";
 import TransactionModal from "./TransactionModal";
@@ -39,7 +40,7 @@ const SidebarItem = ({ icon, text, isOpen, onClick }) => (
   </li>
 );
 
-const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
+const Sidebar = ({ isOpen, toggleSidebar, setActivePage, onOpenLogViewer }) => {
   const [manualToggle, setManualToggle] = useState(false);
   const [isTransactionOpen, setTransactionOpen] = useState(false);
   const [isConfirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -63,6 +64,7 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage }) => {
       permission: "view_admin_page",
     },
     { icon: <Settings24Regular />, text: "Settings", action: () => setActivePage("settings") },
+    { icon: <DocumentText24Regular />, text: "Лог харах", action: () => onOpenLogViewer && onOpenLogViewer() },
     { icon: <Chat24Regular />, text: "Messages", action: () => showMessage("Тун удахгүй!", "info") },
   ];
 
