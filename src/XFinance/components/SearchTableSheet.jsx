@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Input, Checkbox } from "@fluentui/react-components";
-import { Search16Regular, ArrowSortUp16Regular, ArrowSortDown16Regular } from "@fluentui/react-icons";
+import {Button, Input, Checkbox, Switch } from "@fluentui/react-components";
+import { Search16Regular, ArrowSortUp16Regular, ArrowSortDown16Regular,ArrowUndoRegular,CheckmarkRegular } from "@fluentui/react-icons";
 import { getActiveCellFormula, setActiveCellValue } from "../xFinance";
 import { getSettingValue } from "../apiHelpers"; // ЗАСВАР: loadSettings-г устгав
 import { useAppContext } from "./AppContext";
@@ -148,17 +148,52 @@ const SearchTableSheet = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleUndo = async () => {
-    if (previousValue) {
-      await setActiveCellValue(previousValue, showMessage, setLoading);
-      setPreviousValue(null);
+ 
+       const handleUndoSelection = async () => {
+      if (previousValue !== null && selectedRow) {
+        await setActiveCellValue(previousValue, showMessage, setLoading);
+        // Excel sheet дээр утгыг хоослох
+        try {
+          const sheetname = getSettingValue(settings, "sheetname");
+          const rowIndex = selectedRow.__index ; // Excel API-д 0-based index
+          const lastKeyName = selectedRow.__lastKey || lastKey || "Сонгосон эсэх";
+          await Excel.run(async (context) => {
+            const sheet = context.workbook.worksheets.getItem(sheetname);
+            const usedRange = sheet.getUsedRange();
+            usedRange.load("values,columnCount");
+            await context.sync();
+            let lastColIndex = usedRange.columnCount;
+            const headers = usedRange.values[0];
+            if (!headers.includes("Сонгосон эсэх")) {
+              showMessage("⚠️ 'Сонгосон эсэх' багана олдсонгүй!");
+              return;
+            } else {
+              lastColIndex = headers.indexOf("Сонгосон эсэх");
+            }
+            sheet.getCell(rowIndex, lastColIndex).values = [[""]];
+            await context.sync();
+            showMessage(`Excel-д мөр ${rowIndex + 1}, багана ${lastColIndex + 1} утгыг хоосоллоо.`);
+          });
+        } catch (err) {
+          showMessage("❌ Сонгосон баганыг хоослох үед алдаа: " + err.message);
+        }
+        // React state дээрх утгыг буцаахын тулд sheet-ээс дахин уншина
+        await fetchDataFromSheet();
+        setSelectedRow(null);
+        setPreviousValue(null);
+        //showMessage("↩️ Сонголт буцаагдлаа.");
+      }
+    };
+  
+    const handleConfirmAndClose = () => {
       setSelectedRow(null);
-    }
-  };
+      setPreviousValue(null);
+      onClose();
+    };
 
   const filteredData = data.filter((row) => {
     const textMatch = Object.values(row).some((v) => v?.toString().toLowerCase().includes(searchText.toLowerCase()));
-    const hideMatch = hideSelected ? row.__lastValue !== "✅ Сонгосон" : true;
+    const hideMatch = hideSelected ? (row.__lastValue !== "✅ Сонгосон" && !Object.values(row).some(v => v === "ББӨ")) : true;
     return textMatch && hideMatch;
   });
 
@@ -211,31 +246,30 @@ const SearchTableSheet = ({ isOpen, onClose }) => {
       <div style={styles.modal}>
         <h2 style={styles.title}>📋Sheet-ээс хайх</h2>
 
-        <Input
-          appearance="outline"
-          contentBefore={<Search16Regular />}
-          placeholder="Хайлт хийх..."
-          value={searchText}
-          onChange={(_, d) => setSearchText(d.value)}
-          style={{ marginBottom: "10px" }}
-        />
-        <Checkbox
-          label="Сонгосон мөрийг Excel-ээс түр нуух"
-          checked={hideSelected}
-          onChange={(_, data) => setHideSelected(data.checked)}
-          style={{ marginBottom: "10px" }}
-        />
-        <button onClick={clearSort}>Сорт арилгах</button>
-
-        {selectedRow && (
-          <div style={styles.selectedRow}>
-            <span>✅ Сонгогдсон: {JSON.stringify(selectedRow)}</span>
-            <button style={styles.undoButton} onClick={handleUndo}>
-              Буцаах
-            </button>
-          </div>
-        )}
-
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: "10px" }}>
+          <Input
+            appearance="outline"
+            contentBefore={<Search16Regular />}
+            placeholder="Хайлт хийх..."
+            value={searchText}
+            onChange={(_, d) => setSearchText(d.value)}
+            style={{ flex: 1 }}
+          />
+          <span style={{ marginLeft: 16 }}>Сонгосон мөрийг нуух</span>
+          <Switch
+            checked={hideSelected}
+            onChange={(_, data) => setHideSelected(data.checked)}
+            aria-label="Сонгосон мөрийг Excel-ээс түр нуух"
+          />
+          <span style={{ marginLeft: 16 }}>Сорт арилгах</span>
+           <Switch
+            checked={sortConfig.length === 0}
+            onChange={() => clearSort()}
+            aria-label="Сорт арилгах"
+          />
+          
+        </div>
+        
         <div style={styles.tableContainer}>
           <table style={styles.table}>
             <thead>
@@ -282,9 +316,20 @@ const SearchTableSheet = ({ isOpen, onClose }) => {
         </div>
 
         <div style={{ marginTop: "15px", textAlign: "right" }}>
-          <button style={styles.closeButton} onClick={onClose}>
-            Хаах
-          </button>
+          {selectedRow ? (
+            <>
+              <Button icon={<ArrowUndoRegular />} onClick={handleUndoSelection}>
+                Буцаах
+              </Button>
+              <Button appearance="primary" icon={<CheckmarkRegular />} onClick={handleConfirmAndClose}>
+                Баталгаажуулах
+              </Button>
+            </>
+          ) : (
+            <button style={styles.closeButton} onClick={onClose}>
+              Хаах
+            </button>
+          )}
         </div>
       </div>
     </div>

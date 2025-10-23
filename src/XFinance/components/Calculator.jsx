@@ -76,18 +76,6 @@ const Calculator = () => {
     return Function('"use strict"; return (' + expr + ')')();
   };
 
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.ctrlKey && e.key === 'v') {
-        e.preventDefault();
-        handlePaste();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
   const inputNumber = (num) => {
     if (waitingForOperand) {
       setDisplay(String(num));
@@ -196,29 +184,7 @@ const Calculator = () => {
             onChange={(e) => setDisplay(e.target.value)}
             onPaste={(e) => {
               e.preventDefault();
-              const text = e.clipboardData.getData('text');
-              setDisplay(text);
-              setTimeout(() => {
-                const numbers = extractNumbers(text);
-                if (numbers.length > 0) {
-                  if (isMathExpression(text)) {
-                    try {
-                      const result = evaluateExpression(text);
-                      setDisplay(formatNumber(result));
-                      setHistory(prev => [text + ' = ' + formatNumber(result), ...prev.slice(0, 9)]);
-                    } catch (err) {
-                      setDisplay(formatNumber(numbers[0]));
-                      setHistory(prev => ['Тоо олдсон: ' + formatNumber(numbers[0]), ...prev.slice(0, 9)]);
-                    }
-                  } else {
-                    setDisplay(formatNumber(numbers[0]));
-                    setHistory(prev => ['Clipboard: "' + text + '"  ' + formatNumber(numbers[0]), ...prev.slice(0, 9)]);
-                  }
-                } else {
-                  setDisplay('Тоо олдсонгүй');
-                  setHistory(prev => ['Тоо олдсонгүй: "' + text + '"', ...prev.slice(0, 9)]);
-                }
-              }, 500);
+              handlePaste();
             }}
             style={{
               width: '100%',

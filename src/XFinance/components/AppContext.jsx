@@ -120,13 +120,19 @@ export const AppProvider = ({ children }) => {
 
   const showMessage = useCallback((msg, duration) => {
     setMessage(msg);
-    const effectiveDuration = duration === 0 ? 0 : msg.startsWith("✅") ? 1500 : 5000;
-    if (msg.startsWith("✅")) setType("success");
-    else if (msg.startsWith("❌")) setType("error");
-    else if (msg.startsWith("⚠️")) setType("warning");
-    else setType("info");
-    if (effectiveDuration > 0) {
-      setTimeout(() => setMessage(""), effectiveDuration);
+    let effectiveDuration = duration === 0 ? 0 : 1500;
+    if (msg.startsWith("✅")) {
+      setType("success");
+      if (effectiveDuration > 0) setTimeout(() => setMessage(""), effectiveDuration);
+    } else if (msg.startsWith("❌")) {
+      setType("error");
+      // Error мэссэж автоматаар хаагдахгүй
+    } else if (msg.startsWith("⚠️")) {
+      setType("warning");
+      // Warning автоматаар хаагдахгүй
+    } else {
+      setType("info");
+      // Info автоматаар хаагдахгүй
     }
   }, []);
 
