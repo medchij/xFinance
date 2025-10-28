@@ -1,6 +1,5 @@
 //require('dotenv').config({ path: require('path').resolve(__dirname, '../.env.local') });
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env.local') });
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+require('dotenv').config({ path: require('path').resolve(__dirname, '.env') });
 const { db } = require('@vercel/postgres');
 const fs = require('fs').promises;
 const path = require('path');
