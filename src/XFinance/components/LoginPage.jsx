@@ -17,7 +17,7 @@ const useStyles = makeStyles({
     display: "flex",
     flexDirection: "column",
     ...shorthands.gap("16px"),
-    width: "300px",
+    width: "250px",
     padding: "24px",
     backgroundColor: "white",
     ...shorthands.borderRadius("8px"),
@@ -26,6 +26,7 @@ const useStyles = makeStyles({
   navigationLink: {
     marginTop: "16px", // Add some space
     textAlign: "center",
+    marginBottom: "24px",
   },
 });
 

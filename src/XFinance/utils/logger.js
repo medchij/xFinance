@@ -2,17 +2,18 @@
  * Frontend Logger - Browser compatible logging utility
  */
 import { BASE_URL } from "../../config";
+import { getAuthToken } from "../../config/token";
 
 class Logger {
   constructor() {
     this.logs = [];
     this.maxLogs = 1000; // Maximum number of logs to keep in memory
-    this.logLevel = "info"; // Default log level
+    this.logLevel = 'info'; // Default log level
     this.remoteLevels = new Set(["error", "warn", "info"]); // Levels to send to backend
 
     // Use shared BASE_URL (dev: http://localhost:4000), or injected value, else relative
     // eslint-disable-next-line no-undef
-    const injectedBase = typeof globalThis !== "undefined" && globalThis.__API_BASE__ ? globalThis.__API_BASE__ : "";
+    const injectedBase = (typeof globalThis !== "undefined" && globalThis.__API_BASE__) ? globalThis.__API_BASE__ : "";
     this.apiBase = (BASE_URL && BASE_URL.trim()) || injectedBase || "";
   }
 
@@ -22,7 +23,7 @@ class Logger {
     warn: 1,
     info: 2,
     debug: 3,
-    trace: 4,
+    trace: 4
   };
 
   setLogLevel(level) {
@@ -45,15 +46,15 @@ class Logger {
   formatMessage(level, message, data = null) {
     // Азийн цагийн бүс (+8) ашиглан DD.MM.YYYY HH:mm:ss форматаар
     const now = new Date();
-    const asiaTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-    const day = String(asiaTime.getUTCDate()).padStart(2, "0");
-    const month = String(asiaTime.getUTCMonth() + 1).padStart(2, "0");
+    const asiaTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+    const day = String(asiaTime.getUTCDate()).padStart(2, '0');
+    const month = String(asiaTime.getUTCMonth() + 1).padStart(2, '0');
     const year = asiaTime.getUTCFullYear();
-    const hours = String(asiaTime.getUTCHours()).padStart(2, "0");
-    const minutes = String(asiaTime.getUTCMinutes()).padStart(2, "0");
-    const seconds = String(asiaTime.getUTCSeconds()).padStart(2, "0");
+    const hours = String(asiaTime.getUTCHours()).padStart(2, '0');
+    const minutes = String(asiaTime.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(asiaTime.getUTCSeconds()).padStart(2, '0');
     const timestamp = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-
+    
     const logEntry = {
       timestamp,
       level: level.toUpperCase(),
@@ -71,62 +72,64 @@ class Logger {
   }
 
   error(message, data = null) {
-    if (!this.shouldLog("error")) return;
-
-    const logEntry = this.formatMessage("error", message, data);
-    console.error(`[${logEntry.timestamp}] ERROR: ${message}`, data || "");
-
+    if (!this.shouldLog('error')) return;
+    
+  const logEntry = this.formatMessage('error', message, data);
+  console.error(`[${logEntry.timestamp}] ERROR: ${message}`, data || '');
+    
     // Send to backend if available
     this.sendToBackend(logEntry);
   }
 
   warn(message, data = null) {
-    if (!this.shouldLog("warn")) return;
-
-    const logEntry = this.formatMessage("warn", message, data);
-    console.warn(`[${logEntry.timestamp}] WARN: ${message}`, data || "");
-
+    if (!this.shouldLog('warn')) return;
+    
+  const logEntry = this.formatMessage('warn', message, data);
+  console.warn(`[${logEntry.timestamp}] WARN: ${message}`, data || '');
+    
     this.sendToBackend(logEntry);
   }
 
   info(message, data = null) {
-    if (!this.shouldLog("info")) return;
-
-    const logEntry = this.formatMessage("info", message, data);
-    console.info(`[${logEntry.timestamp}] INFO: ${message}`, data || "");
-
+    if (!this.shouldLog('info')) return;
+    
+  const logEntry = this.formatMessage('info', message, data);
+  console.info(`[${logEntry.timestamp}] INFO: ${message}`, data || '');
+    
     this.sendToBackend(logEntry);
   }
 
   debug(message, data = null) {
-    if (!this.shouldLog("debug")) return;
-
-    const logEntry = this.formatMessage("debug", message, data);
-    console.debug(`[${logEntry.timestamp}] DEBUG: ${message}`, data || "");
-
+    if (!this.shouldLog('debug')) return;
+    
+    const logEntry = this.formatMessage('debug', message, data);
+    console.debug(`[${logEntry.timestamp}] DEBUG: ${message}`, data || '');
+    
     this.sendToBackend(logEntry);
   }
 
   trace(message, data = null) {
-    if (!this.shouldLog("trace")) return;
-
-    const logEntry = this.formatMessage("trace", message, data);
-    console.trace(`[${logEntry.timestamp}] TRACE: ${message}`, data || "");
-
+    if (!this.shouldLog('trace')) return;
+    
+    const logEntry = this.formatMessage('trace', message, data);
+    console.trace(`[${logEntry.timestamp}] TRACE: ${message}`, data || '');
+    
     this.sendToBackend(logEntry);
   }
 
   // Send log to backend server
   async sendToBackend(logEntry) {
     try {
-      const levelLower = String(logEntry.level || "").toLowerCase();
+      const levelLower = String(logEntry.level || '').toLowerCase();
       if (this.remoteLevels.has(levelLower)) {
         const url = `${this.apiBase}/api/logs`;
         console.log("Sending log to backend:", url, logEntry);
+  const token = getAuthToken();
         const response = await fetch(url, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": token ? `Bearer ${token}` : undefined
           },
           body: JSON.stringify(logEntry),
         });

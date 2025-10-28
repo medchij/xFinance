@@ -13,7 +13,7 @@ const isServerless = !!process.env.VERCEL || process.env.SERVERLESS_ENV === 'tru
 const LOG_DIR = process.env.LOG_DIR
   ? path.resolve(process.env.LOG_DIR)
   : (isServerless ? os.tmpdir() : path.resolve(__dirname, '../logs'));
-const LOG_FILE = path.join(LOG_DIR, 'frontend.log');
+const LOG_FILE = path.join(LOG_DIR, 'combined.log');
 
 // Ensure logs directory exists
 async function ensureLogsDir() {
@@ -34,8 +34,8 @@ router.post('/', async (req, res) => {
     const logEntry = req.body;
     
     // Add server timestamp
-    logEntry.serverTimestamp = new Date().toISOString();
-    logEntry.source = 'frontend';
+  logEntry.serverTimestamp = new Date().toISOString();
+  logEntry.source = 'combined';
     
     // Store in memory
     logs.push(logEntry);

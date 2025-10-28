@@ -3,6 +3,7 @@
  * Tracks all user interactions and system events in one place
  */
 import logger from "./logger";
+import { getAuthToken } from "../../config/token";
 
 class ActivityTracker {
   constructor() {
@@ -52,27 +53,6 @@ class ActivityTracker {
     return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`;
   }
 
-  // Get current user info from localStorage or session
-  getCurrentUser() {
-    try {
-      // Try to get user from localStorage
-      const token = localStorage.getItem("authToken");
-      if (token) {
-        // Decode JWT token to get user info (basic decoding, not verification)
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        return payload.username || payload.email || payload.id || "authenticated";
-      }
-
-      // Try to get user from sessionStorage
-      const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
-      if (currentUser) {
-        return currentUser.username || currentUser.email || currentUser.name || "authenticated";
-      }
-    } catch (e) {
-      // Failed to decode or parse
-    }
-    return "anonymous";
-  }
 
   // Tracking идэвхтэй эсэхийг шалгах
   isTrackingEnabled(type) {
@@ -152,6 +132,16 @@ class ActivityTracker {
 
     this.activityCount++;
 
+    let user = "anonymous";
+    const token = getAuthToken();
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        user = payload.username || payload.email || payload.id || "authenticated";
+      } catch {
+        user = "anonymous";
+      }
+    }
     const enrichedDetails = {
       ...details,
       sessionId: this.sessionId,
@@ -159,7 +149,7 @@ class ActivityTracker {
       timestamp: this.getAsiaTimestamp(),
       category,
       action,
-      user: this.getCurrentUser(), // Add current user
+      user,
       url: typeof window !== "undefined" ? window.location.href : "unknown",
       userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "unknown",
     };

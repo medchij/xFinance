@@ -399,45 +399,39 @@ const LogViewer = ({ isOpen, onClose }) => {
       }
     }
 
-    // Үндсэн message
-    let message = String(log.message);
-
-    // Data-г message дээр нэмэх
-    if (log.data && typeof log.data === "object") {
-      const dataEntries = [];
-
-      Object.keys(log.data).forEach((key) => {
-        const value = log.data[key];
-
-        // Эдгээр техникийн талбаруудыг алгасъя
-        if (["sessionId", "activityCount", "timestamp", "category", "action", "url", "userAgent"].includes(key)) {
-          return;
-        }
-
-        if (Array.isArray(value)) {
-          dataEntries.push(`${key}: [${value.length} items]`);
-        } else if (typeof value === "object" && value !== null) {
-          try {
-            const objStr = JSON.stringify(value);
-            if (objStr.length > 50) {
-              dataEntries.push(`${key}: {...}`);
-            } else {
-              dataEntries.push(`${key}: ${objStr}`);
-            }
-          } catch (e) {
-            dataEntries.push(`${key}: [object]`);
-          }
-        } else if (value !== undefined && value !== null) {
-          dataEntries.push(`${key}: ${value}`);
-        }
-      });
-
-      if (dataEntries.length > 0) {
-        message += ` | ${dataEntries.join(", ")}`;
+    // Message + context харуулна
+    let msg = "";
+    if (!log.message) {
+      msg = "";
+    } else if (Array.isArray(log.message)) {
+      msg = `[Array(${log.message.length})] ${JSON.stringify(log.message)}`;
+    } else if (typeof log.message === "object") {
+      try {
+        msg = JSON.stringify(log.message, null, 2);
+      } catch (e) {
+        msg = String(log.message);
       }
+    } else {
+      msg = String(log.message);
     }
 
-    return message;
+    // context талбарыг харуулна
+    if (log.data && log.data.context) {
+      try {
+        let ctxStr = typeof log.data.context === "object"
+          ? JSON.stringify(log.data.context, null, 2)
+          : String(log.data.context);
+        // componentStack-ийг хасах
+        if (ctxStr.includes("componentStack")) {
+          ctxStr = ctxStr.replace(/componentStack[^\n]*/g, "");
+        }
+        if (ctxStr.trim()) {
+          msg += `\nContext: ${ctxStr.trim()}`;
+        }
+      } catch {}
+    }
+    return msg;
+    showMessage(msg);
   };
 
   if (!isOpen) return null;

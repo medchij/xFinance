@@ -11,8 +11,10 @@ import {
 import { BASE_URL } from "../config";
 
 // Helper to get company_id from localStorage
+import { getSelectedCompany } from "../config/token";
+
 const getCompanyId = () => {
-  const companyId = localStorage.getItem("selectedCompany");
+  const companyId = getSelectedCompany();
   if (!companyId) {
     throw new Error("⚠️ Компани сонгогдоогүй байна. Профайл хуудаснаас сонголт хийнэ үү.");
   }
@@ -174,23 +176,10 @@ export async function fetchVehicleInfoByPlate(setMessage, setLoading) {
     }
 
     const fieldsToShow = [
-      "cabin_no",
-      "declaration_no",
-      "mark_name",
-      "build_year",
-      "build_month",
-      "imported_date",
-      "color_name",
-      "country_name",
-      "model_name",
-      "purpose_name",
-      "fuel_type_eco_class_name",
-      "fuel_type_name",
-      "steering_type_name",
-      "vehicle_type_name",
-      "wheel_name",
-      "owner.first_name",
-      "owner.register",
+      "cabin_no", "declaration_no", "mark_name", "build_year", "build_month", "imported_date",
+      "color_name", "country_name", "model_name", "purpose_name", "fuel_type_eco_class_name",
+      "fuel_type_name", "steering_type_name", "vehicle_type_name", "wheel_name",
+      "owner.first_name", "owner.register",
     ];
 
     const popupContent = fieldsToShow
@@ -335,7 +324,9 @@ export async function getKhanbankToken(setMessage, setLoading) {
 
     if (missingOrEmpty.length > 0) {
       throw new Error(
-        `⚠️ Дараах тохиргоо дутуу байна: ${missingOrEmpty.join(", ")}. Профайл хуудаснаас гүйцэт бөглөнө үү.`
+        `⚠️ Дараах тохиргоо дутуу байна: ${missingOrEmpty.join(
+          ", "
+        )}. Профайл хуудаснаас гүйцэт бөглөнө үү.`
       );
     }
 
@@ -385,20 +376,21 @@ export async function getKhanbankToken(setMessage, setLoading) {
     setMessage("✅ Token амжилттай авлаа.");
 
     await fetch(`${BASE_URL}/api/settings?id=${accessId}&company_id=${companyId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ value: result.access_token }),
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: result.access_token }),
     });
 
     await fetch(`${BASE_URL}/api/settings?id=${refreshId}&company_id=${companyId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ value: result.refresh_token }),
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: result.refresh_token }),
     });
 
     return { result, response };
   });
 }
+
 
 export async function fetchKhanbankAccountInfo(setMessage, setLoading) {
   return withLoading(setLoading, setMessage, async function fetchKhanbankAccountInfo() {

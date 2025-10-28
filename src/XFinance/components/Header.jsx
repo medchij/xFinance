@@ -68,7 +68,7 @@ const useStyles = makeStyles({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: tokens.fontSizeBase100,
+    fontSize: tokens.fontSizeBase200,
     fontWeight: tokens.fontWeightSemibold,
     flexShrink: 0, // Багасахгүй
   },
@@ -81,7 +81,7 @@ const useStyles = makeStyles({
     fontSize: tokens.fontSizeHero900,
     fontWeight: tokens.fontWeightRegular,
     color: tokens.colorNeutralForeground1,
-    maxWidth: "90%",
+    maxWidth: "98%",
     textAlign: "center",
     wordBreak: "break-word",
     lineHeight: "1.4",
@@ -119,7 +119,7 @@ const Header = ({ title, logo, message, isPublic, onNavigateToLogin, currentUser
               {currentUser.role && (
                 <span style={{ 
                   marginLeft: "8px", 
-                  fontSize: tokens.fontSizeBase100, 
+                  fontSize: tokens.fontSizeBase200, 
                   opacity: 0.8 
                 }}>
                   ({currentUser.role})

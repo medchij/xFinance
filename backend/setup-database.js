@@ -1,10 +1,12 @@
+//require('dotenv').config({ path: require('path').resolve(__dirname, '../.env.local') });
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env.local') });
-
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const { db } = require('@vercel/postgres');
 const fs = require('fs').promises;
 const path = require('path');
+console.log('POSTGRES_URL:', process.env.POSTGRES_URL);
 const bcrypt = require('bcrypt');
-
+console.log('POSTGRES_URL:', process.env.POSTGRES_URL);
 function parseDate(dateStr) {
     if (!dateStr) return null;
     const date = new Date(dateStr);
@@ -137,5 +139,6 @@ async function setup() {
         if (client) await client.release();
     }
 }
+
 
 setup();

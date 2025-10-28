@@ -3,33 +3,33 @@
     "id": "1",
     "tab": "Үндсэн тохиргоо",
     "name": "khanbank_username",
-    "value": "",
+    "value": "2000880289",
     "creade_date": "2023-10-01T00:00:00.000Z",
-    "update_date": "2025-06-12T08:23:38.992Z"
+    "update_date": "2025-06-29T05:21:18.931Z"
   },
   {
     "id": "2",
     "tab": "Үндсэн тохиргоо",
     "name": "khanbank_password",
-    "value": "",
+    "value": "TWV0YTIwMjU=",
     "creade_date": "2023-10-01T00:00:00.000Z",
-    "update_date": "2025-06-12T08:23:41.754Z"
+    "update_date": "2025-06-29T05:21:26.941Z"
   },
   {
     "id": "3",
     "tab": "Үндсэн тохиргоо",
     "name": "access_token",
-    "value": "P07KLGcBRoErPMMDNXKkx4xfy6AG",
+    "value": "UW8G9Z9ETW26xdaS2ISqSVAk71kV",
     "creade_date": "2023-10-01T00:00:00.000Z",
-    "update_date": "2025-05-29T07:56:41.784Z"
+    "update_date": "2025-08-04T08:24:35.029Z"
   },
   {
     "id": "4",
     "tab": "Бусад тохиргоо",
-    "name": "TABLEAU EMAIL CODE",
-    "value": "********",
+    "name": "sheetname",
+    "value": "НӨАТ",
     "creade_date": "2023-10-01T00:00:00.000Z",
-    "update_date": "2023-10-01T00:00:00.000Z"
+    "update_date": "2025-08-04T15:22:20.454Z"
   },
   {
     "id": "5",
@@ -42,10 +42,10 @@
   {
     "id": "6",
     "name": "refresh_token",
-    "value": "m3ILARvlr5iMZUGQsyR3NKWYdqAw00iC",
+    "value": "Am9cVeELxru1GBsqreYZdiTbDMOKwWxk",
     "tab": "Үндсэн тохиргоо",
     "create_date": "2025-05-22T08:29:35.676Z",
-    "update_date": "2025-05-29T07:56:41.790Z"
+    "update_date": "2025-08-04T08:24:35.042Z"
   },
   {
     "id": "7",
@@ -58,23 +58,8 @@
     "id": "8",
     "tab": "Үндсэн тохиргоо",
     "name": "car_token",
-    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiZ3Vlc3QiLCJpYXQiOjE3NDg1MDM3MTIsImV4cCI6MTc0ODU5MDExMn0.ZAPBzvNGv5Y3OKs-ZBiK7XN5iCKbZBgA8WJ6tU8Q7fg",
+    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTE0MzM5LCJyb2xlIjoidXNlciIsImZpcnN0bmFtZSI6ItCU0K3QnNCn0JjQk9Ch0q7QoNCt0J0iLCJsYXN0bmFtZSI6ItOo0YHTqdGF0LbQsNGA0LPQsNC7IiwiaWF0IjoxNzUxNDY3MzI2LCJleHAiOjE3ODMwMjQ5MjZ9.dkyKOghxijqrAupTJnU81FU2aFE7QNN42asaZNYB_Po",
     "create_date": "2025-05-25T15:12:23.998Z",
-    "update_date": "2025-05-29T07:29:52.753Z"
-  },
-  {
-    "id": "9",
-    "tab": "Үндсэн тохиргоо",
-    "name": "ф",
-    "value": "фыы",
-    "create_date": "2025-05-26T14:26:54.027Z",
-    "update_date": "2025-05-26T15:17:06.605Z"
-  },
-  {
-    "id": "10",
-    "tab": "Бусад тохиргоо",
-    "name": "sheetname",
-    "value": "НӨАТ",
-    "create_date": "2025-06-12T08:17:01.672Z"
+    "update_date": "2025-07-02T14:42:44.016Z"
   }
 ]

@@ -163,20 +163,31 @@ export async function writeToImportSheet(sheetName, sheetData, confirmStatus, se
   });
 }
 
-export async function insertText(text) {
-  // Write text to the top left cell.
-  try {
-    await Excel.run(async (context) => {
-      const sheet = context.workbook.worksheets.getActiveWorksheet();
-      const range = sheet.getRange("A1");
-      range.values = [[text]];
-      range.format.autofitColumns();
-      await context.sync();
-    });
-  } catch (error) {
-    // Error handling without console output
-  }
+export async function insertText(text, setMessage, setLoading) {
+  // Write text to the active cell only if it is empty. Show message. Show loading.
+  return withLoading(setLoading, setMessage, async function insertTextWithLoading() {
+    try {
+      await Excel.run(async (context) => {
+        const range = context.workbook.getActiveCell();
+        range.load("values, address");
+        await context.sync();
+        const currentValue = range.values[0][0];
+        if (currentValue === null || currentValue === "") {
+          range.values = [[text]];
+          range.format.autofitColumns();
+          await context.sync();
+          if (setMessage) setMessage(`✅ ${range.address} нүдэнд утга амжилттай бичигдлээ.`);
+        } else {
+          if (setMessage) setMessage(`⚠️ ${range.address} нүдэнд аль хэдийн утга байна.`);
+        }
+      });
+    } catch (error) {
+      if (setMessage) setMessage("❌ Алдаа: " + error.message);
+    }
+  });
 }
+
+
 //Тоо руу хөрвүүлэх функц
 export const handleNumberConversion = async (setMessage, setLoading) => {
   return withLoading(setLoading, setMessage, async function handleNumberConversion() {

@@ -14,7 +14,7 @@ const useStyles = makeStyles({
     marginRight: "10px",
   },
   itemText: {
-    fontSize: tokens.fontSizeBase400, 
+    fontSize: tokens.fontSizeBase300, 
     fontColor: tokens.colorNeutralBackgroundStatic,
   },
   welcome__main: {
@@ -24,7 +24,7 @@ const useStyles = makeStyles({
     alignItems: "center",
   },
   message: {
-    fontSize: tokens.fontSizeBase400,
+    fontSize: tokens.fontSizeBase300,
     fontColor: tokens.colorNeutralBackgroundStatic,
     fontWeight: tokens.fontWeightRegular,
     paddingLeft: "10px",

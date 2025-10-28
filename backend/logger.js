@@ -1,5 +1,6 @@
 const winston = require('winston');
 const path = require('path');
+const { Console } = require('console');
 
 // Лог файлуудын байршил
 const logDir = path.join(__dirname, 'logs');
@@ -23,6 +24,13 @@ const logger = winston.createLogger({
       }
     }),
     winston.format.errors({ stack: true }),
+    winston.format((info) => {
+      // data.user-ийг root-level-д гаргаж бичнэ (frontend.log-д ч адил)
+      if (info.data && info.data.user) {
+        info.user = info.data.user;
+      }
+      return info;
+    })(),
     winston.format.json()
   ),
   defaultMeta: { service: 'xfinance-backend' },
@@ -63,14 +71,17 @@ const requestLogger = (req, res, next) => {
   // Хэрэглэгчийн мэдээллийг JWT token-оос авах
   let user = null;
   const authHeader = req.headers.authorization;
+  console.log("AuthHeader:", authHeader);
   if (authHeader && authHeader.startsWith('Bearer ')) {
     try {
       const jwt = require('jsonwebtoken');
       const token = authHeader.substring(7);
+      console.log("Token:", token);
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+      console.log("Decoded JWT:", decoded);
       user = decoded.username || decoded.email || decoded.id;
     } catch (err) {
-      // JWT invalid эсвэл expired
+      console.error("JWT error:", err);
     }
   }
   

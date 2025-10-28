@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from "react";
 import { BASE_URL } from "../../config";
+import { getAuthToken, getSelectedCompany } from "../../config/token";
 import { ActivityTracker } from "../utils/activityTracker";
 import defaultLogger from "../utils/logger";
 
@@ -16,7 +17,7 @@ export const AppProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [permissions, setPermissions] = useState(new Set()); // Use a Set for efficient lookups
   const [actionLog, setActionLog] = useState([]);
-  const [selectedCompany, setSelectedCompany] = useState(() => localStorage.getItem("selectedCompany") || "dataNany");
+  const [selectedCompany, setSelectedCompany] = useState(() => getSelectedCompany() || "dataNany");
 
   // --- CACHED DATA STATES ---
   const [companies, setCompanies] = useState([]);
@@ -31,7 +32,7 @@ export const AppProvider = ({ children }) => {
   );
 
   const fetchCurrentUser = async () => {
-    const token = localStorage.getItem("authToken");
+  const token = getAuthToken();
     if (!token) {
       setIsLoggedIn(false);
       return;
@@ -80,7 +81,7 @@ export const AppProvider = ({ children }) => {
         throw new Error(data.message || "Нэвтрэхэд алдаа гарлаа.");
       }
 
-      localStorage.setItem("authToken", data.token);
+  localStorage.setItem("authToken", data.token); // хадгалах хэсэг хэвээр
       activityTracker.trackSuccess("AuthLogin", "Login successful, token saved");
 
       await fetchCurrentUser(); // Fetch user data right after login
@@ -99,8 +100,8 @@ export const AppProvider = ({ children }) => {
   const logout = useCallback((showLogoutMessage = true) => {
     activityTracker.trackAction("AuthLogout", "Logout process started", { showMessage: showLogoutMessage });
 
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("selectedCompany");
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("selectedCompany"); // устгах хэсэг хэвээр
     setIsLoggedIn(false);
     setCurrentUser(null);
     setPermissions(new Set());

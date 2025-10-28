@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-
+import { useActivityTracking } from "../hooks/useActivityTracking";
 import { Button, Tooltip } from "@fluentui/react-components";
 import * as fns from "../xFinance";
 import * as bFns from "../ebarimt";
@@ -36,7 +36,7 @@ import {
 import CalendarDateBoundaries from "./CalendarDateBoundaries";
 import { ExcelIcon, KhanbankIcon } from "../../icons";
 import SearchTableSheet from "./SearchTableSheet";
-import { useActivityTracking} from "../hooks/useActivityTracking";
+import activityTracker from "../utils/activityTracker";
 
 const groupedTools = [
   {
@@ -141,6 +141,7 @@ const CustomTools = ({ isSidebarOpen }) => {
   };
 
   const handleClick = async (label) => {
+    activityTracker.trackUserAction("CustomTools", label, { type: "tool", label });
     await withLoading(setLoading, showMessage, async () => {
       await actions[label]?.();
     });
