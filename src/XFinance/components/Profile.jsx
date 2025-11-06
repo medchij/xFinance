@@ -7,6 +7,7 @@ import Header from "./Header";
 
 const Profile = ({ isSidebarOpen }) => {
   const {
+    currentUser,
     selectedCompany,
     setSelectedCompany,
     showMessage,
@@ -17,8 +18,11 @@ const Profile = ({ isSidebarOpen }) => {
   } = useAppContext();
 
   useEffect(() => {
-    fetchCompanies(false);
-  }, [fetchCompanies]);
+    // Зөвхөн currentUser татагдсан үед компаниудыг татах
+    if (currentUser) {
+      fetchCompanies(false);
+    }
+  }, [fetchCompanies, currentUser]);
 
   const handleCompanyChange = (_, data) => {
     if (data.optionValue) {

@@ -37,14 +37,18 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
 
   const handleRowClick = async (row, valueToInsert) => {
     try {
+       const currentFormula = await getActiveCellFormula(showMessage, setLoading);
       setSelectedRow(row);
       trackSelection(activeTab, row.id || row.account_number || row.cf_number, valueToInsert);
-
+      if (currentFormula !== null && currentFormula !== undefined && currentFormula !== "") {
+        showMessage("⚠️ Сонгосон нүд хоосон биш байна. Хоосон нүд рүү шилжүүлнэ үү.");
+        return;
+      }
       if (onSelect) {
         onSelect(row);
         onClose();
       } else {
-        const currentFormula = await getActiveCellFormula(showMessage, setLoading);
+       
         setPreviousValue(currentFormula);
         await setActiveCellValue(valueToInsert, showMessage, setLoading);
         trackExcelAction("cell_value_set", { value: valueToInsert, cellType: activeTab });
@@ -100,7 +104,7 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
       );
     } else if (activeTab === "cf") {
       return (
-        row.original_id?.toLowerCase().includes(lowerSearchText) || row.name?.toLowerCase().includes(lowerSearchText)
+        row.code?.toLowerCase().includes(lowerSearchText) || row.name?.toLowerCase().includes(lowerSearchText)
       );
     } else {
       // customer
@@ -189,7 +193,7 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
                   onDoubleClick={() =>
                     handleRowClick(
                       row,
-                      activeTab === "account" ? row.account_number : activeTab === "cf" ? row.original_id : row.name
+                      activeTab === "account" ? row.account_number : activeTab === "cf" ? row.code : row.name
                     )
                   }
                   onMouseEnter={() => setHoveredRow(row.id || index)}
@@ -206,7 +210,7 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
                   ) : activeTab === "cf" ? (
                     <>
                       <td style={styles.td}>{row.id}</td>
-                      <td style={styles.td}>{row.original_id}</td>
+                      <td style={styles.td}>{row.code}</td>
                       <td style={styles.td}>{row.name}</td>
                     </>
                   ) : (

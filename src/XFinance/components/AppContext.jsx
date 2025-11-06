@@ -32,9 +32,10 @@ export const AppProvider = ({ children }) => {
   );
 
   const fetchCurrentUser = async () => {
-  const token = getAuthToken();
+    const token = getAuthToken();
     if (!token) {
       setIsLoggedIn(false);
+      activityTracker.log("Token байхгүй тул fetchCurrentUser дууслаа", "auth", {}, "warn");
       return;
     }
 
@@ -48,11 +49,39 @@ export const AppProvider = ({ children }) => {
         setCurrentUser(data.user);
         setPermissions(new Set(data.permissions || []));
         setIsLoggedIn(true);
+        activityTracker.log("fetchCurrentUser: Амжилттай", "auth", { user: data.user, permissions: data.permissions }, "info");
+        
+        // Хэрэглэгчийн allowed_companies шалгаад сонгогдсон компанийг validate хийх
+        const allowedCompanies = data.user.allowed_companies;
+        const currentSelectedCompany = getSelectedCompany();
+        
+        // Хэрэв allowed_companies NULL эсвэл хоосон бол selectedCompany-г устгах
+        if (!allowedCompanies || allowedCompanies.length === 0) {
+          console.log('🚫 User has no allowed_companies - clearing selectedCompany');
+          setSelectedCompany(null);
+          localStorage.removeItem('selectedCompany');
+        } 
+        // Хэрэв одоо сонгогдсон компани allowed_companies дотор байхгүй бол устгах
+        else if (currentSelectedCompany && !allowedCompanies.includes(currentSelectedCompany)) {
+          console.log(`⚠️ Selected company "${currentSelectedCompany}" not in allowed_companies - clearing selection`);
+          setSelectedCompany(null);
+          localStorage.removeItem('selectedCompany');
+        }
+        // Хэрэв сонгогдсон компани байхгүй бол эхний зөвшөөрөгдсөн компанийг сонгох
+        else if (!currentSelectedCompany && allowedCompanies.length > 0) {
+          console.log(`✅ Auto-selecting first allowed company: ${allowedCompanies[0]}`);
+          setSelectedCompany(allowedCompanies[0]);
+          localStorage.setItem('selectedCompany', allowedCompanies[0]);
+        }
+        
+        return data.user;
       } else {
         // Token is invalid or expired
+        activityTracker.log("fetchCurrentUser: Token хүчингүй эсвэл серверээс алдаа ирлээ", "auth", { status: response.status }, "warn");
         logout(false); // Logout without showing a message
       }
     } catch (error) {
+      activityTracker.log("fetchCurrentUser: Алдаа гарлаа", "auth", { error: error.message }, "error");
       showMessage("❌ Хэрэглэгчийн мэдээлэл татахад алдаа гарлаа.");
       logout(false);
     } finally {
@@ -143,9 +172,30 @@ export const AppProvider = ({ children }) => {
       activityTracker.trackApiCall("DataFetch", "fetchCompanies", "GET", "/api/companies", { force });
       setLoading(true);
       try {
-        const res = await fetch(`${BASE_URL}/api/companies`);
+        const token = getAuthToken();
+        const res = await fetch(`${BASE_URL}/api/companies`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
         if (!res.ok) throw new Error("Серверээс компаниудын жагсаалтыг татахад алдаа гарлаа.");
-        const fetchedCompanies = await res.json();
+        let fetchedCompanies = await res.json();
+        
+        console.log('📊 Fetched companies:', fetchedCompanies);
+        console.log('👤 Current user:', currentUser);
+        
+        // Хэрэв allowed_companies NULL буюу хоосон массив бол хоосон жагсаалт харуулах
+        if (!currentUser?.allowed_companies || currentUser.allowed_companies.length === 0) {
+          console.log('🚫 No allowed_companies - user has no access to any company');
+          setCompanies([]);
+          return;
+        }
+        
+        // Зөвхөн зөвшөөрөгдсөн компаниудыг шүүж авах
+        console.log('🔒 Filtering by allowed_companies:', currentUser.allowed_companies);
+        fetchedCompanies = fetchedCompanies.filter(company => 
+          currentUser.allowed_companies.includes(company.id)
+        );
+        console.log('✅ Filtered companies:', fetchedCompanies);
+        
         setCompanies(fetchedCompanies);
         activityTracker.trackSuccess("DataFetch", "Companies list fetched successfully", {
           count: fetchedCompanies.length,
@@ -157,7 +207,7 @@ export const AppProvider = ({ children }) => {
         setLoading(false);
       }
     },
-    [companies.length, showMessage]
+    [companies.length, showMessage, currentUser]
   );
 
   const fetchSettings = useCallback(
@@ -166,6 +216,15 @@ export const AppProvider = ({ children }) => {
         setSettings([]);
         return;
       }
+      
+      // Хэрэглэгчийн allowed_companies шалгах
+      if (currentUser?.allowed_companies && !currentUser.allowed_companies.includes(selectedCompany)) {
+        console.log(`🚫 Access denied: "${selectedCompany}" not in allowed_companies`);
+        showMessage(`⚠️ Та "${selectedCompany}" компанийн датад хандах эрхгүй байна.`);
+        setSettings([]);
+        return;
+      }
+      
       if (settings.length > 0 && !force) return;
       activityTracker.trackApiCall("DataFetch", "fetchSettings", "GET", `/api/settings?company_id=${selectedCompany}`, {
         company: selectedCompany,
@@ -184,7 +243,7 @@ export const AppProvider = ({ children }) => {
         setLoading(false);
       }
     },
-    [selectedCompany, settings.length, showMessage]
+    [selectedCompany, settings.length, showMessage, currentUser]
   );
 
   const fetchSearchData = useCallback(
@@ -193,6 +252,15 @@ export const AppProvider = ({ children }) => {
         setSearchData({ account: [], cf: [], customer: [] });
         return;
       }
+      
+      // Хэрэглэгчийн allowed_companies шалгах
+      if (currentUser?.allowed_companies && !currentUser.allowed_companies.includes(selectedCompany)) {
+        console.log(`🚫 Access denied: "${selectedCompany}" not in allowed_companies`);
+        showMessage(`⚠️ Та "${selectedCompany}" компанийн датад хандах эрхгүй байна.`);
+        setSearchData({ account: [], cf: [], customer: [] });
+        return;
+      }
+      
       const hasData = searchData.account.length > 0 || searchData.cf.length > 0 || searchData.customer.length > 0;
       if (hasData && !force) {
         return;
@@ -219,7 +287,7 @@ export const AppProvider = ({ children }) => {
         setLoading(false);
       }
     },
-    [selectedCompany, showMessage, searchData]
+    [selectedCompany, showMessage, searchData, currentUser]
   );
 
   // --- EFFECTS ---
@@ -235,9 +303,12 @@ export const AppProvider = ({ children }) => {
       console.log(`🏢 Сонгогдсон компани хадгалагдлаа: ${selectedCompany}`);
       setSettings([]);
       setSearchData({ account: [], cf: [], customer: [] });
+      // Автоматаар дансны мэдээлэл татах
+      fetchSearchData();
     } else if (!isLoggedIn) {
       localStorage.removeItem("selectedCompany");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCompany, isLoggedIn]);
 
   return (

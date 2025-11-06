@@ -75,6 +75,18 @@ app.use('/api/permissions', permissionsRouter);
 const logsRouter = require('./routes/logs');
 app.use('/api/logs', logsRouter);
 
+const currencyRouter = require('./routes/currency');
+app.use('/api/currency', currencyRouter);
+
+const branchRouter = require('./routes/branch');
+app.use('/api/branch', branchRouter);
+
+const glaccountRouter = require('./routes/glaccount');
+app.use('/api/glaccount', glaccountRouter);
+
+const glTooluurChangeRouter = require('./routes/gl-tooluurchange');
+app.use('/api/gl-tooluurchange', glTooluurChangeRouter);
+
 
 // Export the app for Vercel
 module.exports = app;

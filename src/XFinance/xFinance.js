@@ -123,18 +123,61 @@ export async function writeToImportSheet(sheetName, sheetData, confirmStatus, se
         await context.sync();
       }
 
+      let existingHeaders = [];
       if (sheetExists && !confirmStatus) {
-        const usedRange = sheet.getRange("A:A").getUsedRangeOrNullObject();
-        usedRange.load("rowCount");
+        const usedRange = sheet.getRange("B:B").getUsedRangeOrNullObject();
+        usedRange.load("rowIndex, rowCount, values");
         await context.sync();
-        startRow = usedRange.isNullObject ? 0 : usedRange.rowCount;
 
-        setMessage("⚠️ Хуучин өгөгдлийг хадгалж, үргэлжлүүлж бичлээ.");
+        startRow = 0;
+        if (!usedRange.isNullObject) {
+          const values = usedRange.values;
+          const startRowIndex = usedRange.rowIndex;
+          // Refine logic to find the last non-empty cell in column B
+          for (let i = values.length - 1; i >= 0; i--) {
+            if (values[i][0] !== null && values[i][0].toString().trim() !== "") {
+              startRow = startRowIndex + i + 1;
+              break;
+            }
+          }
+        }
+        console.log("Determined startRow for import:", startRow);
+        // Оруулах өгөгдөл хамгийн доод талын хоосон нүднээс эхэлнэ
+
+        // Header mapping
+        const sheetUsedRange = sheet.getUsedRange();
+        sheetUsedRange.load("columnCount");
+        await context.sync();
+        const headerRowIndex = sheetName === "Journal" ? 1 : 0;
+        const existingHeadersRange = sheet.getRangeByIndexes(headerRowIndex, 0, 1, sheetUsedRange.columnCount);
+        existingHeadersRange.load("values");
+        await context.sync();
+        existingHeaders = existingHeadersRange.values[0] || [];
+        const newHeaders = sheetData[0] || [];
+        const mappedSheetData = sheetData.map(row => {
+          const newRow = [];
+          for (let i = 0; i < existingHeaders.length; i++) {
+            const header = existingHeaders[i];
+            const newColIdx = newHeaders.indexOf(header);
+            newRow.push(newColIdx >= 0 ? row[newColIdx] : "");
+          }
+          return newRow;
+        });
+        sheetData = mappedSheetData;
+
+        setMessage("⚠️ Хуучин өгөгдлийг хадгалж, header mapping хийж нэмлээ.");
         await new Promise((resolve) => setTimeout(resolve, 2500));
       }
 
-      const rows = sheetData.length;
-      const columns = sheetData.reduce((max, row) => Math.max(max, row.length), 0);
+      let dataToWrite = sheetData;
+      let columns;
+      if (confirmStatus) {
+        columns = sheetData.reduce((max, row) => Math.max(max, row.length), 0);
+      } else {
+        columns = existingHeaders.length;
+        dataToWrite = sheetData.slice(1);
+      }
+      const rows = dataToWrite.length;
 
       if (rows === 0 || columns === 0) {
         throw new Error("❌ SheetData хоосон байна!");
@@ -144,7 +187,7 @@ export async function writeToImportSheet(sheetName, sheetData, confirmStatus, se
         throw new Error("❌ Баганын тоо 13-аас хэтэрсэн байна!");
       }
 
-      const normalizedData = sheetData.map((row) =>
+      const normalizedData = dataToWrite.map((row) =>
         row.length === columns ? row : [...row, ...Array(columns - row.length).fill("")]
       );
 
@@ -469,6 +512,54 @@ export async function fetchAccountBalanceData(setMessage, setLoading) {
     });
 
     setMessage("✅ Амжилттай.");
+  });
+}
+
+// Шинэ функц: Сонгосон range-д account data бичих
+export async function writeAccountDataToSelectedRange(accountData, setMessage, setLoading) {
+  return withLoading(setLoading, setMessage, async function writeAccountDataToSelectedRange() {
+    await Excel.run(async (context) => {
+      const sheet = context.workbook.worksheets.getActiveWorksheet();
+      const selectedRange = context.workbook.getSelectedRange();
+      selectedRange.load("values, rowIndex, columnIndex, rowCount, columnCount");
+      await context.sync();
+
+      const selectedValues = selectedRange.values;
+      if (!selectedValues || selectedValues.length === 0) {
+        throw new Error("⚠️ Сонгосон range-д header алга.");
+      }
+
+      const excelHeaders = selectedValues[0];
+
+      if (!Array.isArray(accountData) || accountData.length === 0) {
+        throw new Error("⚠️ Account data хоосон байна.");
+      }
+
+      // Дансны дугаараар эрэмбэлэх
+      accountData.sort((a, b) => {
+        const numA = (a["Дансны дугаар"] || "").toString();
+        const numB = (b["Дансны дугаар"] || "").toString();
+        return numA.localeCompare(numB, undefined, { numeric: true });
+      });
+
+      // Data-г бэлтгэх - таарч байгаа header-үүдийг бичих
+      const dataToWrite = accountData.map(item => {
+        return excelHeaders.map(header => {
+          return item[header] || "";
+        });
+      });
+
+      // Header-ийн дараа бичих
+      const startRow = selectedRange.rowIndex + 1;
+      const startCol = selectedRange.columnIndex;
+      const rangeToWrite = sheet.getRangeByIndexes(startRow, startCol, dataToWrite.length, dataToWrite[0].length);
+      rangeToWrite.values = dataToWrite;
+      rangeToWrite.format.autofitColumns();
+
+      await context.sync();
+
+      setMessage("✅ Дансны мэдээлэл амжилттай бичигдлээ.");
+    });
   });
 }
 

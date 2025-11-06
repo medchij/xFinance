@@ -34,6 +34,7 @@ const LoginPage = ({ onLogin, onCompanySelect, onNavigateToPublic }) => {
   const styles = useStyles();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   // Activity tracking
   const { trackFormStart, trackFieldChange, trackSubmit } = useActivityTracking("LoginPage");
@@ -42,12 +43,18 @@ const LoginPage = ({ onLogin, onCompanySelect, onNavigateToPublic }) => {
     e.preventDefault();
     trackFormStart();
 
-    const defaultCompany = "data";
+    const defaultCompany = "dataNany";
     onCompanySelect(defaultCompany);
     onLogin(username, password, defaultCompany);
 
     trackSubmit(true);
   };
+
+  if (showForgotPassword) {
+    // Forgot Password хуудас харуулах
+    const ForgotPassword = require('./ForgotPassword').default;
+    return <ForgotPassword onBackToLogin={() => setShowForgotPassword(false)} />;
+  }
 
   return (
     <div className={styles.root}>
@@ -76,6 +83,13 @@ const LoginPage = ({ onLogin, onCompanySelect, onNavigateToPublic }) => {
         <Button appearance="primary" type="submit">
           Нэвтрэх
         </Button>
+        
+        {/* Forgot Password линк */}
+        <div style={{ textAlign: 'center', marginTop: '8px' }}>
+          <Link onClick={() => setShowForgotPassword(true)} style={{ fontSize: '14px' }}>
+            Нууц үг мартсан уу?
+          </Link>
+        </div>
       </form>
 
       {/* Link to go back to the public main page */}

@@ -1,3 +1,4 @@
+import ConfirmationDialog from "./ConfirmationDialog";
 import React, { useState, useEffect } from "react";
 import {
   Button,
@@ -67,7 +68,9 @@ const isSensitiveKey = (key) =>
 const SettingsPage = ({ isSidebarOpen }) => {
   const styles = useStyles();
   const { selectedCompany, showMessage, setLoading, settings, fetchSettings, loading } = useAppContext();
-
+    // Confirm dialog state for delete
+  const [deleteId, setDeleteId] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [tabs, setTabs] = useState([]);
   const [activeTab, setActiveTab] = useState(null);
   const [editId, setEditId] = useState(null);
@@ -98,7 +101,39 @@ const SettingsPage = ({ isSidebarOpen }) => {
       setActiveTab(null);
     }
   }, [settings, activeTab]);
+// Тохиргоо устгах баталгаажуулалттай функц
+const handleDelete = (id) => {
+  setDeleteId(id);
+  setShowDeleteConfirm(true);
+};
 
+const handleDeleteConfirmed = async (confirmed) => {
+  setShowDeleteConfirm(false);
+  if (!confirmed || !deleteId) {
+    setDeleteId(null);
+    return;
+  }
+  await withLoading(setLoading, showMessage, async () => {
+    const url = `${BASE_URL}/api/settings/${deleteId}?company_id=${selectedCompany}`;
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${localStorage.getItem("authToken")}`,
+        "Content-Type": "application/json"
+      }
+    });
+    let result = {};
+    if (response.headers.get("content-type")?.includes("application/json")) {
+      result = await response.json();
+    }
+    if (!response.ok) throw new Error(result.message || "Тохиргоо устгахад алдаа гарлаа.");
+    await fetchSettings(true);
+    showMessage("✅ Тохиргоо амжилттай устгагдлаа.", "success");
+  });
+  setDeleteId(null);
+};
+  {/* Confirm dialog for delete */}
+  <ConfirmationDialog isOpen={showDeleteConfirm} onClose={handleDeleteConfirmed} />
   const handleRefresh = () => {
     showMessage("Тохиргоог дахин ачааллаж байна...");
     fetchSettings(true);
@@ -159,6 +194,7 @@ const SettingsPage = ({ isSidebarOpen }) => {
         transition: "margin-left 0.3s ease-in-out",
       }}
     >
+      <ConfirmationDialog isOpen={showDeleteConfirm} onClose={handleDeleteConfirmed} />
       {!selectedCompany ? (
         <h2>⚠️ Компани сонгогдоогүй байна. Профайл хуудаснаас сонгоно уу.</h2>
       ) : (
@@ -240,9 +276,14 @@ const SettingsPage = ({ isSidebarOpen }) => {
                           </Tooltip>
                         </>
                       ) : (
-                        <Tooltip content="Засах" relationship="label">
-                          <Button icon={<EditRegular />} onClick={() => handleEdit(row)} />
-                        </Tooltip>
+                        <>
+                          <Tooltip content="Засах" relationship="label">
+                            <Button icon={<EditRegular />} onClick={() => handleEdit(row)} />
+                          </Tooltip>
+                          <Tooltip content="Устгах" relationship="label">
+                            <Button icon={<DismissCircle24Regular />} onClick={() => handleDelete(row.id)} appearance="subtle" />
+                          </Tooltip>
+                        </>
                       )}
                     </TableCell>
                   </TableRow>

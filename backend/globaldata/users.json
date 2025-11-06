@@ -5,7 +5,8 @@
     "password": "password",
     "email": "admin@example.com",
     "full_name": "Админ Хэрэглэгч",
-    "role_id": 1
+    "role_id": 1,
+    "allowed_companies": ["data", "dataNany", "dataMall", "dataMeta", "dataSoyombo"]
   },
   {
     "id": 2,
@@ -13,6 +14,7 @@
     "password": "password",
     "email": "user@example.com",
     "full_name": "Энгийн Хэрэглэгч",
-    "role_id": 2
+    "role_id": 2,
+    "allowed_companies": ["dataNany", "dataMall", "dataMeta"]
   }
 ]

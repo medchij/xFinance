@@ -2,12 +2,12 @@ import React from "react";
 import PropTypes from "prop-types";
 import { Dialog, DialogSurface, DialogBody, DialogTitle, DialogActions, Button } from "@fluentui/react-components";
 
-const ConfirmationDialog = ({ isOpen, onClose }) => {
+const ConfirmationDialog = ({ isOpen, onClose, message }) => {
   return (
     <Dialog open={isOpen} onOpenChange={(_, data) => !data.open && onClose(false)}>
       <DialogSurface>
         <DialogBody>
-          <DialogTitle>Та хуучин өгөгдлийг устгахдаа итгэлтэй байна уу?</DialogTitle>
+          <DialogTitle>{message}</DialogTitle>
 
           <DialogActions>
             <Button
@@ -40,6 +40,7 @@ const ConfirmationDialog = ({ isOpen, onClose }) => {
 ConfirmationDialog.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
+  message: PropTypes.string.isRequired,
 };
 
 export default ConfirmationDialog;

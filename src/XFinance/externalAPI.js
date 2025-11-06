@@ -13,6 +13,27 @@ import { BASE_URL } from "../config";
 // Helper to get company_id from localStorage
 import { getSelectedCompany } from "../config/token";
 
+
+  // Add random background color to data range from Fluent colors
+  const fluentColors = [
+        "#0078D4", // Accent Blue
+        "#107C10", // Accent Green
+        "#FF8C00", // Accent Orange
+        "#C239B3", // Accent Purple
+        "#00B7C3", // Accent Teal
+        "#FFB900", // Accent Yellow
+        "#0099BC", // Accent Cyan
+        "#5C2D91", // Accent Indigo
+        "#00BCF2", // Accent Light Blue
+        "#498205", // Accent Light Green
+        "#FF4343", // Accent Light Red
+        "#FF8C00", // Accent Light Orange (duplicate, but ok)
+        "#881798", // Accent Magenta
+        "#2D7D32", // Accent Dark Green
+        "#6B69D6", // Accent Lavender
+      ];
+const getRandomColor = () => fluentColors[Math.floor(Math.random() * fluentColors.length)];
+
 const getCompanyId = () => {
   const companyId = getSelectedCompany();
   if (!companyId) {
@@ -20,7 +41,6 @@ const getCompanyId = () => {
   }
   return companyId;
 };
-
 export async function fetchCurrencyRatesByAPI(setMessage, setLoading) {
   return withLoading(setLoading, setMessage, async function fetchCurrencyRatesByAPI() {
     setMessage("⏳ Ханшийн мэдээлэл татаж байна...");
@@ -198,33 +218,13 @@ export async function fetchVehicleInfoByPlate(setMessage, setLoading) {
   });
 }
 
-export async function fetchKhanbankReceiptFromSheet(setMessage, setLoading) {
+export async function fetchKhanbankReceiptFromSheet(setMessage, setLoading, { account, fromDate, toDate }) {
   return withLoading(setLoading, setMessage, async function fetchKhanbankReceiptFromSheet() {
     setMessage("⏳ Хуулга татаж байна...");
 
     const companyId = getCompanyId(); // localStorage-аас ID авах
     const settings = await loadSettings(companyId); // ID-г дамжуулах
     let token = getSettingValue(settings, "access_token");
-
-    const { accountNo, fromDate, toDate } = await Excel.run(async (context) => {
-      const sheet = context.workbook.worksheets.getItem("Import");
-      const range = sheet.getRange("B3:B5");
-      range.load("values");
-      await context.sync();
-
-      const [acc, fromRaw, toRaw] = range.values.map((r) => r[0]);
-
-      if (!acc || !fromRaw || !toRaw) {
-        throw new Error("📌 B3-B5 нүднүүдэд accountNo, fromDate, toDate бүгд байх шаардлагатай!");
-      }
-
-      return {
-        accountNo: acc.toString().trim(),
-        fromDate: normalizeExcelDate(fromRaw + 1, "fromDate"),
-        toDate: normalizeExcelDate(toRaw + 1, "toDate"),
-      };
-    });
-
     const makeRequest = async (currentToken) => {
       const myHeaders = new Headers();
       myHeaders.append("Authorization", `Bearer ${currentToken}`);
@@ -232,7 +232,7 @@ export async function fetchKhanbankReceiptFromSheet(setMessage, setLoading) {
       myHeaders.append("Origin", "https://corp.khanbank.com");
       myHeaders.append("Host", "api.khanbank.com:9003");
 
-      const url = `https://api.khanbank.com:9003/v3/omni/accounts/receipt/${accountNo}?transactionDate=%7B%22lt%22:%22${fromDate}T17:42:30%22,%22gt%22:%22${toDate}T09:57:20%22%7D&docType=0&transactionAmount=%7B%22gt%22:%220%22,%22lt%22:%220%22%7D`;
+  const url = `https://api.khanbank.com:9003/v3/omni/accounts/receipt/${account}?transactionDate=%7B%22lt%22:%22${fromDate}T17:42:30%22,%22gt%22:%22${toDate}T09:57:20%22%7D&docType=0&transactionAmount=%7B%22gt%22:%220%22,%22lt%22:%220%22%7D`;
 
       const response = await fetch(url, {
         method: "GET",
@@ -243,7 +243,8 @@ export async function fetchKhanbankReceiptFromSheet(setMessage, setLoading) {
       return { response, result };
     };
 
-    let { response, result } = await makeRequest(token);
+  let { response, result } = await makeRequest(token);
+  //console.log("[TEST] fetchKhanbankReceiptFromSheet result:", result); // Тестийн зорилгоор нэмсэн
 
     if (response.status === 401) {
       const tokenResp = await getKhanbankToken(setMessage, setLoading);
@@ -266,42 +267,54 @@ export async function fetchKhanbankReceiptFromSheet(setMessage, setLoading) {
       accountId: formatLargeNumber(tx.accountId),
     }));
 
+    // headers, rows-г Excel.run-оос гадна зарлаж, утга онооно
+    const headers = [
+      "transactionDate",
+      "txnBranchId",
+      "beginBalance",
+      "Debit",
+      "Credit",
+      "endBalance",
+      "transactionRemarks",
+      "accountId",
+    ];
+
+    const rows = transactions.map((tx) => [
+      tx.transactionDate,
+      tx.txnBranchId,
+      tx.beginBalance,
+      tx.Debit,
+      tx.Credit,
+      tx.endBalance,
+      tx.transactionRemarks,
+      tx.accountId,
+    ]);
+
     await Excel.run(async (context) => {
-      const sheet = context.workbook.worksheets.getItem("Import");
-
-      const headers = [
-        "transactionDate",
-        "txnBranchId",
-        "beginBalance",
-        "Debit",
-        "Credit",
-        "endBalance",
-        "transactionRemarks",
-        "accountId",
-      ];
-
-      const rows = transactions.map((tx) => [
-        tx.transactionDate,
-        tx.txnBranchId,
-        tx.beginBalance,
-        tx.Debit,
-        tx.Credit,
-        tx.endBalance,
-        tx.transactionRemarks,
-        tx.accountId,
-      ]);
+      let sheet;
+      try {
+        sheet = context.workbook.worksheets.getItem("Import");
+        sheet.load("name");
+        await context.sync();
+      } catch (e) {
+        // If not found, create it
+        sheet = context.workbook.worksheets.add("Import");
+        await context.sync();
+      }
 
       const headerRange = sheet.getRange("A8:H8");
       headerRange.values = [headers];
 
       const dataRange = sheet.getRangeByIndexes(8, 0, rows.length, headers.length);
+      dataRange.values = "";
       dataRange.values = rows;
+      dataRange.format.font.color = getRandomColor();
 
       await context.sync();
     });
 
     setMessage("✅ Хуулга амжилттай татагдаж, Excel-д бичигдлээ.");
-    return { result, response };
+    return { headers, rows, result, response };
   });
 }
 
@@ -411,7 +424,7 @@ export async function fetchKhanbankAccountInfo(setMessage, setLoading) {
       }
 
       return {
-        accountNo: acc.toString().trim(),
+        accountNo: acc.toString().trim().replace(/\s/g, ''),
         activeCellAddress: activeCell.address,
       };
     });

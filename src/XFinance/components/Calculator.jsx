@@ -171,7 +171,7 @@ const Calculator = () => {
   };
 
   return (
-    <div ref={containerRef} style={{ padding: '15px', maxWidth: '300px', margin: '0 auto' }}>
+    <div ref={containerRef} style={{ padding: '15px', maxWidth: '250px', margin: '0 auto' }}>
       <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>
          Smart Calculator
       </h3>

@@ -11,6 +11,7 @@ import CreateAccount from "./CreateAccount";
 import CreateCustomer from "./CreateCustomer";
 import { useAppContext } from "./AppContext";
 import Calculator from "./Calculator";
+import AccountDateDialog from "./AccountDateDialog";
 import {
   NumberSymbol16Regular,
   TextField16Regular,
@@ -83,6 +84,7 @@ const groupedTools = [
       { icon: <Add16Regular />, label: "ЕДД данс үүсгэх" },
       { icon: <AddCircle16Regular />, label: "Данс үүсгэх" },
       { icon: <AddSquare16Regular />, label: "Харилцагч үүсгэх" },
+      { icon: <DocumentTableSearchRegular />, label: "Дансны мэдээлэл бичих" },
     ],
   },
   {
@@ -99,9 +101,19 @@ const groupedTools = [
 ];
 
 const CustomTools = ({ isSidebarOpen }) => {
-  const { setLoading, showMessage } = useAppContext();
+  const { setLoading, showMessage, searchData, fetchSearchData } = useAppContext();
   const [activeModal, setActiveModal] = useState(null);
   const [isNarrowScreen, setIsNarrowScreen] = useState(false);
+  const [dialogResult, setDialogResult] = useState(null);
+  // Хайх товч дарахад дуудагдана
+  const handleDialogSearch = async ({ account, fromDate, toDate }) => {
+    try {
+      return await efns.fetchKhanbankReceiptFromSheet(showMessage, setLoading, { account, fromDate, toDate });
+    } catch (e) {
+      showMessage(e.message || "Алдаа гарлаа.");
+    }
+    // setActiveModal(null) устгав: dialog-ыг шууд хаахгүй
+  };
   const activity = useActivityTracking();
   useEffect(() => {
     const handleResize = () => {
@@ -120,7 +132,7 @@ const CustomTools = ({ isSidebarOpen }) => {
     "Албан ханш татах": () => efns.fetchCurrencyRatesByAPI(showMessage, setLoading),
     "Машины мэдээлэл татах": () => efns.fetchVehicleInfoByPlate(showMessage, setLoading),
     "Хааны token татах": () => efns.getKhanbankToken(showMessage, setLoading),
-    "Хааны хуулга татах": () => efns.fetchKhanbankReceiptFromSheet(showMessage, setLoading),
+    "Хааны хуулга татах": () => setActiveModal("AccountDateDialog"),
     "Хааны данс лавлах": () => efns.fetchKhanbankAccountInfo(showMessage, setLoading),
     "РД-аар ҮА лавлах": () => bFns.getMerchantCategoryById(showMessage, setLoading),
     "Идэвхитэй нүдээр шүүлт хийх": () => fns.filterByActiveCellValue(showMessage, setLoading),
@@ -134,12 +146,28 @@ const CustomTools = ({ isSidebarOpen }) => {
     "PS Зээлийн төлөлт": () => pfns.loanpaymentData(showMessage, setLoading),
     "PS Зээлийн зориулалт, хугацаа": () => pfns.extractLoanPurposeAndTerm(showMessage, setLoading),
     "Топ 40 зээлийн тайлан": () => pfns.processTop40LoanReport(showMessage, setLoading),
-
     "ЕДД данс үүсгэх": () => setActiveModal("createGL"),
     "Данс үүсгэх": () => setActiveModal("createAccount"),
     "Харилцагч үүсгэх": () => setActiveModal("createCustomer"),
+    "Дансны мэдээлэл бичих": async () => {
+      if (!searchData.account || searchData.account.length === 0) {
+        showMessage("⏳ Дансны мэдээлэл татаж байна...");
+        await fetchSearchData();
+        if (!searchData.account || searchData.account.length === 0) {
+          showMessage("⚠️ Дансны мэдээлэл татаж чадсангүй.");
+          return;
+        }
+      }
+      fns.writeAccountDataToSelectedRange(searchData.account, showMessage, setLoading);
+    },
   };
-
+  // Dialog-оос утга авсны дараа fetchKhanbankReceiptFromSheet-г дуудна
+  useEffect(() => {
+    if (dialogResult) {
+      efns.fetchKhanbankReceiptFromSheet(showMessage, setLoading, dialogResult);
+      setDialogResult(null);
+    }
+  }, [dialogResult, showMessage, setLoading]);
   const handleClick = async (label) => {
     activityTracker.trackUserAction("CustomTools", label, { type: "tool", label });
     await withLoading(setLoading, showMessage, async () => {
@@ -156,24 +184,29 @@ const CustomTools = ({ isSidebarOpen }) => {
         justifyContent: "flex-start",
         minHeight: "100vh",
         backgroundColor: "#f3f4f6",
-        padding: "12px",
-        width: isSidebarOpen ? "calc(100% - 180px)" : "calc(85% - 50px)",
-        marginLeft: isSidebarOpen ? "180px" : "50px",
-        transition: "margin-left 0.3s ease-in-out, width 0.3s ease-in-out",
       }}
     >
+      {activeModal === "AccountDateDialog" && (
+        <AccountDateDialog
+          open={true}
+          onClose={() => setActiveModal(null)}
+          onSearch={handleDialogSearch}
+        />
+      )}
+      {/* Main content starts here, no extra wrapper div */}
       <div
         style={{
           backgroundColor: "#fff",
           padding: "10px",
           borderRadius: "4px",
           boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-          width: isNarrowScreen ? "100%" : "400px",
+          width: isNarrowScreen ? "100%" : "300px",
           textAlign: "center",
           borderRight: isNarrowScreen ? "none" : "2px solid #ccc",
           minHeight: "calc(100vh - 20px)",
           marginBottom: isNarrowScreen ? "0" : "0",
           marginRight: isNarrowScreen ? "0" : "20px",
+          marginLeft: isNarrowScreen ? "20px" : "60px",
           order: isNarrowScreen ? 2 : 0, // ⭐️ ЭНЭ ШИНЭ ЗУРААС!
         }}
       >
@@ -187,7 +220,8 @@ const CustomTools = ({ isSidebarOpen }) => {
           borderRadius: "4px",
           minHeight: "calc(100vh - 20px)",
           width: "100%",
-          maxWidth: isNarrowScreen ? "100%" : "320px",
+          marginLeft: isNarrowScreen ? "40px" : "0",
+          maxWidth: isNarrowScreen ? "80%" : "250px",
           boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
           display: "flex",
           flexDirection: "column",

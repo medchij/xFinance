@@ -108,6 +108,13 @@ const SearchTableSheet = ({ isOpen, onClose }) => {
   const handleRowClick = async (row) => {
     try {
       const formula = await getActiveCellFormula(showMessage, setLoading);
+      
+      // Хэрэв нүд хоосон биш бол бичихгүй
+      if (formula !== null && formula !== undefined && formula !== "") {
+        showMessage("⚠️ Сонгосон нүд хоосон биш байна. Хоосон нүд рүү шилжүүлнэ үү.");
+        return;
+      }
+      
       setPreviousValue(formula);
       setSelectedRow(row);
 

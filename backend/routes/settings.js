@@ -1,3 +1,4 @@
+
 const express = require('express');
 const router = express.Router();
 const { query } = require('../db'); // Go up one level to find db.js
@@ -37,9 +38,22 @@ router.post('/', async (req, res) => {
   }
 
   try {
+    // Нэвтэрсэн хэрэглэгчийн id-г авах (Authorization header-аас JWT-г задлах)
+    let userId = null;
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.decode(token);
+        userId = decoded && decoded.id ? decoded.id : null;
+      } catch (e) {
+        userId = null;
+      }
+    }
     const { rows } = await query(
-      'INSERT INTO settings (company_id, name, value, tab) VALUES ($1, $2, $3, $4) RETURNING *',
-      [req.company_id, name, value, tab]
+      'INSERT INTO settings (company_id, name, value, tab, original_id, created_at, updated_at, created_by, updated_by) VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), $6, $7) RETURNING *',
+      [req.company_id, name, value, tab, null, userId, userId]
     );
     res.status(201).json(rows[0]);
   } catch (error) {
@@ -78,5 +92,28 @@ router.put('/', async (req, res) => {
     res.status(500).json({ message: `Failed to update setting.` });
   }
 });
-
+// DELETE /api/settings/:id?company_id=...
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+  const company_id = req.query.company_id;
+  if (!id) {
+    return res.status(400).json({ message: 'id is required as a URL parameter' });
+  }
+  if (!company_id) {
+    return res.status(400).json({ message: 'company_id is required as a query parameter' });
+  }
+  try {
+    const { rowCount } = await query(
+      'DELETE FROM settings WHERE id = $1 AND company_id = $2',
+      [id, company_id]
+    );
+    if (rowCount === 0) {
+      return res.status(404).json({ message: `Setting with ID ${id} not found for this company.` });
+    }
+    res.status(200).json({ message: `Setting with ID ${id} deleted successfully.` });
+  } catch (error) {
+    console.error(`Error deleting setting ${id} for ${company_id}:`, error);
+    res.status(500).json({ message: `Failed to delete setting.` });
+  }
+});
 module.exports = router;

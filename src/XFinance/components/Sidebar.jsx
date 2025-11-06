@@ -92,7 +92,22 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage, onOpenLogViewer }) => {
 
   return (
     <>
+      <style>{`
+        .sidebar-scroll::-webkit-scrollbar {
+          width: 4px;
+          background: transparent;
+        }
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+          background: #e0e0e0;
+          border-radius: 4px;
+        }
+        .sidebar-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: #e0e0e0 transparent;
+        }
+      `}</style>
       <div
+        className="sidebar-scroll"
         style={{
           width: isOpen ? "180px" : "50px",
           height: "100vh",
@@ -102,7 +117,9 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage, onOpenLogViewer }) => {
           alignItems: "center",
           padding: "10px 0",
           transition: "width 0.3s ease-in-out",
-          overflow: "hidden",
+          // overflow: "hidden",
+          overflowX: "hidden",
+          overflowY: "auto",
           position: "fixed",
           left: 0,
           top: 0,
@@ -151,6 +168,7 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage, onOpenLogViewer }) => {
           icon={<PersonCircle24Regular />}
           style={{
             width: "100%",
+            marginLeft: "5px",
             justifyContent: isOpen ? "flex-start" : "center",
             padding: "12px 20px",
             marginTop: "auto",
@@ -168,6 +186,7 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage, onOpenLogViewer }) => {
       <SearchAccount isOpen={isSearchOpen} onClose={() => setSearchOpen(false)} />
       <ConfirmationDialog
         isOpen={isConfirmDialogOpen}
+        message="Та хуучин өгөгдлийг устгахдаа итгэлтэй байна уу?" 
         onClose={async (confirmed) => {
           setLoading(true);
           try {

@@ -26,7 +26,7 @@ const ENTITIES = {
 
 async function createTables(client) {
     console.log('Бүх хүснэгтийг устгаж, шинээр үүсгэж байна...');
-    await client.sql`DROP TABLE IF EXISTS  settings, cf_items, gl_accounts, gl_categories, customers, currencies, branches, accounts, companies,  permissions CASCADE;`;
+    await client.sql`DROP TABLE IF EXISTS  settings, cf_items, gl_accounts, gl_categories, customers, currencies, branches, accounts, companies CASCADE;`;
 
     console.log('Үндсэн хүснэгтүүдийг үүсгэж байна...');
     await client.sql`CREATE TABLE companies (id VARCHAR(100) PRIMARY KEY, name VARCHAR(255) NOT NULL);`;
@@ -36,7 +36,7 @@ async function createTables(client) {
     await client.sql`CREATE TABLE customers (id SERIAL PRIMARY KEY, company_id VARCHAR(100) REFERENCES companies(id), original_id VARCHAR(50), name VARCHAR(255), status VARCHAR(50), created_at TIMESTAMP WITH TIME ZONE, updated_at TIMESTAMP WITH TIME ZONE, created_by INTEGER REFERENCES users(id), updated_by INTEGER REFERENCES users(id), UNIQUE(company_id, name));`;
     await client.sql`CREATE TABLE gl_categories (id SERIAL PRIMARY KEY, company_id VARCHAR(100) REFERENCES companies(id), original_id VARCHAR(50), name VARCHAR(255), created_at TIMESTAMP WITH TIME ZONE, updated_at TIMESTAMP WITH TIME ZONE, created_by INTEGER REFERENCES users(id), updated_by INTEGER REFERENCES users(id), UNIQUE(company_id, name));`;
     await client.sql`CREATE TABLE gl_accounts (id SERIAL PRIMARY KEY, company_id VARCHAR(100) REFERENCES companies(id), original_id VARCHAR(50), account_number VARCHAR(255), account_name VARCHAR(255), category_name VARCHAR(255), currency VARCHAR(50), counter INTEGER, created_at TIMESTAMP WITH TIME ZONE, updated_at TIMESTAMP WITH TIME ZONE, created_by INTEGER REFERENCES users(id), updated_by INTEGER REFERENCES users(id), UNIQUE(company_id, account_number));`;
-    await client.sql`CREATE TABLE cf_items (id SERIAL PRIMARY KEY, company_id VARCHAR(100) REFERENCES companies(id), original_id VARCHAR(50), name VARCHAR(255), type VARCHAR(50), created_at TIMESTAMP WITH TIME ZONE, updated_at TIMESTAMP WITH TIME ZONE, created_by INTEGER REFERENCES users(id), updated_by INTEGER REFERENCES users(id), UNIQUE(company_id, name));`;
+    await client.sql`CREATE TABLE cf_items (id SERIAL PRIMARY KEY, company_id VARCHAR(100) REFERENCES companies(id), original_id VARCHAR(50), code VARCHAR(50), name VARCHAR(255), type VARCHAR(50), created_at TIMESTAMP WITH TIME ZONE, updated_at TIMESTAMP WITH TIME ZONE, created_by INTEGER REFERENCES users(id), updated_by INTEGER REFERENCES users(id), UNIQUE(company_id, code));`;
     await client.sql`CREATE TABLE settings (id SERIAL PRIMARY KEY, company_id VARCHAR(100) REFERENCES companies(id), original_id VARCHAR(50), tab VARCHAR(100), name VARCHAR(255), value TEXT, created_at TIMESTAMP WITH TIME ZONE, updated_at TIMESTAMP WITH TIME ZONE, created_by INTEGER REFERENCES users(id), updated_by INTEGER REFERENCES users(id), UNIQUE(company_id, name));`;
 
     console.log('✅ Бүх хүснэгтүүд амжилттай үүсгэгдлээ.');
@@ -82,9 +82,10 @@ async function migrateData(client, companyDirs, adminUserId) {
                                 break;
                             case 'cf_items':
                                 const name = record.name || '';
+                                const code = record.code || '';
                                 const type = name.includes('(+)') ? 'Inflow' : (name.includes('(-)') ? 'Outflow' : 'Other');
-                                const cleanedName = name.replace(/\s*\([+-]\)/, '').trim();
-                                await client.sql`INSERT INTO cf_items (company_id, original_id, name, type, created_at, updated_at, created_by, updated_by) VALUES (${dirName}, ${record.id}, ${cleanedName}, ${type}, ${createdAt}, ${now}, ${adminUserId}, ${adminUserId}) ON CONFLICT (company_id, name) DO NOTHING;`;
+                                //const cleanedName = name.replace(/\s*\([+-]\)/, '').trim();
+                                await client.sql`INSERT INTO cf_items (company_id, original_id, code, name, type, created_at, updated_at, created_by, updated_by) VALUES (${dirName}, ${record.id}, ${code}, ${name}, ${type}, ${createdAt}, ${now}, ${adminUserId}, ${adminUserId}) ON CONFLICT (company_id, code) DO NOTHING;`;
                                 break;
                             case 'settings':
                                 await client.sql`INSERT INTO settings (company_id, original_id, tab, name, value, created_at, updated_at, created_by, updated_by) VALUES (${dirName}, ${record.id}, ${record.tab}, ${record.name}, ${record.value}, ${createdAt}, ${now}, ${adminUserId}, ${adminUserId}) ON CONFLICT (company_id, name) DO NOTHING;`;

@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect } from "react";
+import React, { lazy, Suspense, useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { AppProvider, useAppContext } from "./AppContext";
 import AppLoader from "./AppLoader";
@@ -7,12 +7,28 @@ import ShortcutListener from "./ShortcutListener";
 import AuthenticatedApp from "./AuthenticatedApp"; // Зөвхөн AuthenticatedApp-г импортлоно
 import ErrorBoundary from "./ErrorBoundary";
 import activityTracker from "../utils/activityTracker";
+import ResetPassword from "./ResetPassword";
 
 // Lazy components
 const UnauthenticatedApp = lazy(() => import(/* webpackChunkName: "app-unauth" */ "./UnauthenticatedApp"));
 
 const AppContent = ({ title }) => {
   const { isLoggedIn, login, setSelectedCompany } = useAppContext();
+  const [currentView, setCurrentView] = useState('main');
+
+  // URL-аас token шалгах
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (token) {
+      setCurrentView('reset-password');
+    }
+  }, []);
+
+  // Reset Password хуудас харуулах
+  if (currentView === 'reset-password') {
+    return <ResetPassword />;
+  }
 
   return (
     <Suspense fallback={<AppLoader />}>

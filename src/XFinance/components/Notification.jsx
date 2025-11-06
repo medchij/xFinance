@@ -22,7 +22,7 @@ const Notification = ({ message, type = "info", onClose, singleline = false }) =
         top: "20%",
         left: "50%",
         transform: "translate(-50%, -20%)",
-        zIndex: 1000,
+        zIndex: 2001,
         maxWidth: "360px",
         width: "90%",
       }}

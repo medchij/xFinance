@@ -9,13 +9,13 @@ const useStyles = makeStyles({
     fontWeight: tokens.fontWeightSemibold,
     marginTop: "12px", // Зайг багасгав
     marginBottom: "8px", // Зайг багасгав
-    fontSize: tokens.fontSizeBase200,
+    fontSize: tokens.fontSizeBase300,
   },
   textPromptAndInsertion: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    fontSize: tokens.fontSizeBase200,
+    fontSize: tokens.fontSizeBase300,
   },
   textAreaField: {
     marginLeft: "16px", // Зайг багасгав
@@ -23,7 +23,7 @@ const useStyles = makeStyles({
     marginBottom: "12px", // Зайг багасгав
     marginRight: "16px", // Зайг багасгав
     maxWidth: "60%", // Өргөнийг бага зэрэг нэмэв
-    fontSize: tokens.fontSizeBase200,
+    fontSize: tokens.fontSizeBase300,
   },
 });
 
@@ -43,8 +43,8 @@ const TextInsertion = (props) => {
 
   return (
     <div className={styles.textPromptAndInsertion}>
-      <Field className={styles.textAreaField} size="large" label="Баримт бичигт оруулах текстийг оруулна уу.">
-        <Textarea size="large" value={text} onChange={handleTextChange} />
+      <Field className={styles.textAreaField} size="medium" label="Баримт бичигт оруулах текстийг оруулна уу.">
+        <Textarea size="medium" value={text} onChange={handleTextChange} />
       </Field>
       <Field className={styles.instructions}>Туршиж үзэх товчийг дарна уу.</Field>
       <Button
@@ -52,7 +52,7 @@ const TextInsertion = (props) => {
         disabled={false}
         size="large"
         onClick={handleTextInsertion}
-        style={{ marginBottom: "24px" }}
+        style={{ marginBottom: "24px", fontSize: tokens.fontSizeBase300 }}
       >
         Туршиж үзэх
       </Button>

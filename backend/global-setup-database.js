@@ -1,6 +1,6 @@
 // backend/Setup_database.js
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env.local') });
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+//require('dotenv').config({ path: require('path').resolve(__dirname, '../.env.local') });
+require('dotenv').config({ path: require('path').resolve(__dirname, '.env') });
 
 const { db } = require('@vercel/postgres');
 const fs = require('fs').promises;
@@ -131,21 +131,23 @@ async function importUsers(client) {
 
       if (u.id != null) {
         await client.sql`
-          INSERT INTO users(id, username, password_hash, email, full_name)
-          VALUES (${u.id}, ${username}, ${hash}, ${email}, ${full_name})
+          INSERT INTO users(id, username, password_hash, email, full_name, role_id)
+          VALUES (${u.id}, ${username}, ${hash}, ${email}, ${full_name}, ${u.role_id})
           ON CONFLICT (id) DO UPDATE
             SET username = EXCLUDED.username,
                 password_hash = EXCLUDED.password_hash,
                 email = EXCLUDED.email,
-                full_name = COALESCE(EXCLUDED.full_name, users.full_name);`;
+                full_name = COALESCE(EXCLUDED.full_name, users.full_name),
+                role_id = COALESCE(EXCLUDED.role_id, users.role_id);`;
       } else {
         await client.sql`
-          INSERT INTO users(username, password_hash, email, full_name,role_id)
+          INSERT INTO users(username, password_hash, email, full_name, role_id)
           VALUES (${username}, ${hash}, ${email}, ${full_name}, ${u.role_id})
           ON CONFLICT (username) DO UPDATE
             SET password_hash = EXCLUDED.password_hash,
                 email = COALESCE(EXCLUDED.email, users.email),
-                full_name = COALESCE(EXCLUDED.full_name, users.full_name);`;
+                full_name = COALESCE(EXCLUDED.full_name, users.full_name),
+                role_id = COALESCE(EXCLUDED.role_id, users.role_id);`;
       }
       count++;
     }

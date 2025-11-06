@@ -6,7 +6,7 @@ const bcrypt = require('bcrypt');
 // GET all users
 router.get('/', async (req, res) => {
     try {
-    const { rows } = await query('SELECT id, username, email, full_name, created_at FROM users ORDER BY created_at DESC');
+    const { rows } = await query('SELECT id, username, email, full_name, is_active, created_at FROM users ORDER BY created_at DESC');
         res.json(rows);
     } catch (err) {
         console.error(err.message);
@@ -42,7 +42,7 @@ router.post('/', async (req, res) => {
 // PUT (update) a user
 router.put('/:id', async (req, res) => {
     const { id } = req.params;
-    const { username, email, full_name, password } = req.body;
+    const { username, email, full_name, password, is_active } = req.body;
 
     try {
         let passwordHash;
@@ -60,13 +60,14 @@ router.put('/:id', async (req, res) => {
         if (email) { fields.push('email'); values.push(email); }
         if (full_name) { fields.push('full_name'); values.push(full_name); }
         if (passwordHash) { fields.push('password_hash'); values.push(passwordHash); }
+        if (is_active !== undefined) { fields.push('is_active'); values.push(is_active); }
         
         if (fields.length === 0) {
             return res.status(400).json({ msg: 'No fields to update' });
         }
 
         query += fields.map((field, i) => `${field} = $${i + 2}`).join(', ');
-        query += ' WHERE id = $1 RETURNING id, username, email, full_name, created_at';
+        query += ' WHERE id = $1 RETURNING id, username, email, full_name, is_active, created_at';
         values.unshift(id);
 
     const { rows } = await query(query, values);
@@ -97,6 +98,31 @@ router.delete('/:id', async (req, res) => {
         }
 
         res.json({ msg: 'User deleted successfully' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+    }
+});
+
+// PATCH - Toggle user active status
+router.patch('/:id/toggle-active', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const { rows } = await query(
+            'UPDATE users SET is_active = NOT is_active WHERE id = $1 RETURNING id, username, is_active',
+            [id]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        const status = rows[0].is_active ? 'идэвхитэй' : 'идэвхигүй';
+        res.json({ 
+            msg: `Хэрэглэгч ${status} болгогдлоо`,
+            user: rows[0]
+        });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server error');
