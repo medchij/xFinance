@@ -118,7 +118,7 @@ export async function fetchCurrencyRatesByAPI(setMessage, setLoading) {
       if (!usdRate || !jpyRate || !rateDate) {
         throw new Error("USD эсвэл JPY ханш олдсонгүй.");
       }
-
+      sheet.getCell(row, col + 1).values = "АЛБАН ХАНШ";
       sheet.getCell(row, col + 2).values = "1";
       sheet.getCell(row, col + 3).values = [[usdRate]];
       sheet.getCell(row, col + 4).values = [[jpyRate]];

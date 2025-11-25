@@ -6,6 +6,8 @@ import LedgerModal from "./LedgerModal";
 import { withLoading } from "../apiHelpers";
 import { useAppContext } from "./AppContext";
 import logger from "../utils/logger"; // Logger import нэмэх
+import { fetchCurrencyRatesByAPI } from "../externalAPI"; // API функц import
+import { getLastEmptyRowInColumn } from "../xFinance"; // B баганы сүүлийн мөр олох функц
 
 const TransactionModal = ({ isOpen, onClose }) => {
   const { showMessage, currentUser } = useAppContext(); // currentUser нэмэх
@@ -48,7 +50,7 @@ const TransactionModal = ({ isOpen, onClose }) => {
     if (transactionDate && exchangeType === "АЛБАН ХАНШ") {
       fetchRateForDate(transactionDate);
     }
-  }, [debitAccount, creditAccount, exchangeType]);
+  }, [transactionDate, exchangeType, debitCurrency, creditCurrency]); // валютууд нэмэгдсэн
 
   const fetchRateForDate = async (dateStr) => {
     try {
@@ -57,7 +59,29 @@ const TransactionModal = ({ isOpen, onClose }) => {
         showMessage,
         async () => {
           await Excel.run(async (context) => {
-            const sheet = context.workbook.worksheets.getItem("Rate");
+            // 1. Rate sheet байгаа эсэхийг шалгах
+            const sheets = context.workbook.worksheets;
+            const rateSheet = sheets.getItemOrNullObject("Rate");
+            await context.sync();
+
+            // 2. Хэрэв Rate sheet байхгүй бол үүсгэх
+            if (rateSheet.isNullObject) {
+              logger.info("Rate sheet байхгүй тул шинээр үүсгэж байна", {
+                user: currentUser?.username || currentUser?.email || "unknown",
+              });
+              
+              const newSheet = sheets.add("Rate");
+              // Header мөр нэмэх
+              const headerRow = [["Тайлант огноо","Ханшийн төрөл","MNT", "USD","JPY"]];
+              newSheet.getRange("A1:F1").values = headerRow;
+              newSheet.getRange("A1:F1").format.font.bold = true;
+              await context.sync();
+              
+              showMessage("ℹ️ Rate sheet шинээр үүсгэгдлээ. Ханш татаж байна...");
+            }
+
+            // 3. Rate sheet-ээс өгөгдөл унших
+            const sheet = rateSheet.isNullObject ? sheets.getItem("Rate") : rateSheet;
             const usedRange = sheet.getUsedRange();
             usedRange.load("values");
             await context.sync();
@@ -70,8 +94,11 @@ const TransactionModal = ({ isOpen, onClose }) => {
             const debitCurCol = header.indexOf(debitCurrency);
             const creditCurCol = header.indexOf(creditCurrency);
 
-            if (dateCol === -1) throw new Error("❌ 'Огноо' багана олдсонгүй.");
+            if (dateCol === -1) {
+              throw new Error("❌ 'Тайлант огноо' багана олдсонгүй.");
+            }
 
+            // 4. Тухайн огнооны ханш байгаа эсэхийг шалгах
             const matchRow = data.find((row) => {
               const cellVal = row[dateCol];
               if (!cellVal || typeof cellVal !== "number") return false;
@@ -80,17 +107,82 @@ const TransactionModal = ({ isOpen, onClose }) => {
               return isoDate === dateStr;
             });
 
-            if (!matchRow) {
-              showMessage("⚠️ Тухайн огнооны ханш олдсонгүй.");
+            // 5. Хэрэв ханш олдсон бол утгыг тохируулах
+            if (matchRow) {
+              const debitR = debitCurrency === "MNT" ? 1 : parseFloat(matchRow[debitCurCol] || 1);
+              const creditR = creditCurrency === "MNT" ? 1 : parseFloat(matchRow[creditCurCol] || 1);
 
+              setDebitRate(debitR);
+              setCreditRate(creditR);
               return;
             }
 
-            const debitR = debitCurrency === "MNT" ? 1 : parseFloat(matchRow[debitCurCol] || 1);
-            const creditR = creditCurrency === "MNT" ? 1 : parseFloat(matchRow[creditCurCol] || 1);
+            // 6. Ханш олдоогүй бол: сүүлийн мөрт огноо нэмж, API дуудах
+            showMessage("⚠️ Тухайн огнооны ханш олдсонгүй. Ханш татаж байна...");
+            
+            // Сүүлийн мөрийн индекс олох
+            const lastRowIndex = rows.length;
+            
+            // Огнооны Excel format руу хөрвүүлэх (1900-01-01-ээс хэдэн өдөр)
+            const transactionDate = new Date(dateStr);
+            const excelDate = Math.floor((transactionDate - new Date(1899, 11, 30)) / (1000 * 60 * 60 * 24));
+            
+            // Сүүлийн мөрт огноо нэмэх
+            const dateCell = sheet.getRangeByIndexes(lastRowIndex, 0, 1, 1);
+            dateCell.values = [[excelDate]];
+            dateCell.numberFormat = [["yyyy-mm-dd"]];
+            
+            // Огноо оруулсан cell-ийг идэвхжүүлэх (fetchCurrencyRatesByAPI-д шаардлагатай)
+            dateCell.select();
+            await context.sync();
 
-            setDebitRate(debitR);
-            setCreditRate(creditR);
+            logger.info("Rate sheet-д шинэ огноо нэмэгдлээ", {
+              user: currentUser?.username || currentUser?.email || "unknown",
+              dateStr,
+              excelDate,
+              rowIndex: lastRowIndex,
+            });
+
+            // 7. API дуудаж ханш татах (одоо идэвхтэй cell нь огноотой)
+            try {
+              await fetchCurrencyRatesByAPI(showMessage, () => {});
+              
+              // 8. Ханш татсны дараа дахин sheet-ээс уншиж авах
+              const updatedUsedRange = sheet.getUsedRange();
+              updatedUsedRange.load("values");
+              await context.sync();
+              
+              const updatedRows = updatedUsedRange.values;
+              const updatedData = updatedRows.slice(1);
+              
+              const updatedMatchRow = updatedData.find((row) => {
+                const cellVal = row[dateCol];
+                if (!cellVal || typeof cellVal !== "number") return false;
+                const cellDate = new Date(Date.UTC(1899, 11, 30 + cellVal));
+                const isoDate = cellDate.toISOString().split("T")[0];
+                return isoDate === dateStr;
+              });
+              
+              if (updatedMatchRow) {
+                const debitR = debitCurrency === "MNT" ? 1 : parseFloat(updatedMatchRow[debitCurCol] || 1);
+                const creditR = creditCurrency === "MNT" ? 1 : parseFloat(updatedMatchRow[creditCurCol] || 1);
+                
+                setDebitRate(debitR);
+                setCreditRate(creditR);
+                showMessage("✅ Ханш амжилттай татагдлаа.");
+                return;
+              } else {
+                showMessage("⚠️ Ханш татагдсан боловч тухайн огнооны мэдээлэл олдсонгүй.");
+              }
+            } catch (apiError) {
+              logger.error("Автоматаар ханш татахад алдаа гарлаа", {
+                user: currentUser?.username || currentUser?.email || "unknown",
+                error: apiError.message,
+                dateStr,
+                stack: apiError.stack,
+              });
+              showMessage("❌ Ханш автоматаар татахад алдаа гарлаа. Гараар татна уу.");
+            }
           });
         },
         "fetchRateForDate"
@@ -260,18 +352,45 @@ const TransactionModal = ({ isOpen, onClose }) => {
         logger.info("Excel дээр байгаа sheet-үүд:", { sheetNames });
 
         // Journal sheet байгаа эсэхийг шалгах
-        const journalSheet = sheets.getItemOrNullObject("Journal");
+        let journalSheet = sheets.getItemOrNullObject("Journal");
         await context.sync();
 
         if (journalSheet.isNullObject) {
-          throw new Error("❌ 'Journal' нэртэй worksheet олдсонгүй. Байгаа sheets: " + sheetNames.join(", "));
+          // Journal sheet байхгүй бол үүсгэх
+          logger.info("Journal sheet байхгүй тул шинээр үүсгэж байна", {
+            user: currentUser?.username || currentUser?.email || "unknown",
+          });
+
+          journalSheet = sheets.add("Journal");
+          // Header мөр нэмэх
+          const headerRow = [
+            [
+              "Д/Д",
+              "Огноо",
+              "Дебет",
+              "Кредит",
+              "Валют",
+              "Дүн",
+              "Гүйлгээний утга",
+              "Харилцагч",
+              "Харьцсан данс",
+              "НӨАТ харилцагч",
+              "Валют чек",
+              "Суурь валютаар",
+              "Мөнгөн гүйлгээ",
+              "Шилжүүлсэн дансны нэр"
+            ],
+          ];
+          journalSheet.getRange("A2:N2").values = headerRow;
+          journalSheet.getRange("A2:N2").format.font.bold = true;
+          await context.sync();
+
+          showMessage("ℹ️ Journal sheet шинээр үүсгэгдлээ.");
         }
 
-        const usedRange = journalSheet.getUsedRange();
-        usedRange.load("rowCount");
-        await context.sync();
+        // B багана (Огноо)-ны сүүлийн хоосон мөрийг олох
+        const nextRow = await getLastEmptyRowInColumn(journalSheet, "B", context);
 
-        const nextRow = usedRange.rowCount;
         const rowValues = [
           nextRow, // A: Д/Д (Дугаар)
           transactionDate, // B: Огноо
@@ -364,7 +483,7 @@ const TransactionModal = ({ isOpen, onClose }) => {
           top: 0,
           left: 0,
           width: "100vw",
-          height: "100vh",
+          height: "90vh",
           background: "rgba(0, 0, 0, 0.3)",
           display: "flex",
           justifyContent: "center",
@@ -378,14 +497,14 @@ const TransactionModal = ({ isOpen, onClose }) => {
             maxHeight: "90vh",
             overflowY: "auto",
             background: "#fff",
-            padding: "24px",
+            padding: "12px",
             borderRadius: "6px",
             display: "flex",
             flexDirection: "column",
-            gap: "16px",
+            gap: "12px",
           }}
         >
-          <h2 style={{ fontSize: "18px", marginBottom: "10px" }}>Гүйлгээ</h2>
+          <h2 style={{ fontSize: "12px", marginBottom: "10px" }}>Гүйлгээ</h2>
 
           <Field label="Гүйлгээний огноо *">
             <Input type="date" value={transactionDate} onChange={(e) => setTransactionDate(e.target.value)} />
@@ -393,12 +512,23 @@ const TransactionModal = ({ isOpen, onClose }) => {
 
           <Field label="Дебит данс *">
             <div style={{ display: "flex", gap: 4 }}>
-              <Input
-                value={debitAccount}
-                readOnly
-                style={{ flex: 1, cursor: "pointer" }}
+              <div
                 onClick={() => handleViewAccountDetails(debitAccount, "дебет")}
-              />
+                style={{
+                  flex: 1,
+                  padding: "4px 8px",
+                  border: "1px solid #d1d1d1",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  color: debitAccount ? "#0078d4" : "#242424",
+                  textDecoration: debitAccount ? "underline" : "none",
+                  backgroundColor: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                {debitAccount || ""}
+              </div>
               <Button
                 icon={<Search16Regular />}
                 onClick={() => {
@@ -425,12 +555,23 @@ const TransactionModal = ({ isOpen, onClose }) => {
 
           <Field label="Кредит данс">
             <div style={{ display: "flex", gap: 4 }}>
-              <Input
-                value={creditAccount}
-                readOnly
-                style={{ flex: 1, cursor: "pointer" }}
+              <div
                 onClick={() => handleViewAccountDetails(creditAccount, "кредит")}
-              />
+                style={{
+                  flex: 1,
+                  padding: "4px 8px",
+                  border: "1px solid #d1d1d1",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  color: creditAccount ? "#0078d4" : "#242424",
+                  textDecoration: creditAccount ? "underline" : "none",
+                  backgroundColor: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                {creditAccount || ""}
+              </div>
               <Button
                 icon={<Search16Regular />}
                 onClick={() => {

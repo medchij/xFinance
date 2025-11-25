@@ -206,7 +206,7 @@ const CustomTools = ({ isSidebarOpen }) => {
           minHeight: "calc(100vh - 20px)",
           marginBottom: isNarrowScreen ? "0" : "0",
           marginRight: isNarrowScreen ? "0" : "20px",
-          marginLeft: isNarrowScreen ? "20px" : "60px",
+          marginLeft: isNarrowScreen ? "20px" : (isSidebarOpen ? "0" : "0"),
           order: isNarrowScreen ? 2 : 0, // ⭐️ ЭНЭ ШИНЭ ЗУРААС!
         }}
       >

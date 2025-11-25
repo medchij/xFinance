@@ -298,6 +298,13 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    // Fetch companies when user is logged in and currentUser is available
+    if (isLoggedIn && currentUser) {
+      fetchCompanies();
+    }
+  }, [isLoggedIn, currentUser, fetchCompanies]);
+
+  useEffect(() => {
     if (isLoggedIn && selectedCompany) {
       localStorage.setItem("selectedCompany", selectedCompany);
       console.log(`🏢 Сонгогдсон компани хадгалагдлаа: ${selectedCompany}`);

@@ -65,7 +65,7 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage, onOpenLogViewer }) => {
     },
     { icon: <Settings24Regular />, text: "Settings", action: () => setActivePage("settings") },
     { icon: <DocumentText24Regular />, text: "Лог харах", action: () => onOpenLogViewer && onOpenLogViewer() },
-    { icon: <Chat24Regular />, text: "Messages", action: () => showMessage("Тун удахгүй!", "info") },
+    { icon: <Chat24Regular />, text: "OCR", action: () => setActivePage("chat") },
   ];
 
   const handleToggleClick = () => {

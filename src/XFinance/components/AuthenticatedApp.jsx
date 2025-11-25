@@ -2,6 +2,7 @@ import React, { useState, lazy, Suspense } from "react";
 import PropTypes from "prop-types";
 import { useAppContext } from "./AppContext"; // useAppContext-г импортлох
 import LogViewer from "./LogViewer"; // LogViewer нэмэх
+import Header from "./Header"; // Header нэмэх
 import { useActivityTracking } from "../hooks/useActivityTracking";
 
 const Sidebar = lazy(() => import(/* webpackChunkName: "page-sidebar" */ "./Sidebar"));
@@ -11,6 +12,7 @@ const SettingsPage = lazy(() => import(/* webpackChunkName: "page-settings" */ "
 const SearchAccount = lazy(() => import(/* webpackChunkName: "page-search" */ "./SearchAccount"));
 const Profile = lazy(() => import(/* webpackChunkName: "page-profile" */ "./Profile"));
 const AdminPage = lazy(() => import(/* webpackChunkName: "page-admin" */ "./AdminPage"));
+const ChatPage = lazy(() => import(/* webpackChunkName: "page-chat" */ "./ChatPage"));
 
 // Эрх шалгах тохиргоо
 const pagePermissions = {
@@ -49,6 +51,7 @@ const AuthenticatedApp = ({ title }) => {
     settings: { Component: SettingsPage, props: {} },
     profile: { Component: Profile, props: {} },
     admin: { Component: AdminPage, props: {} },
+    chat: { Component: ChatPage, props: {} },
   };
 
   const toggleSidebar = () => {
@@ -73,30 +76,43 @@ const AuthenticatedApp = ({ title }) => {
   const pageProps = pages[activePage]?.props || {};
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
-      <Suspense fallback={<div style={{ padding: 12 }}>Түр хүлээгээрэй…</div>}>
-        <Sidebar
-          isOpen={isSidebarOpen}
-          toggleSidebar={toggleSidebar}
-          setActivePage={handlePageChange}
-          onOpenLogViewer={() => setLogViewerOpen(true)} // Лог товч функц нэмэв
-        />
-        <div
-          style={{
-            flexGrow: 1,
-            transition: "margin-left 0.3s ease-in-out",
-            //marginLeft: isSidebarOpen ? 250 : 50,
-            padding: "8px", // Зайг эрс багасгав
-            backgroundColor: "#f3f4f6",
-          }}
-        >
-          {ActivePageComponent ? (
-            <ActivePageComponent {...pageProps} isSidebarOpen={isSidebarOpen} />
-          ) : (
-            <div>Хуудас олдсонгүй</div>
-          )}
-        </div>
-      </Suspense>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      {/* Header бүх хуудсанд */}
+      <Header
+        logo="assets/logo-filled.png"
+        title={title}
+        message="xFinance"
+        isPublic={false}
+        currentUser={currentUser}
+        onNavigateToProfile={() => handlePageChange("profile")}
+        isSidebarOpen={isSidebarOpen}
+      />
+      
+      <div style={{ display: "flex", flex: 1 }}>
+        <Suspense fallback={<div style={{ padding: 12 }}>Түр хүлээгээрэй…</div>}>
+          <Sidebar
+            isOpen={isSidebarOpen}
+            toggleSidebar={toggleSidebar}
+            setActivePage={handlePageChange}
+            onOpenLogViewer={() => setLogViewerOpen(true)} // Лог товч функц нэмэв
+          />
+          <div
+            style={{
+              flexGrow: 1,
+              transition: "margin-left 0.3s ease-in-out",
+              //marginLeft: isSidebarOpen ? 250 : 50,
+              padding: "8px", // Зайг эрс багасгав
+              backgroundColor: "#f3f4f6",
+            }}
+          >
+            {ActivePageComponent ? (
+              <ActivePageComponent {...pageProps} isSidebarOpen={isSidebarOpen} />
+            ) : (
+              <div>Хуудас олдсонгүй</div>
+            )}
+          </div>
+        </Suspense>
+      </div>
 
       {/* Log Viewer Modal */}
       <LogViewer isOpen={isLogViewerOpen} onClose={() => setLogViewerOpen(false)} />

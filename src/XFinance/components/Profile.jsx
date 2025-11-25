@@ -3,7 +3,6 @@ import { BASE_URL } from "../../config";
 import { Dropdown, Option, Field, tokens, Button } from "@fluentui/react-components";
 import { ArrowClockwise16Regular, SignOut24Regular } from "@fluentui/react-icons"; // SignOut24Regular нэмэв
 import { useAppContext } from "./AppContext";
-import Header from "./Header";
 
 const Profile = ({ isSidebarOpen }) => {
   const {
@@ -45,13 +44,9 @@ const Profile = ({ isSidebarOpen }) => {
         transition: "margin-left 0.3s ease-in-out",
         display: "flex",
         flexDirection: "column",
+        padding: "24px",
       }}
     >
-      <Header
-        logo="assets/logo-filled.png"
-        message={selectedCompany ? `Та ${selectedCompany} орчинд байна` : "Компани сонгоогүй байна"}
-      />
-
       {/* Компани сонгох хэсэг */}
       <div
         style={{

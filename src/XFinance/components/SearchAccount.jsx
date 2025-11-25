@@ -37,18 +37,20 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
 
   const handleRowClick = async (row, valueToInsert) => {
     try {
-       const currentFormula = await getActiveCellFormula(showMessage, setLoading);
       setSelectedRow(row);
       trackSelection(activeTab, row.id || row.account_number || row.cf_number, valueToInsert);
-      if (currentFormula !== null && currentFormula !== undefined && currentFormula !== "") {
-        showMessage("⚠️ Сонгосон нүд хоосон биш байна. Хоосон нүд рүү шилжүүлнэ үү.");
-        return;
-      }
+      
       if (onSelect) {
+        // TransactionModal-аас дуудсан бол шууд утга буцаана, шалгалтгүй
         onSelect(row);
         onClose();
       } else {
-       
+        // Excel cell-д оруулах үед шалгалт хийнэ
+        const currentFormula = await getActiveCellFormula(showMessage, setLoading);
+        if (currentFormula !== null && currentFormula !== undefined && currentFormula !== "") {
+          showMessage("⚠️ Идэвхтэй нүд хоосон биш байна.");
+          return;
+        }
         setPreviousValue(currentFormula);
         await setActiveCellValue(valueToInsert, showMessage, setLoading);
         trackExcelAction("cell_value_set", { value: valueToInsert, cellType: activeTab });

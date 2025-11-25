@@ -1,14 +1,34 @@
 import React, { useEffect } from "react";
 import PropTypes from "prop-types";
-import Header from "./Header";
 import HeroList from "./HeroList";
 import TextInsertion from "./TextInsertion";
+import { Image, tokens, makeStyles } from "@fluentui/react-components";
 import { Ribbon24Regular, LockOpen24Regular, DesignIdeas24Regular } from "@fluentui/react-icons";
 import { insertText } from "../xFinance";
 import { useActivityTracking } from "../hooks/useActivityTracking";
 
+const useStyles = makeStyles({
+  welcome__header: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    marginBottom: "16px",
+  },
+  message: {
+    fontSize: tokens.fontSizeHero900,
+    fontWeight: tokens.fontWeightRegular,
+    color: tokens.colorNeutralForeground1,
+    maxWidth: "98%",
+    textAlign: "center",
+    wordBreak: "break-word",
+    lineHeight: "1.4",
+    marginTop: "8px",
+  },
+});
+
 const MainContent = ({ title, isSidebarOpen, isPublic = false, onNavigateToLogin, currentUser, onNavigateToProfile }) => {
   const { trackPageView } = useActivityTracking("MainContent");
+  const styles = useStyles();
 
   useEffect(() => {
     trackPageView("MainContent", {
@@ -33,15 +53,12 @@ const MainContent = ({ title, isSidebarOpen, isPublic = false, onNavigateToLogin
 
   return (
     <div style={rootStyle}>
-      <Header
-        logo="assets/logo-filled.png"
-        title={title}
-        message="Тавтай морил"
-        isPublic={isPublic}
-        onNavigateToLogin={onNavigateToLogin}
-        currentUser={currentUser}
-        onNavigateToProfile={onNavigateToProfile}
-      />
+      {/* ===================== Logo болон Гарчиг ==================== */}
+      <div className={styles.welcome__header + " fluent-Header-welcome__header"}>
+        <Image width="70" height="70" src="assets/logo-filled.png" alt={title} />
+        <h1 className={styles.message + " fluent-Header-message"}>Тавтай морил</h1>
+      </div>
+      
       <HeroList
         message="Энэ нэмэлт хэрэгсэл нь таны ажиллагааг хялбарчлах болно"
         items={[
@@ -50,6 +67,14 @@ const MainContent = ({ title, isSidebarOpen, isPublic = false, onNavigateToLogin
           { icon: <DesignIdeas24Regular />, primaryText: "Тайлан мэдээгээ илүү мэргэжлийн түвшинд тайлагнаарай!" },
         ]}
       />
+      
+     
+      
+      {/* Market Heat Map
+      <div style={{ marginTop: '24px', marginBottom: '24px' }}>
+        <MarketHeatMap />
+      </div> */}
+      
       <TextInsertion insertText={insertText} />
     </div>
   );

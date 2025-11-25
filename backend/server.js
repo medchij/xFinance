@@ -87,6 +87,9 @@ app.use('/api/glaccount', glaccountRouter);
 const glTooluurChangeRouter = require('./routes/gl-tooluurchange');
 app.use('/api/gl-tooluurchange', glTooluurChangeRouter);
 
+const ocrRouter = require('./routes/ocr');
+app.use('/api/ocr', ocrRouter);
+
 
 // Export the app for Vercel
 module.exports = app;

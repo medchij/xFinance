@@ -127,7 +127,8 @@ export default function AccountDateDialog({ open, onClose, onSearch }) {
                   <label style={{ display: "block", marginBottom: 4, fontWeight: 500 }}>Данс</label>
                   <Dropdown
                     value={account}
-                    onChange={(_, data) => setAccount(data.value)}
+                    selectedOptions={[account]}
+                    onOptionSelect={(_, data) => setAccount(data.optionValue)}
                     style={{ width: "100%", minWidth: 80 }}
                   >
                     {accountList.map((acc) => (

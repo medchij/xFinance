@@ -274,7 +274,7 @@ const LedgerModal = ({ isOpen, onClose, selectedAccount, initialDateFrom = null,
         }
 
         // Header мөр авах - шинэ багануудтай
-        const headers = values[0];
+        const headers = values[1];
 
         const headerIndexes = {
           id: headers.indexOf("Д/Д"),
@@ -477,7 +477,7 @@ const LedgerModal = ({ isOpen, onClose, selectedAccount, initialDateFrom = null,
       return;
     }
 
-    setMessage("Дансны хуулга хайж байна...", "info");
+    setMessage("✅ Дансны хуулга хайж байна...", "info");
     fetchLedgerData();
   };
 
@@ -637,7 +637,7 @@ const LedgerModal = ({ isOpen, onClose, selectedAccount, initialDateFrom = null,
 
         {/* Transaction Table */}
         {ledgerData.length > 0 && (
-          <div style={{ overflowX: "auto" }}>
+          <div style={{ overflowX: "auto", maxHeight: "400px", overflowY: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #ddd" }}>
               <thead>
                 <tr style={{ backgroundColor: "#f5f5f5" }}>

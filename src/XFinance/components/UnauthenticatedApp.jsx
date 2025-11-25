@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import LoginPage from "./LoginPage";
 import MainContent from "./maincontent";
+import Header from "./Header";
 
 const UnauthenticatedApp = ({ onLogin, onCompanySelect }) => {
   // State to toggle between login and public view
@@ -19,8 +20,18 @@ const UnauthenticatedApp = ({ onLogin, onCompanySelect }) => {
       {showLogin ? (
         <LoginPage onLogin={onLogin} onCompanySelect={onCompanySelect} onNavigateToPublic={handleNavigateToPublic} />
       ) : (
-        // Pass a function to MainContent to allow it to trigger navigation
-        <MainContent isPublic={true} onNavigateToLogin={handleNavigateToLogin} />
+        <>
+          {/* Public view - Header with login button */}
+          <Header
+            logo="assets/logo-filled.png"
+            title="xFinance"
+            message="xFinance"
+            isPublic={true}
+            onNavigateToLogin={handleNavigateToLogin}
+            isSidebarOpen={false}
+          />
+          <MainContent isPublic={true} onNavigateToLogin={handleNavigateToLogin} />
+        </>
       )}
     </div>
   );

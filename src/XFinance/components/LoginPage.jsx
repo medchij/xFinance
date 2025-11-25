@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
-import { Input, Button, Link, makeStyles, shorthands } from "@fluentui/react-components";
+import { Input, Button, Link, Text, makeStyles, shorthands } from "@fluentui/react-components";
 import Header from "./Header";
 import { useActivityTracking } from "../hooks/useActivityTracking";
 
@@ -10,7 +10,7 @@ const useStyles = makeStyles({
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    //height: "100vh",
+    minHeight: "100vh",
     backgroundColor: "#f3f3f3",
   },
   form: {
@@ -60,6 +60,9 @@ const LoginPage = ({ onLogin, onCompanySelect, onNavigateToPublic }) => {
     <div className={styles.root}>
       <Header logo="assets/logo-filled.png" title="XFinance" message="Системд нэвтрэх" />
       <form onSubmit={handleLogin} className={styles.form}>
+        <Text size={500} weight="semibold" align="center" style={{ marginBottom: '8px' }}>
+          Нэвтрэх
+        </Text>
         <Input
           type="text"
           placeholder="Нэвтрэх нэр"

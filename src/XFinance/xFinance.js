@@ -26,6 +26,34 @@ export function loadXLSX() {
   });
 }
 
+/**
+ * Тухайн sheet-ийн тодорхой баганы сүүлийн хоосон мөрийг олох функц
+ * @param {Excel.Worksheet} sheet - Excel worksheet объект
+ * @param {string} columnLetter - Баганы үсэг (жнь: "B", "C")
+ * @param {Excel.RequestContext} context - Excel context
+ * @returns {Promise<number>} - Сүүлийн хоосон мөрийн индекс (0-based)
+ */
+export async function getLastEmptyRowInColumn(sheet, columnLetter, context) {
+  const columnRange = sheet.getRange(`${columnLetter}:${columnLetter}`);
+  const usedRange = columnRange.getUsedRangeOrNullObject();
+  usedRange.load("rowIndex, rowCount, values");
+  await context.sync();
+
+  let lastEmptyRow = 0;
+  if (!usedRange.isNullObject) {
+    const values = usedRange.values;
+    const startRowIndex = usedRange.rowIndex;
+    // Сүүлээс эхлэн хоосон биш нүдийг олох
+    for (let i = values.length - 1; i >= 0; i--) {
+      if (values[i][0] !== null && values[i][0].toString().trim() !== "") {
+        lastEmptyRow = startRowIndex + i + 1; // Дараагийн хоосон мөр
+        break;
+      }
+    }
+  }
+  return lastEmptyRow;
+}
+
 export const handleFileImport = async (
   event,
   {
@@ -125,22 +153,7 @@ export async function writeToImportSheet(sheetName, sheetData, confirmStatus, se
 
       let existingHeaders = [];
       if (sheetExists && !confirmStatus) {
-        const usedRange = sheet.getRange("B:B").getUsedRangeOrNullObject();
-        usedRange.load("rowIndex, rowCount, values");
-        await context.sync();
-
-        startRow = 0;
-        if (!usedRange.isNullObject) {
-          const values = usedRange.values;
-          const startRowIndex = usedRange.rowIndex;
-          // Refine logic to find the last non-empty cell in column B
-          for (let i = values.length - 1; i >= 0; i--) {
-            if (values[i][0] !== null && values[i][0].toString().trim() !== "") {
-              startRow = startRowIndex + i + 1;
-              break;
-            }
-          }
-        }
+        startRow = await getLastEmptyRowInColumn(sheet, "B", context);
         console.log("Determined startRow for import:", startRow);
         // Оруулах өгөгдөл хамгийн доод талын хоосон нүднээс эхэлнэ
 
