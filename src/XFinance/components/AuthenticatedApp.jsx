@@ -6,7 +6,7 @@ import Header from "./Header"; // Header нэмэх
 import { useActivityTracking } from "../hooks/useActivityTracking";
 
 const Sidebar = lazy(() => import(/* webpackChunkName: "page-sidebar" */ "./Sidebar"));
-const MainContent = lazy(() => import(/* webpackChunkName: "page-main" */ "./Maincontent"));
+const Maincontent = lazy(() => import(/* webpackChunkName: "page-main" */ "./Maincontent"));
 const CustomTools = lazy(() => import(/* webpackChunkName: "page-tools" */ "./CustomTools"));
 const SettingsPage = lazy(() => import(/* webpackChunkName: "page-settings" */ "./SettingsPage"));
 const SearchAccount = lazy(() => import(/* webpackChunkName: "page-search" */ "./SearchAccount"));
@@ -23,7 +23,7 @@ const pagePermissions = {
 
 const AuthenticatedApp = ({ title }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [activePage, setActivePage] = useState("maincontent");
+  const [activePage, setActivePage] = useState("Maincontent");
   const [isLogViewerOpen, setLogViewerOpen] = useState(false);
   const { hasPermission, showMessage, currentUser } = useAppContext(); // currentUser нэмэв
 
@@ -45,7 +45,7 @@ const AuthenticatedApp = ({ title }) => {
   }, [trackExcelAction]);
 
   const pages = {
-    maincontent: { Component: MainContent, props: { title, currentUser, onNavigateToProfile: () => setActivePage("profile") } },
+    Maincontent: { Component: Maincontent, props: { title, currentUser, onNavigateToProfile: () => setActivePage("profile") } },
     CustomTools: { Component: CustomTools, props: {} },
     search: { Component: SearchAccount, props: {} },
     settings: { Component: SettingsPage, props: {} },
