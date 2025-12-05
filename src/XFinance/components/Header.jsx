@@ -7,15 +7,16 @@ import { useAppContext } from "./AppContext";
 
 const useStyles = makeStyles({
   headerContainer: {
-    position: "relative", // For positioning the login button
+    position: "relative",
+    
     backgroundColor: tokens.colorNeutralBackground3,
-    //paddingTop: "20px", // Зайг багасгав
-    //paddingBottom: "16px", // Зайг багасгав
+    paddingTop: "8px",
+    paddingBottom: "8px",
   },
   controlsSection: {
     position: "relative",
     height: "40px", // Хяналтын хэсгийн өндөр - аватар багтахаар өсгөв
-    marginBottom: "5px", // Доорх хэсэгтэй зай
+    marginBottom: "0px",
   },
   loginButton: {
     position: "absolute",

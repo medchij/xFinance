@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import LoginPage from "./LoginPage";
-import MainContent from "./maincontent";
+import MainContent from "./Maincontent";
 import Header from "./Header";
 
 const UnauthenticatedApp = ({ onLogin, onCompanySelect }) => {

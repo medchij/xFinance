@@ -1106,3 +1106,246 @@ async function getLastRow(sheet, columnIndex) {
   }
   return 0;
 }
+
+
+// Үлдэгдэл тэнцэл тайлан боловсруулалт
+// H3: =IF(A3<>"",IF(ISNUMBER(VALUE(MID(A3,7,4))),VALUE(MID(A3,7,4)),""),H2)
+// I3: =IF(A3<>"",IF(ISNUMBER(VALUE(MID(A3,1,7))),VALUE(MID(A3,1,6)),""),I2)
+// J3: =MID(I3,1,4)
+// K3: =MID(I3,1,3)
+// L3: =MID(I3,1,2)
+export async function processBalanceReconciliation(setMessage, setLoading) {
+  return withLoading(setLoading, setMessage, async () => {
+    await Excel.run(async (context) => {
+      setMessage("⏳ Үлдэгдэл тэнцэл боловсруулж байна...");
+
+      const sheet = context.workbook.worksheets.getActiveWorksheet();
+      
+      // A2 нүдийг шалгах
+      const a2Cell = sheet.getCell(1, 0); // A2 (row 1, col 0)
+      a2Cell.load("values");
+      await context.sync();
+
+      const a2Value = a2Cell.values[0][0];
+      if (!a2Value || !a2Value.toString().includes("Үлдэгдэл тэнцэл")) {
+        throw new Error("⚠️ A2 нүдэнд 'Үлдэгдэл тэнцэл' гэсэн үг байхгүй байна.");
+      }
+
+      // Сүүлийн мөрийг олох
+      const lastRow = await getLastRow(sheet, 0); // A баганын дагуу
+      if (lastRow < 3) {
+        throw new Error("⚠️ Өгөгдөл хангалтгүй байна.");
+      }
+
+      // Бүх мөрүүдийг уншина (A багана, 3-р мөрөөс эхлэн)
+      const dataRange = sheet.getRangeByIndexes(2, 0, lastRow - 2, 12); // Row 3-с эхлэх, A-L багана (0-11)
+      dataRange.load("values");
+      await context.sync();
+
+      const rows = dataRange.values;
+      
+      // H2, I2-ийн анхны утгыг авах
+      const h2Cell = sheet.getCell(1, 7); // H2
+      const i2Cell = sheet.getCell(1, 8); // I2
+      h2Cell.load("values");
+      i2Cell.load("values");
+      await context.sync();
+
+      // Томьёонуудыг массиваар бэлтгэх
+      const hFormulas = [];
+      const iFormulas = [];
+      const jFormulas = [];
+      const kFormulas = [];
+      const lFormulas = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const rowNum = i + 3; // Excel мөрийн дугаар (3-с эхэлнэ)
+        
+        hFormulas.push([`=IF(A${rowNum}<>"",IF(ISNUMBER(VALUE(MID(A${rowNum},7,4))),VALUE(MID(A${rowNum},7,4)),""),H${rowNum - 1})`]);
+        iFormulas.push([`=IF(A${rowNum}<>"",IF(ISNUMBER(VALUE(MID(A${rowNum},1,7))),VALUE(MID(A${rowNum},1,6)),""),I${rowNum - 1})`]);
+        jFormulas.push([`=MID(I${rowNum},1,4)`]);
+        kFormulas.push([`=MID(I${rowNum},1,3)`]);
+        lFormulas.push([`=MID(I${rowNum},1,2)`]);
+      }
+
+      // Бүх томьёог нэг дор бичих
+      sheet.getRangeByIndexes(2, 7, rows.length, 1).formulas = hFormulas;
+      sheet.getRangeByIndexes(2, 8, rows.length, 1).formulas = iFormulas;
+      sheet.getRangeByIndexes(2, 9, rows.length, 1).formulas = jFormulas;
+      sheet.getRangeByIndexes(2, 10, rows.length, 1).formulas = kFormulas;
+      sheet.getRangeByIndexes(2, 11, rows.length, 1).formulas = lFormulas;
+
+      await context.sync();
+
+      setMessage(`✅ Үлдэгдэл тэнцэл боловсруулалт дууслаа. ${rows.length} мөр боловсруулсан.`);
+    });
+  });
+}
+
+// Санхүүгийн тайлангийн томьёо оруулах (R, S багана)
+export async function GIprocessFinancialReport(setMessage, setLoading) {
+  return withLoading(setLoading, setMessage, async () => {
+    await Excel.run(async (context) => {
+      setMessage("⏳ Санхүүгийн тайлан боловсруулж байна...");
+
+      const sheet = context.workbook.worksheets.getActiveWorksheet();
+      
+      // R болон S багануудад томьёо оруулах
+      const formulas = [
+        ["Нийт мөнгөн хөрөнгө", "=SUMPRODUCT(G:G, --(LEFT(I:I, 2) = \"11\"))/2"],
+        ["Зээлийн багц цэвэр дүнгээр", "=SUMPRODUCT(G:G, --(LEFT(I:I, 2) = \"12\"))/2"],
+        ["Хүлээж болзошгүй үүрэг", "0"],
+        ["Нийт зээлийн багц", "=S14+S15"],
+        ["Зээлийн эрсдлийн сан", "=-SUMPRODUCT(G:G, --(LEFT(I:I, 3) = \"128\"))/2"],
+        ["ЗЕСангийн дараах цэвэр зээл", "=S14-S17"],
+        ["Хүүгийн орлого тэнцлийн дотуур", "=-SUMPRODUCT(G:G, --(ISNUMBER(SEARCH(LEFT(I:I, 2), \"41\"))))/2"],
+        ["Хүүгийн орлого тэнцлийн гадуур", "0"],
+        ["Хадгаламжийн хүүгийн орлого", "0"],
+        ["Хүүгийн бус орлого", "=-SUMPRODUCT(G:G, --(ISNUMBER(SEARCH(LEFT(I:I, 2), \"42,43,44,45\"))))/2"],
+        ["Нийт орлого", "=-SUMPRODUCT(G:G, --(LEFT(I:I, 1) = \"4\"))/2"],
+        ["Нийт зардал", "=SUMPRODUCT(G:G, --(LEFT(I:I, 1) = \"5\"))/2-SUMPRODUCT(G:G, --(LEFT(I:I, 2) = \"54\"))/2-S25"],
+        ["Үүнээс эх үүсвэрийн зардал", "=SUMPRODUCT(G:G, --(LEFT(I:I, 2) = \"51\"))/2"],
+        ["Эх үүсвэрийн зардал", "=SUMPRODUCT(G:G, --(LEFT(I:I, 2) = \"51\"))/2"],
+        ["Татварын өмнөх ашиг", "=S23-S24-S25"],
+        ["Татварын зардал", "=S27*10%"],
+        ["Татварын дараах ашиг", "=S27-S28"],
+        ["2022 оны ААНОТын буцаалтын орлого", ""],
+        ["Нийт цэвэр ашиг", "=S29+S30"],
+        ["Зорилт", "0"]
+      ];
+
+      // R13-с эхлэн бичих (row index 12)
+      for (let i = 0; i < formulas.length; i++) {
+        const rowIdx = i + 12; // R13 = row 12 (0-indexed)
+        sheet.getCell(rowIdx, 17).values = [[formulas[i][0]]]; // R багана (17)
+        if (formulas[i][1]) {
+          sheet.getCell(rowIdx, 18).formulas = [[formulas[i][1]]]; // S багана (18)
+        } else {
+          sheet.getCell(rowIdx, 18).values = [[""]]; // Хоосон утга
+        }
+      }
+
+
+      await context.sync();
+
+      setMessage(`✅ Санхүүгийн тайлан амжилттай боловсруулагдлаа.`);
+    });
+  });
+}
+export async function APprocessFinancialReport(setMessage, setLoading) {
+  return withLoading(setLoading, setMessage, async () => {
+    await Excel.run(async (context) => {
+      setMessage("⏳ Санхүүгийн тайлан боловсруулж байна...");
+
+      const sheet = context.workbook.worksheets.getActiveWorksheet();
+      
+      // R болон S багануудад томьёо оруулах
+      const formulas = [
+        ["Нийт мөнгөн хөрөнгө", "=SUMPRODUCT(G:G, --(LEFT(I:I, 2) = \"11\"))/2"],
+        ["Зээлийн багц цэвэр дүнгээр", "=SUMPRODUCT(G:G, --(LEFT(I:I, 2) = \"13\"))/2"],
+        ["Хүлээж болзошгүй үүрэг", "0"],
+        ["Нийт зээлийн багц", "=S14+S15"],
+        ["Зээлийн эрсдлийн сан", "=-SUMPRODUCT(G:G, --(LEFT(I:I, 3) = \"139\"))/2"],
+        ["ЗЕСангийн дараах цэвэр зээл", "=S14-S17"],
+        ["Хүүгийн орлого тэнцлийн дотуур", "=-SUMPRODUCT(G:G, --(ISNUMBER(SEARCH(LEFT(I:I, 2), \"41\"))))/2"],
+        ["Хүүгийн орлого тэнцлийн гадуур", "0"],
+        ["Хадгаламжийн хүүгийн орлого", "0"],
+        ["Хүүгийн бус орлого", "=-SUMPRODUCT(G:G, --(ISNUMBER(SEARCH(LEFT(I:I, 2), \"42,43,44,45\"))))/2"],
+        ["Нийт орлого", "=-SUMPRODUCT(G:G, --(LEFT(I:I, 1) = \"4\"))/2"],
+        ["Нийт зардал", "=SUMPRODUCT(G:G, --(LEFT(I:I, 1) = \"5\"))/2"],
+        ["Үүнээс эх үүсвэрийн зардал", "=SUMPRODUCT(G:G, --(LEFT(I:I, 4) = \"5235\"))/2"],
+        ["Эх үүсвэрийн зардал", "=SUMPRODUCT(G:G, --(LEFT(I:I, 2) = \"51\"))/2"],
+        ["Татварын өмнөх ашиг", "=S23-S24"],
+        ["Татварын зардал", "=S27*10%"],
+        ["Татварын дараах ашиг", "=S27-S28"],
+        ["2022 оны ААНОТын буцаалтын орлого", ""],
+        ["Нийт цэвэр ашиг", "=S29+S30"],
+        ["Зорилт", "0"]
+      ];
+
+      // R13-с эхлэн бичих (row index 12)
+      for (let i = 0; i < formulas.length; i++) {
+        const rowIdx = i + 12; // R13 = row 12 (0-indexed)
+        sheet.getCell(rowIdx, 17).values = [[formulas[i][0]]]; // R багана (17)
+        if (formulas[i][1]) {
+          sheet.getCell(rowIdx, 18).formulas = [[formulas[i][1]]]; // S багана (18)
+        } else {
+          sheet.getCell(rowIdx, 18).values = [[""]]; // Хоосон утга
+        }
+      }
+
+
+      await context.sync();
+
+      setMessage(`✅ Санхүүгийн тайлан амжилттай боловсруулагдлаа.`);
+    });
+  });
+}
+
+
+// Polaris NES API-аас зээлийн мэдээлэл татах функц
+export async function fetchPolarisLoanData(setMessage, setLoading) {
+  return withLoading(setLoading, setMessage, async () => {
+    await Excel.run(async (context) => {
+      setMessage("⏳ Polaris зээл татах эхэллээ...");
+
+      // 1. Идэвхтэй cell-ээс зээлийн дугаар унших
+      const activeCell = context.workbook.getSelectedRange();
+      activeCell.load("values");
+      await context.sync();
+
+      const loanNumber = activeCell.values[0][0];
+      if (!loanNumber) {
+        throw new Error("⚠️ Зээлийн дугаар оруулна уу!");
+      }
+
+      // 2. Зээлийн дугаар валидаци (16+ тэмдэгт, "1221"-ээр эхэлнэ)
+      if (loanNumber.toString().length < 16 || !loanNumber.toString().startsWith("1221")) {
+        throw new Error("⚠️ Зээлийн дугаар буруу байна. 16+ тэмдэгт, '1221'-ээр эхэлнэ.");
+      }
+
+      console.log("🔍 Polaris request:", { loanNumber });
+      setMessage("⏳ Backend API руу хүсэлт илгээж байна...");
+
+      // 3. Backend proxy-аар дамжуулан Polaris API руу хандах (CORS шийдэл)
+      // Authorization header нэмэх (JWT token)
+      const token = localStorage.getItem('authToken');
+      
+      const response = await fetch("http://localhost:4000/api/polaris/loan-data", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          loanNumber: loanNumber.toString(),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || `❌ API хүсэлт амжилтгүй: ${response.status}`);
+      }
+
+      const parsedResult = await response.json();
+
+      // 4. repayAcntCode-ийг олж авах
+      const repayAcntCode = parsedResult?.repayAcntCode || "";
+      const loanname = parsedResult?.name || "";
+      
+      // 5. Үр дүнг идэвхтэй cell-ийн хажууд бичих (багана 1: repayAcntCode)
+      const resultCell1 = activeCell.getOffsetRange(0, 1);
+      resultCell1.values = [["'" + repayAcntCode]];
+      const resultCellLoanName = activeCell.getOffsetRange(0, 2);
+      resultCellLoanName.values = [[loanname]];
+      // 6. Бүх хариуг JSON форматаар гаргах (багана 2: бүх хариу)
+     // const resultCell2 = activeCell.getOffsetRange(0, 2);
+      //const fullResponse = JSON.stringify(parsedResult, null, 2);
+      //resultCell2.values = [[fullResponse]];
+      
+      await context.sync();
+
+      setMessage(`✅ Polaris-аас мэдээлэл амжилттай татагдлаа. Зээлийн дугаар: ${loanNumber}`);
+    });
+  });
+}

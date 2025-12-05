@@ -7,53 +7,107 @@ export async function getMerchantCategoryById(setMessage, setLoading) {
       range.load("values");
       await context.sync();
       const value = range.values[0][0];
-      if (!value || isNaN(value)) throw new Error("📌 ID тоо хэлбэртэй байх ёстой.");
-      return value;
+      if (!value || isNaN(value)) throw new Error("⚠️ Идэвхитэй нүдэнд ID тоо оруулна уу.");
+      return value.toString().trim();
     });
 
-    const url = `${BASE_URL}/api/merchant/${id}`;
+    // Backend-ээр дамжуулан OpenDataLab-аас мэдээллийг авах
+    const url = `${BASE_URL}/api/merchant-category/${encodeURIComponent(id)}`;
 
     let response;
     try {
       response = await fetch(url);
     } catch (error) {
-      throw new Error("❌ Сайт руу fetch хийхэд алдаа гарлаа: " + error.message);
+      throw new Error("❌ Backend сайт руу fetch хийхэд алдаа гарлаа: " + error.message);
     }
 
     if (!response.ok) {
       throw new Error(`❌ HTTP алдаа: ${response.status}`);
     }
 
-    const htmlText = await response.text();
+    const data = await response.json();
 
-    if (typeof DOMParser === "undefined") {
-      throw new Error("❌ DOMParser дэмжигдэхгүй орчинд ажиллуулж байна.");
+    if (!data || !data.result) {
+      throw new Error("⚠️ Мэдээлэл олдсонгүй.");
     }
 
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, "text/html");
-    const table = doc.querySelector("table");
-    const pageTitle = doc.querySelector("title")?.textContent || "Гарчиг олдсонгүй";
-    if (!table) {
-      throw new Error("⚠️ Хүснэгт олдсонгүй.");
-    }
+    // Excel-д дараа нь баганад бичих
+    await Excel.run(async (context) => {
+      const range = context.workbook.getActiveCell();
+      const newRange = range.getOffsetRange(0, 1);
+      newRange.values = [[data.categoryData || "Олдсонгүй"]];
+      await context.sync();
+    });
 
-    let result = `${pageTitle}\n`;
-
-    const rows = table.querySelectorAll("tr");
-
-    for (let i = 1; i < rows.length; i++) {
-      const cells = rows[i].querySelectorAll("td");
-      const rowText = Array.from(cells)
-        .map((cell) => cell.textContent.trim())
-        .join(" ");
-      result += rowText + "\n";
-    }
-
-    // Excel дээр бичих
-
-    setMessage("📋 Үр дүн:\n" + result);
-    //console.log("📋 Үр дүн:", result);
-    return { result, response };
+    setMessage("⚠️ Байгууллагын ангилал:\n" + data.result);
+    return data;
   });
 }
+
+/**
+ * Регистрийн дугаараар байгууллагын нэрийг авах функц
+ * @param {string} regNo - Регистрийн дугаар
+ * @returns {Promise<string>} - Байгууллагын нэр
+ */
+export async function getMerchantNameByRegNumber(regNo) {
+  try {
+    // Регистрийн дугаарыг шалгах
+    if (!regNo || regNo.toString().trim() === "") {
+      return "Алдаа: РД хоосон байна.";
+    }
+
+    // URL үүсгэх
+    const url = `https://info.ebarimt.mn/rest/merchant/info?regno=${encodeURIComponent(regNo)}`;
+
+    // HTTP хүсэлт
+    const response = await fetch(url);
+
+    // Хариуг шалгах
+    if (response.ok) {
+      const json = await response.json();
+
+      // Байгууллагын нэр авах
+      if (json && json.name) {
+        return json.name;
+      } else {
+        return "Байгууллагын нэр олдсонгүй.";
+      }
+    } else {
+      return `HTTP алдаа. Статус: ${response.status}`;
+    }
+  } catch (error) {
+    return `Алдаа гарлаа: ${error.message}`;
+  }
+}
+
+/**
+ * Excel дээр регистрийн дугаараар байгууллагын нэр авах функц
+ * @param {Function} setMessage - Мессеж үзүүлэх функц
+ * @param {Function} setLoading - Ачаалалтын статус үзүүлэх функц
+ */
+export async function getMerchantInfoFromExcel(setMessage, setLoading) {
+  return await withLoading(setLoading, setMessage, async () => {
+    const regNo = await Excel.run(async (context) => {
+      const range = context.workbook.getActiveCell();
+      range.load("values");
+      await context.sync();
+      const value = range.values[0][0];
+      if (!value) throw new Error("⚠️ Идэвхитэй нүдэнд регистрийн дугаар оруулна уу.");
+      return value.toString().trim();
+    });
+
+    const merchantName = await getMerchantNameByRegNumber(regNo);
+
+    // Дараа нь баганын мэдээллийг бичих
+    await Excel.run(async (context) => {
+      const range = context.workbook.getActiveCell();
+      const newRange = range.getOffsetRange(0, 1);
+      newRange.values = [[merchantName]];
+      await context.sync();
+    });
+
+    setMessage(`✅ "${regNo}" → "${merchantName}"`);
+    return merchantName;
+  });
+}
+

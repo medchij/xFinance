@@ -244,75 +244,6 @@ const Profile = ({ isSidebarOpen }) => {
     return value;
   };
 
-  const getSettingLabel = (key) => {
-    const labels = {
-      language: '🌐 Хэл',
-      currency: '💰 Валют',
-      dateFormat: '📅 Огноо формат',
-      theme: '🎨 Theme',
-      emailNotifications: '📧 Email мэдэгдэл',
-      autoSync: '🔄 Автомат sync',
-      sessionTimeout: '⏱️ Session timeout (мин)',
-    };
-    return labels[key] || key;
-  };
-
-  return (
-    <div
-      style={{
-        flexGrow: 1,
-        backgroundColor: tokens.colorNeutralBackground1,
-        minHeight: "100vh",
-        marginLeft: isSidebarOpen ? 180 : 50,
-        transition: "margin-left 0.3s ease-in-out",
-        display: "flex",
-        flexDirection: "column",
-        padding: "24px",
-      }}
-    >
-      {/* Компани сонгох хэсэг */}
-      <div
-        style={{
-          background: "#fff",
-          padding: "24px",
-          borderRadius: "8px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          margin: "20px",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-          <h2>Компани Сонголт</h2>
-          <Button
-            icon={<ArrowClockwise16Regular />}
-            appearance="subtle"
-            onClick={handleRefresh}
-            aria-label="Сэргээх"
-            disabled={loading}
-          />
-        </div>
-
-        {loading && companies.length === 0 ? null : (
-          <Field label="Таны ажиллах боломжтой компаниуд" style={{ maxWidth: "400px" }}>
-            <Dropdown
-              value={selectedCompany || ""}
-              onOptionSelect={handleCompanyChange}
-              placeholder="Компани сонгоно уу..."
-              disabled={companies.length === 0}
-            >
-              {companies.map((company) => (
-                <Option key={company.id} value={company.id}>
-                  {company.name}
-                </Option>
-              ))}
-            </Dropdown>
-          </Field>
-        )}
-
-        {companies.length === 0 && !loading && (
-          <p style={{ color: tokens.colorPaletteRedBackground3 }}>⚠️ Мэдээллийн санд компани бүртгэгдээгүй байна.</p>
-        )}
-      </div>
-
       {/* Системийн ерөнхий тохиргоо */}
       <div
         style={{
@@ -398,69 +329,140 @@ const Profile = ({ isSidebarOpen }) => {
                             ? data.value === 'true' 
                             : key === 'sessionTimeout' 
                             ? parseInt(data.value) || 30
-                            : data.value;
-                          setSettings({ ...settings, [key]: newValue });
-                        }}
-                        style={{ maxWidth: "300px" }}
-                      />
-                    ) : (
-                      <span style={{ 
-                        maxWidth: "300px", 
-                        display: "inline-block",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap"
-                      }}>
-                        {getSettingDisplayValue(key, value)}
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
-                      {editKey === key ? (
-                        <>
-                          <Tooltip content="Хадгалах" relationship="label">
-                            <Button 
-                              icon={<CheckmarkCircle24Regular />} 
-                              appearance="subtle"
-                              onClick={() => handleEditSetting(key, settings[key])} 
-                            />
-                          </Tooltip>
-                          <Tooltip content="Болих" relationship="label">
-                            <Button 
-                              icon={<DismissCircle24Regular />} 
-                              appearance="subtle"
-                              onClick={() => {
-                                setSettings({ ...settings, [key]: originalSettings[key] || value });
-                                setEditKey(null);
-                              }} 
-                            />
-                          </Tooltip>
-                        </>
-                      ) : (
-                        <>
-                          <Tooltip content="Засах" relationship="label">
-                            <Button 
-                              icon={<EditRegular />} 
-                              appearance="subtle"
-                              onClick={() => setEditKey(key)} 
-                            />
-                          </Tooltip>
-                          <Tooltip content="Устгах" relationship="label">
-                            <Button 
-                              icon={<DeleteRegular />} 
-                              appearance="subtle"
-                              onClick={() => handleDeleteSetting(key)}
-                            />
-                          </Tooltip>
-                        </>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
+ton
+            icon={<ArrowClockwise16Regular />}
+            appearance="subtle"
+            onClick={handleRefresh}
+            aria-label="Сэргээх"
+            disabled={loading}
+          />
+        </div>
+
+        {loading && companies.length === 0 ? null : (
+          <Field label="Таны ажиллах боломжтой компаниуд" style={{ maxWidth: "400px" }}>
+            <Dropdown
+              value={selectedCompany || ""}
+              onOptionSelect={handleCompanyChange}
+              placeholder="Компани сонгоно уу..."
+              disabled={companies.length === 0}
+            >
+              {companies.map((company) => (
+                <Option key={company.id} value={company.id}>
+                  {company.name}
+                </Option>
               ))}
-            </TableBody>
-          </Table>
+            </Dropdown>
+          </Field>
+        )}
+
+        {companies.length === 0 && !loading && (
+          <p style={{ color: tokens.colorPaletteRedBackground3 }}>⚠️ Мэдээллийн санд компани бүртгэгдээгүй байна.</p>
+        )}
+      </div>
+
+      {/* Системийн ерөнхий тохиргоо */}
+      <div
+        style={{
+          background: "#fff",
+          padding: "24px",
+          borderRadius: "8px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          margin: "20px",
+          marginTop: 0,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", marginBottom: "24px" }}>
+          <Settings24Regular style={{ marginRight: "8px" }} />
+          <h2>Системийн Ерөнхий Тохиргоо</h2>
+        </div>
+
+        {/* Үндсэн тохиргоо */}
+        <div style={{ marginBottom: "24px" }}>
+          <h3 style={{ marginBottom: "16px", fontSize: "16px" }}>📊 Үндсэн тохиргоо</h3>
+          
+          <Field label="Хэл" style={{ maxWidth: "400px", marginBottom: "12px" }}>
+            <Dropdown
+              value={settings.language || "mn"}
+              onOptionSelect={(_, data) => handleSettingChange("language", data.optionValue)}
+            >
+              <Option value="mn">Монгол</Option>
+              <Option value="en">English</Option>
+            </Dropdown>
+          </Field>
+
+          <Field label="Валют" style={{ maxWidth: "400px", marginBottom: "12px" }}>
+            <Dropdown
+              value={settings.currency || "MNT"}
+              onOptionSelect={(_, data) => handleSettingChange("currency", data.optionValue)}
+            >
+              <Option value="MNT">₮ MNT - Төгрөг</Option>
+              <Option value="USD">$ USD - Доллар</Option>
+              <Option value="EUR">€ EUR - Евро</Option>
+            </Dropdown>
+          </Field>
+
+          <Field label="Огноо формат" style={{ maxWidth: "400px", marginBottom: "12px" }}>
+            <Dropdown
+              value={settings.dateFormat || "YYYY-MM-DD"}
+              onOptionSelect={(_, data) => handleSettingChange("dateFormat", data.optionValue)}
+            >
+              <Option value="YYYY-MM-DD">YYYY-MM-DD (2025-12-04)</Option>
+              <Option value="DD/MM/YYYY">DD/MM/YYYY (04/12/2025)</Option>
+              <Option value="MM/DD/YYYY">MM/DD/YYYY (12/04/2025)</Option>
+            </Dropdown>
+          </Field>
+        </div>
+
+        {/* Интерфейс */}
+        <div style={{ marginBottom: "24px" }}>
+          <h3 style={{ marginBottom: "16px", fontSize: "16px" }}>🎨 Интерфейс</h3>
+          
+          <Field label="Theme" style={{ maxWidth: "400px", marginBottom: "12px" }}>
+            <Dropdown
+              value={settings.theme || "light"}
+              onOptionSelect={(_, data) => handleSettingChange("theme", data.optionValue)}
+            >
+              <Option value="light">☀️ Гэрэл</Option>
+              <Option value="dark">🌙 Харанхуй</Option>
+            </Dropdown>
+          </Field>
+        </div>
+
+        {/* Мэдэгдэл */}
+        <div style={{ marginBottom: "24px" }}>
+          <h3 style={{ marginBottom: "16px", fontSize: "16px" }}>🔔 Мэдэгдэл</h3>
+          
+          <Field label="Email мэдэгдэл илгээх">
+            <Switch
+              checked={settings.emailNotifications}
+              onChange={(_, data) => handleSettingChange("emailNotifications", data.checked)}
+            />
+          </Field>
+        </div>
+
+        {/* Excel Add-in */}
+        <div style={{ marginBottom: "24px" }}>
+          <h3 style={{ marginBottom: "16px", fontSize: "16px" }}>📱 Excel Add-in</h3>
+          
+          <Field label="Автомат sync">
+            <Switch
+              checked={settings.autoSync}
+              onChange={(_, data) => handleSettingChange("autoSync", data.checked)}
+            />
+          </Field>
+        </div>
+
+        {/* Аюулгүй байдал */}
+        <div style={{ marginBottom: "24px" }}>
+          <h3 style={{ marginBottom: "16px", fontSize: "16px" }}>🔐 Аюулгүй байдал</h3>
+          
+          <Field label="Session timeout (минут)" style={{ maxWidth: "400px", marginBottom: "12px" }}>
+            <Input
+              type="number"
+              value={String(settings.sessionTimeout || 30)}
+              onChange={(_, data) => handleSettingChange("sessionTimeout", parseInt(data.value) || 30)}
+            />
+          </Field>
         </div>
 
         {/* Хадгалах товчнууд */}

@@ -477,3 +477,128 @@ export async function fetchKhanbankAccountInfo(setMessage, setLoading) {
     return { result, response, accountDetail, activeCellAddress };
   });
 }
+
+// ==================== IBAN Generator ====================
+
+const banks = {
+  "Khaan Bank": "0005",
+  "TDB": "0004",
+  "Golomt Bank": "0150",
+  "State Bank": "0001",
+  "Khan Bank": "0005",
+  // Шинэ банкууд нэмнэ
+};
+
+function lettersToDigits(str) {
+  // A=10, B=11, ... Z=35
+  return str.toUpperCase().split('').map(ch => {
+    if (ch >= 'A' && ch <= 'Z') return String(ch.charCodeAt(0) - 55);
+    return ch;
+  }).join('');
+}
+
+// MOD97 тооцоолох (том тоо string хэлбэрээр)
+function mod97FromString(numStr) {
+  let rem = 0;
+  for (let i = 0; i < numStr.length; i++) {
+    const ch = numStr.charAt(i);
+    if (ch < '0' || ch > '9') throw new Error('mod97 expects digits only');
+    rem = (rem * 10 + (ch.charCodeAt(0) - 48)) % 97;
+  }
+  return rem;
+}
+
+/**
+ * Монгол IBAN үүсгэх
+ * @param {string} account - Дансны дугаар (9-12 орон)
+ * @param {string} bankIdentifier - Банк код (4 орон) эсвэл банкны нэр
+ * @param {string} branch - Салбарын код (default: "00")
+ * @returns {string} IBAN - Жишээ: "MN760005005041274490"
+ */
+export function generateMongoliaIban(account, bankIdentifier, branch = "00") {
+  // Account-ыг цэвэрлэх (зайг арилгаж, тэмдэгтүүдийг устгах)
+  let cleanAccount = String(account).replace(/\s+/g, '').replace(/'/g, '').trim();
+  
+  // Account дугаарыг 10 орон болгох (хэрэв богино бол 0-ээр нөхнө)
+  if (cleanAccount.length < 10) {
+    cleanAccount = cleanAccount.padStart(10, '0');
+  }
+  
+  const bankCode = (banks[bankIdentifier] !== undefined)
+    ? banks[bankIdentifier]
+    : (bankIdentifier && bankIdentifier.length === 4 ? bankIdentifier : null);
+
+  if (!bankCode) {
+    throw new Error("Банк код олдсонгүй. banks объектыг нэмнэ үү эсвэл 4 оронтой банк код оруулна уу.");
+  }
+
+  // MN -> "2223"
+  const countryDigits = lettersToDigits("MN");
+  // Rearranged: bankCode + branch + account + countryDigits + "00"
+  const rearranged = bankCode + branch + cleanAccount + countryDigits + "00";
+
+  const remainder = mod97FromString(rearranged);
+  const check = 98 - remainder;
+  const checkStr = String(check).padStart(2, "0");
+
+  return `MN${checkStr}${bankCode}${branch}${cleanAccount}`;
+}
+
+/**
+ * Бүх банкуудад IBAN үүсгэх
+ * @param {string} account - Дансны дугаар
+ * @param {string} branch - Салбарын код
+ * @returns {Array<{bankName:string, bankCode:string, iban:string}>}
+ */
+export function generateAllIbans(account, branch = "00") {
+  return Object.entries(banks).map(([name, code]) => {
+    try {
+      return { 
+        bankName: name, 
+        bankCode: code, 
+        iban: generateMongoliaIban(account, code, branch) 
+      };
+    } catch (e) {
+      return { 
+        bankName: name, 
+        bankCode: code, 
+        iban: null, 
+        error: e.message 
+      };
+    }
+  });
+}
+
+/**
+ * Excel-ийн идэвхтэй нүдний утгаар IBAN үүсгэх
+ * @param {function} setMessage - Мэдэгдэл харуулах функц
+ * @param {function} setLoading - Loading төлөв тохируулах функц
+ * @param {string} bankIdentifier - Банк код эсвэл нэр
+ */
+export async function generateIbanFromActiveCell(setMessage, setLoading, bankIdentifier) {
+  return withLoading(setLoading, setMessage, async function generateIban() {
+    await Excel.run(async (context) => {
+      const activeCell = context.workbook.getActiveCell();
+      activeCell.load("values, address");
+      await context.sync();
+
+      const account = String(activeCell.values[0][0]).trim();
+      
+      if (!account || account === "") {
+        throw new Error("⚠️ Идэвхтэй нүдэнд дансны дугаар байхгүй байна.");
+      }
+
+      const iban = generateMongoliaIban(account, bankIdentifier);
+      
+      // Баруун талын нүдэнд бичих
+      const rightCell = activeCell.getOffsetRange(0, 1);
+      rightCell.values = [[iban]];
+      rightCell.format.autofitColumns();
+      
+      await context.sync();
+      
+      setMessage(`✅ IBAN үүсгэгдлээ: ${iban}`);
+      return iban;
+    });
+  });
+}

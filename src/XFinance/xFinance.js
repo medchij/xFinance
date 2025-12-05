@@ -309,6 +309,50 @@ export const handleTextConversion = async (setMessage, setLoading) => {
   });
 };
 
+//Огноо руу хөрвүүлэх функц
+export const handleDateConversion = async (setMessage, setLoading) => {
+  return withLoading(setLoading, setMessage, async function handleDateConversion() {
+    await Excel.run(async (context) => {
+      const range = context.workbook.getSelectedRange();
+      range.load("values");
+      await context.sync();
+
+      const originalValues = range.values;
+
+      const newValues = originalValues.map((row) =>
+        row.map((cell) => {
+          if (cell === null || cell === "") return "";
+          
+          // Хэрэв тоо бол Excel serial date байж болно
+          if (typeof cell === "number") {
+            // Excel serial date-ийг JavaScript Date руу хөрвүүлэх
+            const excelEpoch = new Date(1899, 11, 30);
+            const jsDate = new Date(excelEpoch.getTime() + cell * 86400000);
+            return jsDate;
+          }
+          
+          // Хэрэв текст бол Date parse хийх
+          if (typeof cell === "string") {
+            const parsed = new Date(cell);
+            if (!isNaN(parsed.getTime())) {
+              return parsed;
+            }
+          }
+          
+          return cell;
+        })
+      );
+
+      range.values = newValues;
+      range.numberFormat = [["yyyy-mm-dd"]];
+      await context.sync();
+    });
+
+    setMessage("✅ Огноо руу амжилттай хөрвүүллээ!");
+  });
+};
+
+
 // ✅ Excel-ийн идэвхтэй нүдэнд утга оруулах функц
 export const setActiveCellValue = async (value, setMessage, setLoading) => {
   return withLoading(setLoading, setMessage, async function setActiveCellValue() {
@@ -365,9 +409,6 @@ export const getActiveCellFormula = async (setMessage, setLoading) => {
 // ✅ Идэвхтэй нүдний утгаар шүүх функц
 export const filterByActiveCellValue = async (setMessage, setLoading) => {
   return withLoading(setLoading, setMessage, async function filterByActiveCellValue() {
-    let filterRange;
-    let filterValue;
-
     await Excel.run(async (context) => {
       const sheet = context.workbook.worksheets.getActiveWorksheet();
       const activeCell = context.workbook.getActiveCell();
@@ -377,54 +418,32 @@ export const filterByActiveCellValue = async (setMessage, setLoading) => {
 
       const rowIndex = activeCell.rowIndex;
       const colIndex = activeCell.columnIndex;
-      filterValue = activeCell.values[0][0];
+      const filterValue = activeCell.values[0][0];
 
       const usedRange = sheet.getUsedRange();
       usedRange.load(["rowCount", "columnCount"]);
       await context.sync();
 
-      const rowRange = sheet.getRangeByIndexes(rowIndex, 0, 1, usedRange.columnCount);
-      const lastCellInRow = rowRange.getLastCell();
-      lastCellInRow.load("columnIndex");
-      await context.sync();
-
-      const lastColIndex = lastCellInRow.columnIndex;
-      const totalRows = usedRange.rowCount;
-      const dataRowCount = totalRows - rowIndex;
-
-      if (dataRowCount <= 1) {
-        throw new Error("⚠️ Доош мөр алга байна.");
-      }
-
-      filterRange = sheet.getRangeByIndexes(rowIndex, colIndex, dataRowCount, 1);
+      // Filter тавих range (header + data)
+      const filterRange = sheet.getRangeByIndexes(rowIndex, 0, usedRange.rowCount - rowIndex, usedRange.columnCount);
       filterRange.load("address");
       await context.sync();
+      const filterRangeAddress = filterRange.address;
 
       // AutoFilter цэвэрлэх
       try {
         sheet.autoFilter.clear();
-      } catch (e) {
-        // AutoFilter байхгүй эсвэл цэвэрлэгдсэн
-      }
+      } catch (e) {}
 
-      sheet.tables.load("items");
-      await context.sync();
+      // Шууд filter тавих (table үүсгэхгүй)
+      //sheet.autoFilter.apply(filterRange, colIndex, { filterOn: Excel.FilterOn.values, values: [`*${filterValue}*`] });
+      sheet.autoFilter.apply(filterRange, colIndex, {
+  filterOn: Excel.FilterOn.custom,
+  criterion1: `*${filterValue}*`,
+  filterOperator: Excel.FilterOperator.and
+});
 
-      sheet.tables.items.forEach((table) => table.convertToRange());
-      await context.sync();
-
-      const table = sheet.tables.add(filterRange.address, true);
-      table.name = "FilteredTable";
-      table.style = "TableStyleLight1";
-      table.showBandedRows = false;
-      table.showBandedColumns = false;
-      table.getHeaderRowRange().format.fill.clear();
-      table.getHeaderRowRange().format.font.bold = false;
-
-      table.columns.getItemAt(0).filter.applyCustomFilter(`*${filterValue}*`, null);
-
-      const msg = `✅ "${filterValue}" утгаар filter тавигдлаа. FilterRange: ${filterRange.address}`;
-      setMessage(msg);
+      setMessage(`✅ "${filterValue}" утгаар filter тавигдлаа. FilterRange: ${filterRangeAddress}`);
     });
   });
 };
@@ -433,40 +452,16 @@ export const clearAutoFilter = async (setMessage, setLoading) => {
   return withLoading(setLoading, setMessage, async function clearAutoFilter() {
     await Excel.run(async (context) => {
       const sheet = context.workbook.worksheets.getActiveWorksheet();
-
-      const tables = sheet.tables;
-      tables.load("items/name");
+      // AutoFilter байгаа эсэхийг шалгана
+      sheet.load("autoFilter");
       await context.sync();
-
-      const filteredTable = tables.items.find((t) => t.name === "FilteredTable");
-      if (!filteredTable) {
-        throw new Error("⚠️ 'FilteredTable' нэртэй хүснэгт олдсонгүй.");
+      if (sheet.autoFilter && sheet.autoFilter.enabled) {
+        sheet.autoFilter.remove();
+        setMessage("✅ AutoFilter амжилттай цэвэрлэгдлээ.");
+      } else {
+        setMessage("⚠️ AutoFilter байхгүй эсвэл идэвхгүй байна.");
       }
-
-      filteredTable.clearFilters();
-      await context.sync();
-
-      const range = filteredTable.getRange();
-      range.load(["columnCount", "values", "format"]);
-      await context.sync();
-
-      filteredTable.convertToRange();
-      await context.sync();
-
-      const headerRow = range.getRow(0);
-      headerRow.load("values");
-      await context.sync();
-
-      const originalValues = headerRow.values[0];
-      const cleanedValues = originalValues.map((v) =>
-        typeof v === "string" && v.toLowerCase().includes("column") ? "" : v
-      );
-
-      headerRow.values = [cleanedValues];
-      await context.sync();
     });
-
-    setMessage("✅ FilteredTable амжилттай цэвэрлэгдлээ.");
   });
 };
 
@@ -645,3 +640,173 @@ export const pasteValuesOnly = async (setMessage, setLoading) => {
     setMessage("✅ Clipboard утгыг зөвхөн value хэлбэрээр буулгалаа.");
   });
 };
+
+/**
+ * Монгол хэлээр тоог үг болгон хөрвүүлэх функц
+ * @param {number} number - Өөрлөх тоо (0-ээс их)
+ * @returns {string} - Монгол үгээр илэрхийлэгдсэн тоо
+ */
+export async function handleNumberToWordsConversion(showMessage, setLoading) {
+  return withLoading(setLoading, showMessage, async () => {
+    try {
+      await Excel.run(async (context) => {
+        const range = context.workbook.getActiveCell();
+        range.load("values");
+        await context.sync();
+
+        const value = range.values?.[0]?.[0];
+        if (!value || isNaN(value)) {
+          showMessage("⚠️ Идэвхитэй нүдэнд тоо оруулна уу.");
+          return;
+        }
+
+        const numberValue = parseFloat(value);
+        const words = convertNumberToWords(numberValue);
+        
+        const newRange = range.getOffsetRange(0, 1);
+        newRange.values = [[words]];
+        await context.sync();
+
+        showMessage(`✅ "${value}" → "${words}"`);
+      });
+    } catch (error) {
+      console.error("Алдаа:", error);
+      showMessage("❌ Алдаа гарлаа: " + error.message);
+    }
+  });
+}
+
+/**
+ * Тоог монгол хэлээр үг болгон хөрвүүлэх үндсэн функц
+ * @param {number} number - Өөрлөх тоо
+ * @returns {string} - Монгол үгээр илэрхийлэгдсэн тоо
+ */
+function convertNumberToWords(number) {
+  // Монгол үгүүд (нэг, хоёр, гурав, дөрөв, таван, зургаа, доман, найман, ес)
+  const ones = [
+    "нэг", "хоёр", "гурав", "дөрөв", "тав", "зургаа", "долоо", "найм", "ес"
+  ];
+  
+  // Олонлог үгүүд (нэг, хоёр, гурван, дөрвөн, таван, зургаан, доман, наймаан, есүүн)
+  const onesPlural = [
+    "нэг", "хоёр", "гурван", "дөрвөн", "таван", "зургаан", "долоон", "найман", "есөн"
+  ];
+
+  // Аравын ариу үгүүд (арван, хорин, гучин, дөчин, тавин, жаран, далан, наян, ерөн)
+  const tens = [
+    "арван", "хорин", "гучин", "дөчин", "тавин",
+    "жаран", "далан", "наян", "ерөн"
+  ];
+
+  // Аравын ариу үгүүдийн олонлог (арав, хорь, гуч, дөч, тавь, жар, дал, ная, ер)
+  const tensPlural = [
+    "арав", "хорь", "гуч", "дөч", "тавь",
+    "жар", "дал", "ная", "ер"
+  ];
+
+  // Зуутын үгүүд (нэг зуун, хоёр зуун, ...)
+  const hundreds = [
+    "нэг зуун", "хоёр зуун", "гурван зуун", "дөрвөн зуун",
+    "таван зуун", "зургаан зуун", "долоон зуун", "найман зуун", "есөн зуун"
+  ];
+
+  // Масштабын үгүүд (мянга, сая, төрбум, их науяд, наяд)
+  const scales = [
+    "мянга", "сая", "тэрбум", "их наяд", "наяд"
+  ];
+
+  if (number === 0) return "тэг";
+  if (number < 0) return "сөрөг " + convertNumberToWords(Math.abs(number));
+
+  // Хүснэгт боловсруулах (3 орноор хувааж хүснэгт үүсгэх)
+  const formattedNumber = String(Math.floor(number)).padStart(12, "0");
+  const parts = [];
+  for (let i = 0; i < 4; i++) {
+    parts.push(parseInt(formattedNumber.substr(i * 3, 3)));
+  }
+
+  let result = "";
+
+  // Илэрхийлэх хэсэг бүрийг боловсруулах
+  for (let partIndex = 0; partIndex < parts.length; partIndex++) {
+    const partNumber = parts[partIndex];
+    let temp = "";
+
+    if (partNumber === 0) continue;
+
+    // Зуут
+    const hundredsDigit = Math.floor(partNumber / 100);
+    if (hundredsDigit > 0) {
+      temp += hundreds[hundredsDigit - 1] + " ";
+    }
+
+    // Аравт
+    const tensDigit = Math.floor((partNumber % 100) / 10);
+    if (tensDigit > 0) {
+      const isLastPart = partIndex === parts.length - 1;
+      const onesDigit = partNumber % 10;
+      // Always use full form (tens) - only use singular when ending in 0
+      temp += tens[tensDigit - 1] + " ";
+    }
+
+    // Нэгжүүд
+    const onesDigit = partNumber % 10;
+    if (onesDigit > 0) {
+      const isLastPart = partIndex === parts.length - 1;
+      const hasTensDigit = Math.floor((partNumber % 100) / 10) > 0;
+      // Last part: If has tens digit, use singular; if no tens, use plural
+      if (isLastPart && hasTensDigit) {
+        temp += ones[onesDigit - 1] + " ";
+      } else {
+        temp += onesPlural[onesDigit - 1] + " ";
+      }
+    }
+
+    // Масштабын үгүүд нэмэх (сүүлийн хэсэгээс бусад бүх хэсэгт)
+    if (temp && partIndex < parts.length - 1) {
+      if (partIndex === parts.length - 2) {
+        temp += scales[0]; // мянга
+      } else if (partIndex === parts.length - 3) {
+        temp += scales[1]; // сая
+      } else if (partIndex === parts.length - 4) {
+        temp += scales[2]; // төрбум
+      }
+      temp += " ";
+    }
+
+    result += temp;
+  }
+
+  // Сүүлийн цифрийн аравтын байрны үгийг олонлогоос ганц хэлбэрт хөрвүүлэх
+  // (зөвхөн аравтын байрт нэгжийн байр байхгүй үед)
+  const lastPart = parts[parts.length - 1];
+  if (lastPart > 0 && lastPart % 10 === 0) {
+    // Зөвхөн аравтын байр байгаа бол (жнь: 10, 20, 30... 90)
+    result = replaceLastWord(result, "арван", "арав");
+    result = replaceLastWord(result, "хорин", "хорь");
+    result = replaceLastWord(result, "гучин", "гуч");
+    result = replaceLastWord(result, "дөчин", "дөч");
+    result = replaceLastWord(result, "тавин", "тавь");
+    result = replaceLastWord(result, "жаран", "жар");
+    result = replaceLastWord(result, "далан", "дал");
+    result = replaceLastWord(result, "наян", "ная");
+    result = replaceLastWord(result, "ерөн", "ер");
+  }
+
+  return result.trimRight();
+}
+
+/**
+ * Текстийн сүүлийн үгийг сольж өөрчлөх функц
+ * @param {string} text - Анхны текст
+ * @param {string} oldWord - Өөрлөх үг
+ * @param {string} newWord - Шинэ үг
+ * @returns {string} - Өөрлөгдсөн текст
+ */
+function replaceLastWord(text, oldWord, newWord) {
+  const trimmed = text.trimRight();
+  if (trimmed.endsWith(oldWord)) {
+    return trimmed.slice(0, -oldWord.length) + newWord;
+  }
+  return text;
+}

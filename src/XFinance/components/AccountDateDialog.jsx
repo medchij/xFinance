@@ -13,6 +13,7 @@ import {
   Option,
   Input,
 } from "@fluentui/react-components";
+import { Search20Regular, ArrowDownload20Regular, DocumentTableArrowRight20Regular, DocumentPdf20Regular } from "@fluentui/react-icons";
  
 export default function AccountDateDialog({ open, onClose, onSearch }) {
   const [searchText, setSearchText] = useState("");
@@ -87,88 +88,201 @@ export default function AccountDateDialog({ open, onClose, onSearch }) {
     ? tableRows.filter(row => row.some(cell => String(cell).toLowerCase().includes(searchText.toLowerCase())))
     : tableRows;
 
+  // Calculate income and expense from filtered rows
+  const calculateTotals = () => {
+    let income = 0;
+    let expense = 0;
+    
+    filteredRows.forEach(row => {
+      // Assuming the amount column is the 3rd column (index 2) or has "Debit" in header
+      const debitIndex = tableHeaders.findIndex(h => h.toLowerCase().includes('debit') || h.toLowerCase().includes('дебет'));
+      const creditIndex = tableHeaders.findIndex(h => h.toLowerCase().includes('credit') || h.toLowerCase().includes('кредит'));
+      
+      if (debitIndex >= 0 && row[debitIndex]) {
+        const amount = parseFloat(String(row[debitIndex]).replace(/,/g, '')) || 0;
+        if (amount < 0) expense += Math.abs(amount);
+        else if (amount > 0) income += amount;
+      }
+      if (creditIndex >= 0 && row[creditIndex]) {
+        const amount = parseFloat(String(row[creditIndex]).replace(/,/g, '')) || 0;
+        if (amount < 0) expense += Math.abs(amount);
+        else if (amount > 0) income += amount;
+      }
+    });
+    
+    return { income, expense };
+  };
+
+  const { income, expense } = calculateTotals();
+
+  // Export helpers
+  const buildCSV = (headers, rows) => {
+    const escapeCell = (cell) => {
+      const s = String(cell ?? "");
+      // Escape quotes and wrap if needed
+      if (s.includes(",") || s.includes("\n") || s.includes("\"")) {
+        return '"' + s.replace(/\"/g, '""') + '"';
+      }
+      return s;
+    };
+    const headerLine = headers.map(escapeCell).join(",");
+    const rowLines = rows.map(r => r.map(escapeCell).join(","));
+    return [headerLine, ...rowLines].join("\n");
+  };
+
+  const downloadBlob = (content, mime, filename) => {
+    try {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Download error", err);
+    }
+  };
+
+  const exportToCSV = () => {
+    if (!tableHeaders.length || !filteredRows.length) return;
+    const csv = buildCSV(tableHeaders, filteredRows);
+    downloadBlob(csv, "text/csv;charset=utf-8;", `transactions_${account}_${fromDate}_${toDate}.csv`);
+  };
+
+  const exportToExcel = () => {
+    // Generate a simple HTML table and save with .xls so Excel opens it.
+    if (!tableHeaders.length || !filteredRows.length) return;
+    const styles = `
+      <style>
+        table { border-collapse: collapse; }
+        th, td { border: 1px solid #ccc; padding: 6px; font-size: 12px; }
+        th { background: #f0f0f0; }
+      </style>
+    `;
+    const headerHtml = `<tr>${tableHeaders.map(h => `<th>${String(h)}</th>`).join("")}</tr>`;
+    const rowsHtml = filteredRows.map(r => `<tr>${r.map(c => `<td>${String(c)}</td>`).join("")}</tr>`).join("");
+    const html = `<!doctype html><html><head>${styles}</head><body>
+      <table><thead>${headerHtml}</thead><tbody>${rowsHtml}</tbody></table>
+    </body></html>`;
+    downloadBlob(html, "application/vnd.ms-excel;charset=utf-8;", `transactions_${account}_${fromDate}_${toDate}.xls`);
+  };
+
+  const exportToPDF = () => {
+    if (!tableHeaders.length || !filteredRows.length) return;
+    const win = window.open("", "_blank");
+    if (!win) return;
+    const styles = `
+      <style>
+        body { font-family: Arial, sans-serif; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 6px; font-size: 12px; }
+        th { background: #f0f0f0; }
+        h2 { font-size: 16px; margin: 0 0 8px; }
+      </style>
+    `;
+    const headerHtml = `<tr>${tableHeaders.map(h => `<th>${String(h)}</th>`).join("")}</tr>`;
+    const rowsHtml = filteredRows.map(r => `<tr>${r.map(c => `<td>${String(c)}</td>`).join("")}</tr>`).join("");
+    win.document.write(`<!doctype html><html><head>${styles}</head><body>
+      <h2>Гүйлгээний тайлан (${account})</h2>
+      <div>Хугацаа: ${fromDate} → ${toDate}</div>
+      <div>Нийт гүйлгээ: ${filteredRows.length} | Орлого: ${income.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | Зарлага: ${expense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+      <table><thead>${headerHtml}</thead><tbody>${rowsHtml}</tbody></table>
+    </body></html>`);
+    win.document.close();
+    win.focus();
+    // Trigger print dialog; user can save as PDF
+    win.print();
+  };
+
   return (
   <Dialog open={open} >
-  <DialogSurface style={{ width: "90vw", maxWidth: "90vw" }}>
-  <DialogBody style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: 0, }}>
-          <div
-            style={{
-              padding: 12,
-              minWidth: 0,
-              width: "100%",
-              maxWidth: "100vw",
-              maxHeight: "90vh",
-              overflowY: "auto",
-              margin: "12px auto",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "flex-start"
-            }}
-          >
-            <DialogTitle as="h2" style={{ fontWeight: 700, fontSize: 22, marginBottom: 20, textAlign: "center" }}>
-              Данс болон огноо сонгох
+  <DialogSurface style={{ width: "auto", maxWidth: "95vw", minWidth: "min(400px, 90vw)" }}>
+  <DialogBody style={{ display: "flex", flexDirection: "column", padding: 1 }}>
+            <DialogTitle as="h3" style={{ fontWeight: 600, fontSize: 16, marginBottom: 12, textAlign: "left" }}>
+              Данс сонгох
             </DialogTitle>
             {/* Form section - top */}
-            <div style={{ minHeight: 80, marginBottom: 12, width: "100%" }}>
+            <div style={{ marginBottom: 16, width: "100%" }}>
+              <div style={{ marginBottom: 8 }}>
+                <Dropdown
+                  value={account}
+                  selectedOptions={[account]}
+                  onOptionSelect={(_, data) => setAccount(data.optionValue)}
+                  style={{ width: "100%", minWidth: "140px" }}
+                >
+                  {accountList.map((acc) => (
+                    <Option key={acc} value={acc}>{acc}</Option>
+                  ))}
+                </Dropdown>
+              </div>
               <div
                 style={{
                   display: "flex",
                   flexDirection: "row",
-                  flexWrap: "wrap",
-                  alignItems: "flex-end",
-                  gap: 12,
-                  minWidth: 0,
+                  gap: 8,
+                  alignItems: "center",
                   width: "100%",
-                  maxWidth: "90vw",
+                  flexWrap: "wrap"
                 }}
               >
-                <div style={{ flex: 1, minWidth: 100, maxWidth: 220, width: "100%" }}>
-                  <label style={{ display: "block", marginBottom: 4, fontWeight: 500 }}>Данс</label>
-                  <Dropdown
-                    value={account}
-                    selectedOptions={[account]}
-                    onOptionSelect={(_, data) => setAccount(data.optionValue)}
-                    style={{ width: "100%", minWidth: 80 }}
-                  >
-                    {accountList.map((acc) => (
-                      <Option key={acc} value={acc}>{acc}</Option>
-                    ))}
-                  </Dropdown>
-                </div>
-                <div style={{ flex: 1, minWidth: 100, maxWidth: 180, width: "100%" }}>
-                  <label style={{ display: "block", marginBottom: 4, fontWeight: 500 }}>Эхлэх</label>
-                  <Input
-                    type="date"
-                    value={fromDate}
-                    onChange={(_, data) => setFromDate(data.value)}
-                    style={{ width: "100%", minWidth: 80 }}
-                  />
-                </div>
-                <div style={{ flex: 1, minWidth: 100, maxWidth: 180, width: "100%" }}>
-                  <label style={{ display: "block", marginBottom: 4, fontWeight: 500 }}>Дуусах</label>
-                  <Input
-                    type="date"
-                    value={toDate}
-                    onChange={(_, data) => setToDate(data.value)}
-                    style={{ width: "100%", minWidth: 80 }}
-                  />
-                </div>
-                <div style={{ flex: 1, minWidth: 100, maxWidth: 180, width: "100%"  }}>
-                <Button appearance="primary" onClick={handleSearch}>Хайх</Button>
+                <Input
+                  type="date"
+                  value={fromDate}
+                  onChange={(_, data) => setFromDate(data.value)}
+                  style={{ width: "140px", minWidth: "120px", flex: "0 1 140px" }}
+                />
+                <span style={{ fontSize: 18, color: "#999", padding: "0 4px", flexShrink: 0 }}>→</span>
+                <Input
+                  type="date"
+                  value={toDate}
+                  onChange={(_, data) => setToDate(data.value)}
+                  style={{ width: "140px", minWidth: "120px", flex: "0 1 140px" }}
+                />
+                
+                <Button 
+                  appearance="primary" 
+                  onClick={handleSearch}
+                  icon={<Search20Regular />}
+                  style={{ minWidth: "40px", padding: "6px", flexShrink: 0 }}
+                />
               </div>
-              </div>
-              {error && <div style={{ color: "#d32f2f", marginTop: 8, fontWeight: 500 }}>{error}</div>}
-              {/* Action buttons below, left-aligned */}
-              
+              {error && <div style={{ color: "#d32f2f", marginTop: 8, fontWeight: 500, fontSize: 13 }}>{error}</div>}
             </div>
             {/* Table/results section - full width below, scrollable if needed */}
-            <div style={{ width: "100%", marginTop: 8, maxHeight: 220, overflowY: "auto", minWidth: 0 }}>
+            <div style={{ width: "100%", marginTop: 8, maxHeight: 400, overflowY: "auto", minWidth: 0, }}>
               {resultMessage && (
                 <div style={{ color: (Array.isArray(tableHeaders) && tableHeaders.length > 0) ? "#388e3c" : "#d32f2f", marginBottom: 14, fontWeight: 500, fontSize: 15 }}>{resultMessage}</div>
               )}
               {Array.isArray(tableHeaders) && tableHeaders.length > 0 && Array.isArray(tableRows) && tableRows.length > 0 && (
                 <>
+                  {/* Summary statistics */}
+                  <div style={{ display: "flex", gap: 16, marginBottom: 12, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                      <div style={{ fontSize: 14 }}>
+                        <strong>Нийт гүйлгээний тоо:</strong> {filteredRows.length}
+                      </div>
+                      <div style={{ fontSize: 14, color: "#2e7d32" }}>
+                        <strong>Орлого:</strong> {income.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                      <div style={{ fontSize: 14, color: "#d32f2f" }}>
+                        <strong>Зарлага:</strong> {expense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <Button appearance="subtle" size="small" title="Export to Excel" icon={<DocumentTableArrowRight20Regular />} onClick={exportToExcel}>
+                        Excel
+                      </Button>
+                      <Button appearance="subtle" size="small" title="Export to CSV" icon={<ArrowDownload20Regular />} onClick={exportToCSV}>
+                        CSV
+                      </Button>
+                      <Button appearance="subtle" size="small" title="Export to PDF" icon={<DocumentPdf20Regular />} onClick={exportToPDF}>
+                        PDF
+                      </Button>
+                    </div>
+                  </div>
                   <div style={{ marginBottom: 8, display: "flex", justifyContent: "flex-end" }}>
                     <input
                       type="text"
@@ -179,7 +293,7 @@ export default function AccountDateDialog({ open, onClose, onSearch }) {
                     />
                   </div>
                   <div style={{ border: "1px solid #ccc", borderRadius: 4, maxHeight: "50vh", overflow: "auto", marginTop: 8, minWidth: 0 }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "auto", minWidth: 400 }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "auto", minWidth: 400, minHeight: "100%" }}>
                       <thead>
                         <tr>
                           {tableHeaders.map((col, idx) => (
@@ -228,8 +342,7 @@ export default function AccountDateDialog({ open, onClose, onSearch }) {
                 </>
               )}
             </div>
-          </div>
-           <div style={{ display: "flex", flexDirection: "row", gap: 12, marginTop: 16, flexWrap: "wrap", width: "100%" }}>
+           <div style={{ display: "flex", flexDirection: "row", gap: 12, marginTop: 16, justifyContent: "flex-end" }}>
                 <Button appearance="secondary" onClick={onClose}>Хаах</Button>
               </div>
         </DialogBody>

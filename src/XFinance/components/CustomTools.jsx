@@ -12,6 +12,7 @@ import CreateCustomer from "./CreateCustomer";
 import { useAppContext } from "./AppContext";
 import Calculator from "./Calculator";
 import AccountDateDialog from "./AccountDateDialog";
+import BankSelectDialog from "./BankSelectDialog";
 import {
   NumberSymbol16Regular,
   TextField16Regular,
@@ -33,6 +34,18 @@ import {
   ReceiptSearchRegular,
   DocumentTableSearchRegular,
   TableCalculatorRegular,
+  GlobeSearchRegular,
+  SearchSparkleFilled,
+  DocumentBulletListMultiple20Regular,
+  DocumentData20Regular,
+  Payment20Regular,
+  DocumentArrowLeft20Regular,
+  PeopleList20Regular,
+  ArrowSync20Regular,
+  DocumentSettings20Regular,
+  Calculator20Regular,
+  DocumentCheckmark20Regular,
+  TextWordCountRegular,
 } from "@fluentui/react-icons";
 import CalendarDateBoundaries from "./CalendarDateBoundaries";
 import { ExcelIcon, KhanbankIcon } from "../../icons";
@@ -45,9 +58,9 @@ const groupedTools = [
     tools: [
       { icon: <NumberSymbol16Regular />, label: "Тоо руу хөрвүүлэх" },
       { icon: <TextField16Regular />, label: "Текст рүү хөрвүүлэх" },
+      { icon: <CalendarLtr16Regular />, label: "Date convert" },
       { icon: <ArrowSwap16Regular />, label: "Тоог сөрөг болгох" },
-      { icon: <ArrowSort16Regular />, label: "Хааны хуулга янзлах" },
-      { icon: <ExcelIcon />, label: "Сонгосон мужийг экпорт хийх" },
+      { icon: <TextWordCountRegular />, label: "Тоог текст болгох" },
     ],
   },
   {
@@ -58,10 +71,11 @@ const groupedTools = [
       { icon: <Color16Regular />, label: "Өнгөөр ялгах" },
       { icon: <ClipboardPaste16Regular />, label: "Paste value" },
       { icon: <CalendarLtr16Regular />, label: "Идэвхитэй нүдэнд огноо оруулах" },
-      { icon: <CalendarLtr16Regular />, label: "Date convert" },
       { icon: <TargetArrow16Regular />, label: "Goal seek" },
       { icon: <TargetArrow16Regular />, label: "Multi Goal seek" },
       { icon: <TableCalculatorRegular />, label: "Динамик хүснэгт" },
+      { icon: <ArrowSort16Regular />, label: "Хааны хуулга янзлах" },
+      { icon: <ExcelIcon />, label: "Сонгосон мужийг экпорт хийх" },
     ],
   },
   {
@@ -72,11 +86,15 @@ const groupedTools = [
       { icon: <MoneyHand16Regular />, label: "Хааны token татах" },
       { icon: <KhanbankIcon />, label: "Хааны хуулга татах" },
       { icon: <ReceiptSearchRegular />, label: "Хааны данс лавлах" },
+      { icon: <GlobeSearchRegular />, label: "Ибан лавлах" },
     ],
   },
   {
     title: "Ebarimt хэрэгслүүд",
-    tools: [{ icon: <DocumentTableSearchRegular />, label: "РД-аар ҮА лавлах" }],
+    tools: [{ icon: <DocumentTableSearchRegular />, label: "РД-аар ҮА лавлах" },
+            { icon: <SearchSparkleFilled />, label: "РД-аар Нэр лавлах" },
+    ],
+    
   },
   {
     title: "Дансны удирдлага",
@@ -85,17 +103,28 @@ const groupedTools = [
       { icon: <AddCircle16Regular />, label: "Данс үүсгэх" },
       { icon: <AddSquare16Regular />, label: "Харилцагч үүсгэх" },
       { icon: <DocumentTableSearchRegular />, label: "Дансны мэдээлэл бичих" },
+
     ],
   },
   {
     title: "Поларис автоматжуулалт",
     tools: [
-      { icon: <Filter16Regular />, label: "PS Зээлийн баланс" },
-      { icon: <Filter16Regular />, label: "PS Зээлийн олголт" },
-      { icon: <Filter16Regular />, label: "PS Зээлийн төлөлт" },
-      { icon: <Filter16Regular />, label: "PS Зээлийн зориулалт, хугацаа" },
-      { icon: <Filter16Regular />, label: "Топ 40 зээлийн тайлан" },
-      //{ icon: <Filter16Regular />, label: "Өгөгдөл оруулах" },
+      { icon: <DocumentBulletListMultiple20Regular />, label: "PS Зээлийн баланс" },
+      { icon: <DocumentData20Regular />, label: "PS Зээлийн олголт" },
+      { icon: <Payment20Regular />, label: "PS Зээлийн төлөлт" },
+      { icon: <DocumentArrowLeft20Regular />, label: "PS Зээлийн зориулалт, хугацаа" },
+      { icon: <PeopleList20Regular />, label: "Топ 40 зээлийн тайлан" },
+      { icon: <ArrowSync20Regular />, label: "Поларис дата шинэчлэх" },
+     
+    ],
+  },
+  {
+    title: "Өдрийн мэдээ автоматжуулалт",
+    tools: [
+      { icon: <DocumentSettings20Regular />, label: "Daily бэлтгэл" },
+      { icon: <Calculator20Regular />, label: "GI Daily тооцоолол" },
+      { icon: <DocumentCheckmark20Regular />, label: "AP Daily тооцоолол" },
+      
     ],
   },
 ];
@@ -127,14 +156,18 @@ const CustomTools = ({ isSidebarOpen }) => {
   const actions = {
     "Тоо руу хөрвүүлэх": () => fns.handleNumberConversion(showMessage, setLoading),
     "Текст рүү хөрвүүлэх": () => fns.handleTextConversion(showMessage, setLoading),
+    "Date convert": () => fns.handleDateConversion(showMessage, setLoading),
     "Тоог сөрөг болгох": () => fns.handleNegativeConversion(showMessage, setLoading),
+    "Тоог текст болгох": () => fns.handleNumberToWordsConversion(showMessage, setLoading),
     "Динамик хүснэгт": () => setActiveModal("searchTableSheet"),
     "Албан ханш татах": () => efns.fetchCurrencyRatesByAPI(showMessage, setLoading),
     "Машины мэдээлэл татах": () => efns.fetchVehicleInfoByPlate(showMessage, setLoading),
     "Хааны token татах": () => efns.getKhanbankToken(showMessage, setLoading),
     "Хааны хуулга татах": () => setActiveModal("AccountDateDialog"),
     "Хааны данс лавлах": () => efns.fetchKhanbankAccountInfo(showMessage, setLoading),
+    "Ибан лавлах": () => setActiveModal("generateIban"),
     "РД-аар ҮА лавлах": () => bFns.getMerchantCategoryById(showMessage, setLoading),
+    "РД-аар Нэр лавлах": () => bFns.getMerchantInfoFromExcel(showMessage, setLoading),
     "Идэвхитэй нүдээр шүүлт хийх": () => fns.filterByActiveCellValue(showMessage, setLoading),
     "Шүүлт арилгах": () => fns.clearAutoFilter(showMessage, setLoading),
     // "Өнгөөр ялгах": () => fns.highlightCellsByColor(showMessage, setLoading),
@@ -146,6 +179,10 @@ const CustomTools = ({ isSidebarOpen }) => {
     "PS Зээлийн төлөлт": () => pfns.loanpaymentData(showMessage, setLoading),
     "PS Зээлийн зориулалт, хугацаа": () => pfns.extractLoanPurposeAndTerm(showMessage, setLoading),
     "Топ 40 зээлийн тайлан": () => pfns.processTop40LoanReport(showMessage, setLoading),
+    "Daily бэлтгэл": () => pfns.processBalanceReconciliation(showMessage, setLoading),
+    "GI Daily тооцоолол": () => pfns.GIprocessFinancialReport(showMessage, setLoading),
+    "AP Daily тооцоолол": () => pfns.APprocessFinancialReport(showMessage, setLoading),
+    "Поларис дата шинэчлэх": () => pfns.fetchPolarisLoanData(showMessage, setLoading),
     "ЕДД данс үүсгэх": () => setActiveModal("createGL"),
     "Данс үүсгэх": () => setActiveModal("createAccount"),
     "Харилцагч үүсгэх": () => setActiveModal("createCustomer"),
@@ -283,6 +320,14 @@ const CustomTools = ({ isSidebarOpen }) => {
       <CreateAccount isOpen={activeModal === "createAccount"} onClose={() => setActiveModal(null)} />
       <CreateCustomer isOpen={activeModal === "createCustomer"} onClose={() => setActiveModal(null)} />
       <SearchTableSheet isOpen={activeModal === "searchTableSheet"} onClose={() => setActiveModal(null)} />
+      <BankSelectDialog
+        isOpen={activeModal === "generateIban"}
+        onClose={() => setActiveModal(null)}
+        onSubmit={(bankCode, accountNumber, iban) => {
+          setActiveModal(null);
+          showMessage(`✅ IBAN хуулагдлаа: ${iban}`);
+        }}
+      />
       {activeModal === "calendar" && (
         <div
           style={{

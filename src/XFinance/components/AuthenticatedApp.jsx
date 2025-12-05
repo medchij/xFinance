@@ -6,7 +6,7 @@ import Header from "./Header"; // Header нэмэх
 import { useActivityTracking } from "../hooks/useActivityTracking";
 
 const Sidebar = lazy(() => import(/* webpackChunkName: "page-sidebar" */ "./Sidebar"));
-const MainContent = lazy(() => import(/* webpackChunkName: "page-main" */ "./maincontent"));
+const MainContent = lazy(() => import(/* webpackChunkName: "page-main" */ "./Maincontent"));
 const CustomTools = lazy(() => import(/* webpackChunkName: "page-tools" */ "./CustomTools"));
 const SettingsPage = lazy(() => import(/* webpackChunkName: "page-settings" */ "./SettingsPage"));
 const SearchAccount = lazy(() => import(/* webpackChunkName: "page-search" */ "./SearchAccount"));

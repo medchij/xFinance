@@ -41,9 +41,13 @@ const useStyles = makeStyles({
     width: "100%",
   },
   table: {
-    width: "100%",
-    minWidth: "600px", // Ensure table has a minimum width
+    width: "auto",
     marginBottom: "16px",
+    tableLayout: "fixed",
+    "& td, & th": {
+      padding: "4px 2px !important",
+      whiteSpace: "nowrap",
+    },
   },
   input: {
     minWidth: "100px",
@@ -230,12 +234,12 @@ const handleDeleteConfirmed = async (confirmed) => {
             </TabList>
           )}
           <div className={styles.tableContainer}>
-            <Table className={styles.table}>
+            <Table className={styles.table} style={{ width: "auto" }}>
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell style={{ width: "20%" }}>Нэр</TableHeaderCell>
-                  <TableHeaderCell>Утга</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "15%", textAlign: "center" }}>Үйлдэл</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "120px", padding: "2px" }}>Нэр</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "150px", padding: "2px" }}>Утга</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "80px", textAlign: "center", padding: "2px" }}>Үйлдэл</TableHeaderCell>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -257,8 +261,8 @@ const handleDeleteConfirmed = async (confirmed) => {
                             whiteSpace: "nowrap",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
-                            maxWidth: "400px",
-                            display: "block",
+                            maxWidth: "100px",
+                            display: "inline-block",
                           }}
                         >
                           {isSensitiveKey(row.name) ? "********" : row.value}

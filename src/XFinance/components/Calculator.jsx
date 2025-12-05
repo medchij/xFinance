@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
 import { useAppContext } from "./AppContext";
+import { CopyRegular } from "@fluentui/react-icons";
 const Calculator = () => {
   const [display, setDisplay] = useState('0');
   const [previousValue, setPreviousValue] = useState(null);
@@ -232,37 +233,40 @@ const Calculator = () => {
                             });
                         }}
                         title="Copy"
-                      >
-                        📋
-                      </button>
-            <button style={operatorStyle} onClick={() => performOperation('/')}>÷</button>
-           
+                        >
+                        <span style={{ marginRight: '4px', display: 'inline-flex', alignItems: 'center' }}>
+                          <CopyRegular style={{ fontSize: '18px' }} />
+                        </span>
+                    
+                        </button>
+                  <button style={operatorStyle} onClick={() => performOperation('/')}>÷</button>
+                   
 
-            <button style={buttonStyle} onClick={() => inputNumber(7)}>7</button>
-            <button style={buttonStyle} onClick={() => inputNumber(8)}>8</button>
-            <button style={buttonStyle} onClick={() => inputNumber(9)}>9</button>
-             <button style={operatorStyle} onClick={() => performOperation('*')}>×</button>
-          
+                  <button style={buttonStyle} onClick={() => inputNumber(7)}>7</button>
+                  <button style={buttonStyle} onClick={() => inputNumber(8)}>8</button>
+                  <button style={buttonStyle} onClick={() => inputNumber(9)}>9</button>
+                   <button style={operatorStyle} onClick={() => performOperation('*')}>×</button>
+                  
 
-            <button style={buttonStyle} onClick={() => inputNumber(4)}>4</button>
-            <button style={buttonStyle} onClick={() => inputNumber(5)}>5</button>
-            <button style={buttonStyle} onClick={() => inputNumber(6)}>6</button>
-              <button style={operatorStyle} onClick={() => performOperation('-')}>-</button>
-           
+                  <button style={buttonStyle} onClick={() => inputNumber(4)}>4</button>
+                  <button style={buttonStyle} onClick={() => inputNumber(5)}>5</button>
+                  <button style={buttonStyle} onClick={() => inputNumber(6)}>6</button>
+                    <button style={operatorStyle} onClick={() => performOperation('-')}>-</button>
+                   
 
-            <button style={buttonStyle} onClick={() => inputNumber(1)}>1</button>
-            <button style={buttonStyle} onClick={() => inputNumber(2)}>2</button>
-            <button style={buttonStyle} onClick={() => inputNumber(3)}>3</button>
-             <button style={operatorStyle} onClick={() => performOperation('+')}>+</button>
-         
+                  <button style={buttonStyle} onClick={() => inputNumber(1)}>1</button>
+                  <button style={buttonStyle} onClick={() => inputNumber(2)}>2</button>
+                  <button style={buttonStyle} onClick={() => inputNumber(3)}>3</button>
+                   <button style={operatorStyle} onClick={() => performOperation('+')}>+</button>
+                 
 
-            <button style={{ ...buttonStyle, gridColumn: 'span 2', aspectRatio: '2/1' }} onClick={() => inputNumber(0)}>0</button>
-            <button style={buttonStyle} onClick={inputDot}>.</button>
-            <button style={{ ...operatorStyle, gridRow: 'span 2', aspectRatio: '1/2' }} onClick={() => performOperation('=')}>=</button>
-          </div>
-        </div>
+                  <button style={{ ...buttonStyle, gridColumn: 'span 2', aspectRatio: '2/1' }} onClick={() => inputNumber(0)}>0</button>
+                  <button style={buttonStyle} onClick={inputDot}>.</button>
+                  <button style={{ ...operatorStyle, gridRow: 'span 2', aspectRatio: '1/2' }} onClick={() => performOperation('=')}>=</button>
+                  </div>
+                </div>
 
-        {/* removed duplicate right-side copy column; single grid copy remains */}
+                {/* removed duplicate right-side copy column; single grid copy remains */}
       </div>
 
       {history.length > 0 && (

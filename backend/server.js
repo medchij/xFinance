@@ -84,12 +84,20 @@ app.use('/api/branch', branchRouter);
 const glaccountRouter = require('./routes/glaccount');
 app.use('/api/glaccount', glaccountRouter);
 
+const userSettingsRouter = require('./routes/user-settings');
+app.use('/api/user-settings', userSettingsRouter);
+
 const glTooluurChangeRouter = require('./routes/gl-tooluurchange');
 app.use('/api/gl-tooluurchange', glTooluurChangeRouter);
 
 const ocrRouter = require('./routes/ocr');
 app.use('/api/ocr', ocrRouter);
 
+const polarisRouter = require('./routes/polaris');
+app.use('/api/polaris', polarisRouter);
+
+const merchantCategoryRoute = require('./routes/merchant-category');
+merchantCategoryRoute(app);
 
 // Export the app for Vercel
 module.exports = app;
