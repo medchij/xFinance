@@ -53,21 +53,5 @@
     "value": "2E910D21-DB84-4B50-8A36-41DCF1757151",
     "tab": "Үндсэн тохиргоо",
     "create_date": "2025-05-22T09:39:01.271Z"
-  },
-  {
-    "id": "8",
-    "tab": "Үндсэн тохиргоо",
-    "name": "car_token",
-    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTE0MzM5LCJyb2xlIjoidXNlciIsImZpcnN0bmFtZSI6ItCU0K3QnNCn0JjQk9Ch0q7QoNCt0J0iLCJsYXN0bmFtZSI6ItOo0YHTqdGF0LbQsNGA0LPQsNC7IiwiaWF0IjoxNzUxNDY3MzI2LCJleHAiOjE3ODMwMjQ5MjZ9.dkyKOghxijqrAupTJnU81FU2aFE7QNN42asaZNYB_Po",
-    "create_date": "2025-05-25T15:12:23.998Z",
-    "update_date": "2025-07-02T14:42:44.016Z"
-  },
-  {
-    "id": "9",
-    "tab": "Үндсэн тохиргоо",
-    "name": "ф",
-    "value": "фыы",
-    "create_date": "2025-05-26T14:26:54.027Z",
-    "update_date": "2025-05-26T15:17:06.605Z"
   }
 ]

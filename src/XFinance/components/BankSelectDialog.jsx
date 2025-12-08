@@ -18,14 +18,14 @@ import { generateMongoliaIban } from "../externalAPI";
 const banks = [
   { name: "Хаан банк", code: "0005" },
   { name: "ХХБанк", code: "0004" },
-  { name: "Голомт банк", code: "0150" },
+  { name: "Голомт банк", code: "0015" },
   { name: "Төрийн банк", code: "0001" },
   { name: "Капитрон банк", code: "0047" },
   { name: "Ариг банк", code: "0043" },
   { name: "Богд банк", code: "0020" },
-  { name: "M банк", code: "0340" },
-  { name: "Чингис хаан банк", code: "0190" },
-  { name: "Үндэсний хөрөнгө оруулалтын банк", code: "0210" },
+  { name: "M банк", code: "0039" },
+  { name: "Чингис хаан банк", code: "0019" },
+  { name: "Үндэсний хөрөнгө оруулалтын банк", code: "0021" },
 ];
 
 const BankSelectDialog = ({ isOpen, onClose, onSubmit }) => {
@@ -37,8 +37,23 @@ const BankSelectDialog = ({ isOpen, onClose, onSubmit }) => {
   useEffect(() => {
     if (accountNumber && accountNumber.trim().length >= 9) {
       try {
+        const cleanAccount = accountNumber.trim();
+        
+        // Дансны эхний 4 оронгоос банк код таних оролдлого
+        let bankCodeFromAccount = null;
+        if (cleanAccount.length >= 4) {
+          const firstFour = cleanAccount.substring(0, 4);
+          const matchedBank = banks.find(b => b.code === firstFour);
+          if (matchedBank) {
+            bankCodeFromAccount = matchedBank.code;
+          }
+        }
+        
+        // Хэрэв дансны дугаараас банк код олдвол түүнийг ашиглах, үгүй бол сонгосон банк
+        const bankToUse = bankCodeFromAccount || selectedBank;
+        
         // Branch код "00" ашиглах (default)
-        const iban = generateMongoliaIban(accountNumber.trim(), selectedBank, "00");
+        const iban = generateMongoliaIban(cleanAccount, bankToUse, "00");
         setGeneratedIban(iban);
       } catch (error) {
         setGeneratedIban("");

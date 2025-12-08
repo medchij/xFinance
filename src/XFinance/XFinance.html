@@ -50,7 +50,14 @@
       Энэ нэмэлт нь таны Office хувилбар дээр ажиллахгүй. Perpetual Office 2021 (эсвэл түүнээс хойшхи хувилбар) эсвэл Microsoft 365 бүртгэл рүү шинэчилнэ үү.
     </div>
     <script>
-      if (navigator.userAgent.indexOf("Trident") !== -1 || navigator.userAgent.indexOf("Edge") !== -1) {
+      // Check for old browsers (IE11/Trident and Edge Legacy/EdgeHTML)
+      // Modern Chromium Edge (WebView2) contains "Edg/" not "Edge/"
+      var ua = navigator.userAgent;
+      var isIE11 = ua.indexOf("Trident") !== -1;
+      var isEdgeLegacy = ua.indexOf("Edge/") !== -1; // Edge Legacy uses "Edge/" 
+      var isUnsupported = isIE11 || isEdgeLegacy;
+      
+      if (isUnsupported) {
         var tridentMessage = document.getElementById("tridentmessage");
         var normalContainer = document.getElementById("container");
         tridentMessage.style.display = "block";

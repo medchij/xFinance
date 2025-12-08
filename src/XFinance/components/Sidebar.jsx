@@ -52,7 +52,7 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage, onOpenLogViewer }) => {
   const { setLoading, showMessage, hasPermission } = useAppContext();
 
   const menuItems = [
-    { icon: <Home24Regular />, text: "Нүүр хуудас", action: () => setActivePage("maincontent") },
+    { icon: <Home24Regular />, text: "Нүүр хуудас", action: () => setActivePage("Maincontent") },
     { icon: <ArrowSwap24Regular />, text: "Гүйлгээ хийх", action: () => setTransactionOpen(true) },
     { icon: <DocumentArrowDown24Regular />, text: "Import Sheet", action: () => setSheetDialogOpen(true) },
     { icon: <Wrench24Regular />, text: "Нэмэлтүүд", action: () => setActivePage("CustomTools") },

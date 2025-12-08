@@ -267,21 +267,26 @@ const Profile = ({ isSidebarOpen }) => {
         transition: "margin-left 0.3s ease-in-out",
         display: "flex",
         flexDirection: "column",
-        padding: "24px",
+        padding: "12px",
+        maxWidth: "100%",
+        overflowX: "hidden",
+        boxSizing: "border-box",
       }}
     >
       {/* Компани сонгох хэсэг */}
       <div
         style={{
           background: "#fff",
-          padding: "24px",
+          padding: "16px",
           borderRadius: "8px",
           boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          margin: "20px",
+          marginBottom: "12px",
+          maxWidth: "100%",
+          boxSizing: "border-box",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-          <h2>Компани Сонголт</h2>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
+          <h2 style={{ fontSize: "18px", margin: 0 }}>Компани Сонголт</h2>
           <Button
             icon={<ArrowClockwise16Regular />}
             appearance="subtle"
@@ -292,12 +297,13 @@ const Profile = ({ isSidebarOpen }) => {
         </div>
 
         {loading && companies.length === 0 ? null : (
-          <Field label="Таны ажиллах боломжтой компаниуд" style={{ maxWidth: "400px" }}>
+          <Field label="Таны ажиллах боломжтой компаниуд" style={{ maxWidth: "100%", width: "100%" }}>
             <Dropdown
               value={selectedCompany || ""}
               onOptionSelect={handleCompanyChange}
               placeholder="Компани сонгоно уу..."
               disabled={companies.length === 0}
+              style={{ width: "100%", maxWidth: "400px" }}
             >
               {companies.map((company) => (
                 <Option key={company.id} value={company.id}>
@@ -317,17 +323,18 @@ const Profile = ({ isSidebarOpen }) => {
       <div
         style={{
           background: "#fff",
-          padding: "24px",
+          padding: "16px",
           borderRadius: "8px",
           boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          margin: "20px",
-          marginTop: 0,
+          maxWidth: "100%",
+          boxSizing: "border-box",
+          overflowX: "hidden",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
           <div style={{ display: "flex", alignItems: "center" }}>
             <Settings24Regular style={{ marginRight: "8px" }} />
-            <h2>Системийн Ерөнхий Тохиргоо</h2>
+            <h2 style={{ fontSize: "18px", margin: 0 }}>Системийн Ерөнхий Тохиргоо</h2>
           </div>
           <Button 
             appearance="primary" 
@@ -341,22 +348,22 @@ const Profile = ({ isSidebarOpen }) => {
         {/* Шинэ тохиргоо нэмэх хэсэг */}
         {showNewInput && (
           <div style={{ 
-            marginBottom: "24px", 
-            padding: "16px", 
+            marginBottom: "16px", 
+            padding: "12px", 
             backgroundColor: tokens.colorNeutralBackground2,
             borderRadius: "8px",
             display: "flex",
+            flexDirection: "column",
             gap: "12px",
-            alignItems: "flex-end"
           }}>
-            <Field label="Түлхүүр нэр" style={{ flex: 1 }}>
+            <Field label="Түлхүүр нэр" style={{ width: "100%" }}>
               <Input
                 placeholder="Жишээ: polaris_nessession"
                 value={newSetting.key}
                 onChange={(_, data) => setNewSetting({ ...newSetting, key: data.value })}
               />
             </Field>
-            <Field label="Утга" style={{ flex: 1 }}>
+            <Field label="Утга" style={{ width: "100%" }}>
               <Input
                 placeholder="Утга оруулна уу"
                 value={newSetting.value}
@@ -366,6 +373,7 @@ const Profile = ({ isSidebarOpen }) => {
             <Button 
               appearance="primary" 
               onClick={handleAddNewSetting}
+              style={{ alignSelf: "flex-start" }}
             >
               Нэмэх
             </Button>
@@ -373,23 +381,30 @@ const Profile = ({ isSidebarOpen }) => {
         )}
 
         {/* Тохиргоо хүснэгт */}
-        <div style={{ marginBottom: "24px", overflowX: "auto" }}>
-          <h3 style={{ marginBottom: "16px", fontSize: "16px" }}>📋 Бүх тохиргоо</h3>
-          <Table style={{ minWidth: "600px" }}>
+        <div style={{ marginBottom: "16px", overflowX: "auto", overflowY: "visible", maxWidth: "100%" }}>
+          <h3 style={{ marginBottom: "12px", fontSize: "16px" }}>📋 Бүх тохиргоо</h3>
+          <Table style={{ width: "100%", tableLayout: "fixed" }}>
             <TableHeader>
               <TableRow>
-                <TableHeaderCell style={{ width: "40%" }}>Тохиргооны нэр</TableHeaderCell>
+                <TableHeaderCell style={{ width: "35%" }}>Тохиргооны нэр</TableHeaderCell>
                 <TableHeaderCell style={{ width: "40%" }}>Утга</TableHeaderCell>
-                <TableHeaderCell style={{ width: "20%", textAlign: "center" }}>Үйлдэл</TableHeaderCell>
+                <TableHeaderCell style={{ width: "25%", textAlign: "center" }}>Үйлдэл</TableHeaderCell>
               </TableRow>
             </TableHeader>
             <TableBody>
               {Object.entries(settings).map(([key, value]) => (
                 <TableRow key={key}>
-                  <TableCell>
-                    <strong>{getSettingLabel(key)}</strong>
+                  <TableCell style={{ verticalAlign: "middle" }}>
+                    <strong style={{ 
+                      display: "block",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap"
+                    }}>
+                      {getSettingLabel(key)}
+                    </strong>
                   </TableCell>
-                  <TableCell>
+                  <TableCell style={{ verticalAlign: "middle" }}>
                     {editKey === key ? (
                       <Input
                         value={typeof value === 'boolean' ? String(value) : String(value)}
@@ -401,28 +416,29 @@ const Profile = ({ isSidebarOpen }) => {
                             : data.value;
                           setSettings({ ...settings, [key]: newValue });
                         }}
-                        style={{ maxWidth: "300px" }}
+                        style={{ width: "100%" }}
                       />
                     ) : (
                       <span style={{ 
-                        maxWidth: "300px", 
-                        display: "inline-block",
+                        display: "block",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
-                        whiteSpace: "nowrap"
+                        whiteSpace: "nowrap",
+                        paddingRight: "8px"
                       }}>
                         {getSettingDisplayValue(key, value)}
                       </span>
                     )}
                   </TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
+                  <TableCell style={{ textAlign: "center", verticalAlign: "middle" }}>
+                    <div style={{ display: "flex", gap: "4px", justifyContent: "center", flexWrap: "nowrap" }}>
                       {editKey === key ? (
                         <>
                           <Tooltip content="Хадгалах" relationship="label">
                             <Button 
                               icon={<CheckmarkCircle24Regular />} 
                               appearance="subtle"
+                              size="small"
                               onClick={() => handleEditSetting(key, settings[key])} 
                             />
                           </Tooltip>
@@ -430,6 +446,7 @@ const Profile = ({ isSidebarOpen }) => {
                             <Button 
                               icon={<DismissCircle24Regular />} 
                               appearance="subtle"
+                              size="small"
                               onClick={() => {
                                 setSettings({ ...settings, [key]: originalSettings[key] || value });
                                 setEditKey(null);
@@ -443,6 +460,7 @@ const Profile = ({ isSidebarOpen }) => {
                             <Button 
                               icon={<EditRegular />} 
                               appearance="subtle"
+                              size="small"
                               onClick={() => setEditKey(key)} 
                             />
                           </Tooltip>
@@ -450,6 +468,7 @@ const Profile = ({ isSidebarOpen }) => {
                             <Button 
                               icon={<DeleteRegular />} 
                               appearance="subtle"
+                              size="small"
                               onClick={() => handleDeleteSetting(key)}
                             />
                           </Tooltip>
@@ -466,38 +485,40 @@ const Profile = ({ isSidebarOpen }) => {
         {/* Хадгалах товчнууд */}
         {hasChanges && (
           <div style={{ 
-            marginBottom: "24px", 
-            padding: "16px", 
+            marginBottom: "16px", 
+            padding: "12px", 
             backgroundColor: tokens.colorNeutralBackground2,
             borderRadius: "8px",
             display: "flex",
+            flexDirection: "column",
             gap: "12px",
-            alignItems: "center"
           }}>
-            <div style={{ flex: 1 }}>
+            <div>
               <strong>⚠️ Өөрчлөлтүүд хадгалагдаагүй байна</strong>
             </div>
-            <Button 
-              appearance="secondary" 
-              onClick={handleCancelChanges}
-              disabled={saving}
-            >
-              Цуцлах
-            </Button>
-            <Button 
-              appearance="primary" 
-              onClick={handleSaveSettings}
-              disabled={saving}
-            >
-              {saving ? "Хадгалаж байна..." : "Хадгалах"}
-            </Button>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <Button 
+                appearance="secondary" 
+                onClick={handleCancelChanges}
+                disabled={saving}
+              >
+                Цуцлах
+              </Button>
+              <Button 
+                appearance="primary" 
+                onClick={handleSaveSettings}
+                disabled={saving}
+              >
+                {saving ? "Хадгалаж байна..." : "Хадгалах"}
+              </Button>
+            </div>
           </div>
         )}
 
         {/* Системээс гарах */}
-        <div style={{ borderTop: `1px solid ${tokens.colorNeutralStroke1}`, paddingTop: "24px" }}>
-          <h3 style={{ marginBottom: "12px", fontSize: "16px" }}>🚪 Системээс гарах</h3>
-          <p style={{ marginBottom: "16px", color: tokens.colorNeutralForeground3 }}>
+        <div style={{ borderTop: `1px solid ${tokens.colorNeutralStroke1}`, paddingTop: "16px" }}>
+          <h3 style={{ marginBottom: "8px", fontSize: "16px" }}>🚪 Системээс гарах</h3>
+          <p style={{ marginBottom: "12px", color: tokens.colorNeutralForeground3, fontSize: "14px" }}>
             Та системээс гарч, нэвтрэх хуудас руу шилжих болно.
           </p>
           <Button icon={<SignOut24Regular />} appearance="primary" onClick={logout}>

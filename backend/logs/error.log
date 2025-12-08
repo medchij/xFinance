@@ -5,3 +5,8 @@
 {"error":"{\"error\":\"Компани ID шаардлагатай\"}","level":"error","message":"HTTP Error Response","method":"POST","service":"xfinance-backend","statusCode":400,"timestamp":"04.12.2025 21:47:09","url":"/loan-data"}
 {"error":"{\"error\":\"Компани ID шаардлагатай\"}","level":"error","message":"HTTP Error Response","method":"POST","service":"xfinance-backend","statusCode":400,"timestamp":"04.12.2025 21:49:40","url":"/loan-data"}
 {"error":"{\"error\":\"Компани ID шаардлагатай\"}","level":"error","message":"HTTP Error Response","method":"POST","service":"xfinance-backend","statusCode":400,"timestamp":"04.12.2025 21:49:43","url":"/loan-data"}
+{"error":"{\"message\":\"Token хүчингүй байна\"}","level":"error","message":"HTTP Error Response","method":"GET","service":"xfinance-backend","statusCode":403,"timestamp":"05.12.2025 16:45:03","url":"/me"}
+{"error":"{\"message\":\"Token хүчингүй байна\"}","level":"error","message":"HTTP Error Response","method":"GET","service":"xfinance-backend","statusCode":403,"timestamp":"06.12.2025 10:04:08","url":"/me"}
+{"error":"{\"message\":\"Token хүчингүй байна\"}","level":"error","message":"HTTP Error Response","method":"GET","service":"xfinance-backend","statusCode":403,"timestamp":"07.12.2025 11:37:18","url":"/me"}
+{"error":"{\"error\":\"Polaris API алдаа: 501 Not Implemented\"}","level":"error","message":"HTTP Error Response","method":"POST","service":"xfinance-backend","statusCode":500,"timestamp":"07.12.2025 23:07:48","url":"/loan-list"}
+{"error":"{\"error\":\"Polaris API алдаа: 501 Not Implemented\"}","level":"error","message":"HTTP Error Response","method":"POST","service":"xfinance-backend","statusCode":500,"timestamp":"07.12.2025 23:10:29","url":"/loan-list"}

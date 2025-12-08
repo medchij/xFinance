@@ -1,0 +1,35 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="100" cy="100" r="90" fill="#0D47A1" stroke="#1565C0" stroke-width="2"/>
+  
+  <!-- Excel Grid Pattern - Clean 4x4 -->
+  <g stroke="#4DB8FF" stroke-width="2" fill="none">
+    <!-- Horizontal lines -->
+    <line x1="50" y1="55" x2="150" y2="55"/>
+    <line x1="50" y1="80" x2="150" y2="80"/>
+    <line x1="50" y1="105" x2="150" y2="105"/>
+    <line x1="50" y1="130" x2="150" y2="130"/>
+    
+    <!-- Vertical lines -->
+    <line x1="50" y1="55" x2="50" y2="130"/>
+    <line x1="83" y1="55" x2="83" y2="130"/>
+    <line x1="116" y1="55" x2="116" y2="130"/>
+    <line x1="150" y1="55" x2="150" y2="130"/>
+  </g>
+  
+  <!-- Data cells - Only 2 main icons -->
+  <!-- Cell 1: Dollar sign (top-left) -->
+  <g fill="#1E88E5" opacity="0.7">
+    <rect x="51" y="56" width="31" height="23"/>
+    <text x="66.5" y="76" font-size="18" fill="#FFFFFF" text-anchor="middle" font-weight="bold">$</text>
+  </g>
+  
+  <!-- Cell 2: Chart up (top-right) -->
+  <g fill="#1E88E5" opacity="0.7">
+    <rect x="117" y="56" width="32" height="23"/>
+    <polyline points="125,77 130,70 135,73 142,62" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Text Label -->
+  <text x="100" y="165" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle" font-family="Arial, sans-serif">ExcelFinance</text>
+</svg>

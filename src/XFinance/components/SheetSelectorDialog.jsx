@@ -119,12 +119,13 @@ const SheetSelectorDialog = ({ isOpen, onClose, onSelect }) => {
             <DialogContent>
               <div className={classes.root}>
                 <div className={classes.field}>
-                  <Label htmlFor="sheet-dropdown">Файл оруулах sheet-ээ сонгоно уу.</Label>
+                 
                   <Dropdown
                     id="sheet-dropdown"
                     placeholder="Жагсаалтаас сонгох..."
                     onOptionSelect={handleOptionSelect}
                     value={selectedSheet || ""}
+                  
                   >
                     {sheetNames.map((name) => (
                       <Option key={name} value={name}>

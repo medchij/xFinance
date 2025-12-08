@@ -206,7 +206,7 @@ export async function writeToImportSheet(sheetName, sheetData, confirmStatus, se
 
       const range = sheet.getRangeByIndexes(startRow, 0, rows, columns); // ✨ Нэмэх эсвэл A1-с бичих
       range.values = normalizedData;
-      range.format.autofitColumns();
+      //range.format.autofitColumns();
       range.format.autofitRows();
 
       sheet.activate();
@@ -319,32 +319,40 @@ export const handleDateConversion = async (setMessage, setLoading) => {
 
       const originalValues = range.values;
 
+      // Бүх утгыг yyyy-mm-dd форматтай текст болгоно (таймзон зөрөхөөс сэргийлнэ)
+      const formatDate = (dateObj) => {
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+        const day = String(dateObj.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      };
+
       const newValues = originalValues.map((row) =>
         row.map((cell) => {
           if (cell === null || cell === "") return "";
-          
+
           // Хэрэв тоо бол Excel serial date байж болно
           if (typeof cell === "number") {
-            // Excel serial date-ийг JavaScript Date руу хөрвүүлэх
             const excelEpoch = new Date(1899, 11, 30);
             const jsDate = new Date(excelEpoch.getTime() + cell * 86400000);
-            return jsDate;
+            return formatDate(jsDate);
           }
-          
+
           // Хэрэв текст бол Date parse хийх
           if (typeof cell === "string") {
             const parsed = new Date(cell);
             if (!isNaN(parsed.getTime())) {
-              return parsed;
+              return formatDate(parsed);
             }
           }
-          
+
           return cell;
         })
       );
 
       range.values = newValues;
-      range.numberFormat = [["yyyy-mm-dd"]];
+      // Text хэлбэрээр хадгалах; Excel өөр формат руу хөрвүүлэхээс хамгаална
+      range.numberFormat = [["@"]] ;
       await context.sync();
     });
 
@@ -810,3 +818,5 @@ function replaceLastWord(text, oldWord, newWord) {
   }
   return text;
 }
+
+

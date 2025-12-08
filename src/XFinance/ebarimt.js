@@ -111,3 +111,56 @@ export async function getMerchantInfoFromExcel(setMessage, setLoading) {
   });
 }
 
+/**
+ * Сонгосон олон нүдэнд регистрийн дугаараар байгууллагын нэр авах функц
+ * @param {Function} setMessage - Мессеж үзүүлэх функц
+ * @param {Function} setLoading - Ачаалалтын статус үзүүлэх функц
+ */
+export async function getMerchantInfoBatch(setMessage, setLoading) {
+  return await withLoading(setLoading, setMessage, async () => {
+    await Excel.run(async (context) => {
+      const range = context.workbook.getSelectedRange();
+      range.load("values, rowIndex, columnIndex");
+      await context.sync();
+
+      const values = range.values;
+      if (!values || values.length === 0) {
+        throw new Error("⚠️ Нүд сонгогдоогүй байна.");
+      }
+
+      let processedCount = 0;
+      let errorCount = 0;
+      const sheet = context.workbook.worksheets.getActiveWorksheet();
+
+      // Сонгосон утга бүрийг боловсруулах
+      for (let i = 0; i < values.length; i++) {
+        const row = values[i];
+        for (let j = 0; j < row.length; j++) {
+          const cell = row[j];
+          if (cell && !isNaN(cell)) {
+            const regNo = cell.toString().trim();
+            const merchantName = await getMerchantNameByRegNumber(regNo);
+            
+            // Баруун баганад (j+1) бичих - getRangeByIndexes ашиглах
+            const targetCell = sheet.getRangeByIndexes(
+              range.rowIndex + i, 
+              range.columnIndex + j + 1, 
+              1, 
+              1
+            );
+            targetCell.values = [[merchantName]];
+            
+            processedCount++;
+          } else if (cell) {
+            errorCount++;
+          }
+        }
+      }
+
+      await context.sync();
+      const message = `✅ ${processedCount} РД-аар ${processedCount} байгууллагын нэр олдлоо.${errorCount > 0 ? ` (${errorCount} буруу утга)` : ""}`;
+      setMessage(message);
+    });
+  });
+}
+

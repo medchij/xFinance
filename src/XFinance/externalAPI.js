@@ -7,6 +7,8 @@ import {
   formatLargeNumber,
   handleHttpError,
   saveSetting,
+  getUserSetting,
+  saveUserSetting,
 } from "./apiHelpers";
 import { BASE_URL } from "../config";
 
@@ -130,8 +132,7 @@ export async function fetchCurrencyRatesByAPI(setMessage, setLoading) {
   });
 }
 
-async function getCarToken(company_id) {
-  // company_id-г параметрээр авна
+async function getCarToken() {
   const response = await fetch("https://service.transdep.mn/autobox-backend/api/v1/user/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -148,9 +149,7 @@ export async function fetchVehicleInfoByPlate(setMessage, setLoading) {
   return withLoading(setLoading, setMessage, async function fetchVehicleInfoByPlate() {
     setMessage("⏳ Машины мэдээлэл татаж байна...");
 
-    const companyId = getCompanyId(); // localStorage-аас ID авах
-    let settings = await loadSettings(companyId); // ID-г дамжуулах
-    let car_token = getSettingValue(settings, "car_token");
+    let car_token = await getUserSetting("car_token");
 
     const plateNo = await Excel.run(async (context) => {
       const range = context.workbook.getActiveCell();
@@ -180,8 +179,8 @@ export async function fetchVehicleInfoByPlate(setMessage, setLoading) {
     let { response, result } = await fetchVehicleData(car_token);
 
     if (response.status === 401) {
-      car_token = await getCarToken(companyId);
-      await saveSetting("car_token", car_token);
+      car_token = await getCarToken();
+      await saveUserSetting("car_token", car_token);
 
       ({ response, result } = await fetchVehicleData(car_token));
     }
@@ -407,34 +406,45 @@ export async function getKhanbankToken(setMessage, setLoading) {
 
 export async function fetchKhanbankAccountInfo(setMessage, setLoading) {
   return withLoading(setLoading, setMessage, async function fetchKhanbankAccountInfo() {
-    setMessage("⏳ Данс лавлаж байна...");
+    setMessage("⏳ Олон данс лавлаж байна...");
 
-    const companyId = getCompanyId(); // localStorage-аас ID авах
-    const settings = await loadSettings(companyId); // ID-г дамжуулах
+    const companyId = getCompanyId();
+    const settings = await loadSettings(companyId);
     let token = getSettingValue(settings, "access_token");
 
-    const { accountNo, activeCellAddress } = await Excel.run(async (context) => {
-      const activeCell = context.workbook.getActiveCell();
-      activeCell.load("values, address");
+    // Сонгосон range-ийн бүх дансны дугааруудыг авах
+    const { accounts, startRow, startCol } = await Excel.run(async (context) => {
+      const selectedRange = context.workbook.getSelectedRange();
+      selectedRange.load("values, rowIndex, columnIndex, rowCount");
       await context.sync();
 
-      const acc = activeCell.values[0][0];
-      if (!acc) {
-        throw new Error("📌 Идэвхтэй нүдэнд дансны дугаар оруулаагүй байна.");
+      const accountNumbers = [];
+      for (let i = 0; i < selectedRange.rowCount; i++) {
+        const cellValue = selectedRange.values[i][0];
+        if (cellValue && cellValue.toString().trim() !== "") {
+          accountNumbers.push(cellValue.toString().trim().replace(/\s/g, ''));
+        } else {
+          accountNumbers.push(null); // Хоосон нүд
+        }
+      }
+
+      if (accountNumbers.filter(a => a !== null).length === 0) {
+        throw new Error("📌 Сонгосон range-д дансны дугаар байхгүй байна.");
       }
 
       return {
-        accountNo: acc.toString().trim().replace(/\s/g, ''),
-        activeCellAddress: activeCell.address,
+        accounts: accountNumbers,
+        startRow: selectedRange.rowIndex,
+        startCol: selectedRange.columnIndex,
       };
     });
 
-    const isIban = /^MN[a-zA-Z0-9]{16,}$/.test(accountNo);
-    const apiPath = isIban
-      ? `https://api.khanbank.com:9003/v3/omni/accounts/inquiry/${accountNo}`
-      : `https://api.khanbank.com:9003/v3/omni/corp/custom/counterparties/accDetails/${accountNo}`;
+    const makeRequest = async (access_token, accountNo) => {
+      const isIban = /^MN[a-zA-Z0-9]{16,}$/.test(accountNo);
+      const apiPath = isIban
+        ? `https://api.khanbank.com:9003/v3/omni/accounts/inquiry/${accountNo}`
+        : `https://api.khanbank.com:9003/v3/omni/corp/custom/counterparties/accDetails/${accountNo}`;
 
-    const makeRequest = async (access_token) => {
       const headers = new Headers();
       headers.append("Authorization", `Bearer ${access_token}`);
       headers.append("Referer", "https://corp.khanbank.com");
@@ -448,45 +458,76 @@ export async function fetchKhanbankAccountInfo(setMessage, setLoading) {
       });
 
       const result = await response.json();
-      return { response, result };
+      return { response, result, isIban };
     };
 
-    let { response, result } = await makeRequest(token);
+    // Олон данс дараалан лавлах
+    const results = [];
+    let tokenRefreshed = false;
 
-    if (response.status === 401) {
-      const tokenResp = await getKhanbankToken(setMessage, setLoading);
-      token = tokenResp.result.access_token;
+    for (let i = 0; i < accounts.length; i++) {
+      const accountNo = accounts[i];
+      
+      if (!accountNo) {
+        results.push(""); // Хоосон нүд
+        continue;
+      }
 
-      ({ response, result } = await makeRequest(token));
+      try {
+        let { response, result, isIban } = await makeRequest(token, accountNo);
+
+        // Token дахин авах (зөвхөн нэг удаа)
+        if (response.status === 401 && !tokenRefreshed) {
+          const tokenResp = await getKhanbankToken(setMessage, setLoading);
+          token = tokenResp.result.access_token;
+          tokenRefreshed = true;
+          
+          ({ response, result, isIban } = await makeRequest(token, accountNo));
+        }
+
+        if (!response.ok) {
+          results.push(`❌ Алдаа: ${response.status}`);
+        } else {
+          const accountDetail = isIban ? result?.name || "" : result?.counterpartyName || "";
+          results.push(accountDetail);
+        }
+      } catch (error) {
+        results.push(`❌ ${error.message}`);
+      }
     }
 
-    if (!response.ok) {
-      handleHttpError(response, result);
-    }
-
-    const accountDetail = isIban ? result?.name || "" : result?.counterpartyName || "";
-
+    // Excel-д бичих (баруун талын багана)
     await Excel.run(async (context) => {
-      const range = context.workbook.getActiveCell();
-      const rightCell = range.getOffsetRange(0, 1);
-      rightCell.values = [[accountDetail]];
+      const sheet = context.workbook.worksheets.getActiveWorksheet();
+      
+      for (let i = 0; i < results.length; i++) {
+        const cell = sheet.getCell(startRow + i, startCol + 1);
+        cell.values = [[results[i]]];
+      }
+      
       await context.sync();
     });
-    console.log("✅ Дансны мэдээлэл:", result);
-    setMessage("✅ Данс лавлагдаж, баруун нүдэнд бичигдлээ.");
-    return { result, response, accountDetail, activeCellAddress };
+
+    const successCount = results.filter(r => r && !r.startsWith("❌")).length;
+    setMessage(`✅ ${successCount}/${accounts.filter(a => a !== null).length} данс амжилттай лавлагдлаа.`);
+    
+    return { results, accounts };
   });
 }
 
 // ==================== IBAN Generator ====================
 
 const banks = {
-  "Khaan Bank": "0005",
-  "TDB": "0004",
-  "Golomt Bank": "0150",
-  "State Bank": "0001",
-  "Khan Bank": "0005",
-  // Шинэ банкууд нэмнэ
+  "0005": "0005", // Хаан банк
+  "0004": "0004", // ХХБанк
+  "0015": "0015", // Голомт банк
+  "0001": "0001", // Төрийн банк
+  "0047": "0047", // Капитрон банк
+  "0043": "0043", // Ариг банк
+  "0020": "0020", // Богд банк
+  "0039": "0039", // M банк
+  "0019": "0019", // Чингис хаан банк
+  "0021": "0021", // Үндэсний хөрөнгө оруулалтын банк
 };
 
 function lettersToDigits(str) {
@@ -519,29 +560,43 @@ export function generateMongoliaIban(account, bankIdentifier, branch = "00") {
   // Account-ыг цэвэрлэх (зайг арилгаж, тэмдэгтүүдийг устгах)
   let cleanAccount = String(account).replace(/\s+/g, '').replace(/'/g, '').trim();
   
-  // Account дугаарыг 10 орон болгох (хэрэв богино бол 0-ээр нөхнө)
-  if (cleanAccount.length < 10) {
-    cleanAccount = cleanAccount.padStart(10, '0');
+  // Дансны эхний 4 оронг банк код гэж үзэх (хэрэв 14 орон байвал)
+  let detectedBankCode = null;
+  let actualAccount = cleanAccount;
+  
+  if (cleanAccount.length >= 14) {
+    const firstFour = cleanAccount.substring(0, 4);
+    if (banks[firstFour]) {
+      detectedBankCode = firstFour;
+      actualAccount = cleanAccount.substring(4); // Банк кодыг хасах
+    }
   }
   
-  const bankCode = (banks[bankIdentifier] !== undefined)
-    ? banks[bankIdentifier]
-    : (bankIdentifier && bankIdentifier.length === 4 ? bankIdentifier : null);
+  // Банк код тодорхойлох: илгээсэн эсвэл дансаас илрүүлсэн
+  const bankCode = detectedBankCode || 
+    (banks[bankIdentifier] !== undefined
+      ? banks[bankIdentifier]
+      : (bankIdentifier && bankIdentifier.length === 4 ? bankIdentifier : null));
 
   if (!bankCode) {
     throw new Error("Банк код олдсонгүй. banks объектыг нэмнэ үү эсвэл 4 оронтой банк код оруулна уу.");
+  }
+  
+  // Account дугаарыг 10 орон болгох (хэрэв богино бол 0-ээр нөхнө)
+  if (actualAccount.length < 10) {
+    actualAccount = actualAccount.padStart(10, '0');
   }
 
   // MN -> "2223"
   const countryDigits = lettersToDigits("MN");
   // Rearranged: bankCode + branch + account + countryDigits + "00"
-  const rearranged = bankCode + branch + cleanAccount + countryDigits + "00";
+  const rearranged = bankCode + branch + actualAccount + countryDigits + "00";
 
   const remainder = mod97FromString(rearranged);
   const check = 98 - remainder;
   const checkStr = String(check).padStart(2, "0");
 
-  return `MN${checkStr}${bankCode}${branch}${cleanAccount}`;
+  return `MN${checkStr}${bankCode}${branch}${actualAccount}`;
 }
 
 /**

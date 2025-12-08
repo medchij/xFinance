@@ -362,7 +362,7 @@ const styles = {
     background: "#fff",
     padding: "20px",
     borderRadius: "8px",
-    maxHeight: "90vh",
+    maxHeight: "85vh",
     overflowY: "auto",
   },
   title: {

@@ -1,4 +1,5 @@
 import { BASE_URL } from "../config";
+import { getAuthToken } from "../config/token";
 import { ActivityTracker } from "./utils/activityTracker";
 import logger from "./utils/logger";
 
@@ -149,4 +150,80 @@ export async function saveSetting(key, value) {
     settings.set(key, value); // add биш — set (байхгүй бол үүсгэнэ, байвал шинэчилнэ)
     await context.sync();
   });
+}
+
+/**
+ * Хэрэглэгчийн тохиргоо татах (user_settings table)
+ * @param {string} settingKey - Тохиргооны түлхүүр (жишээ: "car_token")
+ * @returns {Promise<string|null>} - Тохиргооны утга эсвэл null
+ */
+export async function getUserSetting(settingKey) {
+  try {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error("🔒 Нэвтрэх шаардлагатай. Token олдсонгүй.");
+    }
+
+    const response = await fetch(`${BASE_URL}/api/user-settings`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const settings = await response.json();
+    return settings[settingKey] || null;
+  } catch (error) {
+    logger.error("getUserSetting функц дээр алдаа гарлаа", {
+      error: error?.message || error,
+      settingKey,
+    });
+    throw error;
+  }
+}
+
+/**
+ * Хэрэглэгчийн тохиргоо хадгалах (user_settings table)
+ * @param {string} settingKey - Тохиргооны түлхүүр
+ * @param {string} settingValue - Тохиргооны утга
+ * @returns {Promise<Object>} - Хадгалагдсан тохиргоо
+ */
+export async function saveUserSetting(settingKey, settingValue) {
+  try {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error("🔒 Нэвтрэх шаардлагатай. Token олдсонгүй.");
+    }
+
+    const response = await fetch(`${BASE_URL}/api/user-settings`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        setting_key: settingKey,
+        setting_value: settingValue,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    logger.info("Хэрэглэгчийн тохиргоо амжилттай хадгалагдлаа", { settingKey });
+    return result;
+  } catch (error) {
+    logger.error("saveUserSetting функц дээр алдаа гарлаа", {
+      error: error?.message || error,
+      settingKey,
+    });
+    throw error;
+  }
 }

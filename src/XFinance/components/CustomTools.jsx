@@ -115,6 +115,7 @@ const groupedTools = [
       { icon: <DocumentArrowLeft20Regular />, label: "PS Зээлийн зориулалт, хугацаа" },
       { icon: <PeopleList20Regular />, label: "Топ 40 зээлийн тайлан" },
       { icon: <ArrowSync20Regular />, label: "Поларис дата шинэчлэх" },
+      { icon: <DocumentTableSearchRegular />, label: "Зээлийн жагсаалт татах" },
      
     ],
   },
@@ -167,7 +168,7 @@ const CustomTools = ({ isSidebarOpen }) => {
     "Хааны данс лавлах": () => efns.fetchKhanbankAccountInfo(showMessage, setLoading),
     "Ибан лавлах": () => setActiveModal("generateIban"),
     "РД-аар ҮА лавлах": () => bFns.getMerchantCategoryById(showMessage, setLoading),
-    "РД-аар Нэр лавлах": () => bFns.getMerchantInfoFromExcel(showMessage, setLoading),
+    "РД-аар Нэр лавлах": () => bFns.getMerchantInfoBatch(showMessage, setLoading),
     "Идэвхитэй нүдээр шүүлт хийх": () => fns.filterByActiveCellValue(showMessage, setLoading),
     "Шүүлт арилгах": () => fns.clearAutoFilter(showMessage, setLoading),
     // "Өнгөөр ялгах": () => fns.highlightCellsByColor(showMessage, setLoading),
@@ -183,6 +184,7 @@ const CustomTools = ({ isSidebarOpen }) => {
     "GI Daily тооцоолол": () => pfns.GIprocessFinancialReport(showMessage, setLoading),
     "AP Daily тооцоолол": () => pfns.APprocessFinancialReport(showMessage, setLoading),
     "Поларис дата шинэчлэх": () => pfns.fetchPolarisLoanData(showMessage, setLoading),
+    "Зээлийн жагсаалт татах": () => pfns.fetchPolarisLoanList(showMessage, setLoading),
     "ЕДД данс үүсгэх": () => setActiveModal("createGL"),
     "Данс үүсгэх": () => setActiveModal("createAccount"),
     "Харилцагч үүсгэх": () => setActiveModal("createCustomer"),
@@ -221,6 +223,11 @@ const CustomTools = ({ isSidebarOpen }) => {
         justifyContent: "flex-start",
         minHeight: "100vh",
         backgroundColor: "#f3f4f6",
+        maxWidth: "100%",
+        overflowX: "hidden",
+        boxSizing: "border-box",
+        marginLeft: isSidebarOpen ? 180 : 50,
+        transition: "margin-left 0.3s ease-in-out",
       }}
     >
       {activeModal === "AccountDateDialog" && (
@@ -242,9 +249,11 @@ const CustomTools = ({ isSidebarOpen }) => {
           borderRight: isNarrowScreen ? "none" : "2px solid #ccc",
           minHeight: "calc(100vh - 20px)",
           marginBottom: isNarrowScreen ? "0" : "0",
-          marginRight: isNarrowScreen ? "0" : "20px",
-          marginLeft: isNarrowScreen ? "20px" : (isSidebarOpen ? "0" : "0"),
-          order: isNarrowScreen ? 2 : 0, // ⭐️ ЭНЭ ШИНЭ ЗУРААС!
+          marginRight: isNarrowScreen ? "0" : "16px",
+          order: isNarrowScreen ? 2 : 0,
+          maxWidth: "100%",
+          overflowX: "hidden",
+          boxSizing: "border-box",
         }}
       >
         <Calculator />
@@ -253,17 +262,16 @@ const CustomTools = ({ isSidebarOpen }) => {
       <div
         style={{
           backgroundColor: "#e5e7eb",
-          padding: "20px",
+          padding: "16px",
           borderRadius: "4px",
           minHeight: "calc(100vh - 20px)",
           width: "100%",
-          marginLeft: isNarrowScreen ? "40px" : "0",
-          maxWidth: isNarrowScreen ? "80%" : "250px",
+          maxWidth: isNarrowScreen ? "90%" : "240px",
           boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          order: isNarrowScreen ? 1 : 0, // ⭐️ ЭНЭ ШИНЭ ЗУРААС!
+          order: isNarrowScreen ? 1 : 0,
         }}
       >
         {groupedTools.map((group, groupIndex) => (
