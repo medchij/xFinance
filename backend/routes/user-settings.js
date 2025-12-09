@@ -3,6 +3,9 @@ const router = express.Router();
 const { query } = require('../db');
 const jwt = require('jsonwebtoken');
 
+// JWT Secret - must match auth.js and authenticateToken.js
+const JWT_SECRET = process.env.JWT_SECRET || 'your-very-secret-key';
+
 // Middleware: JWT-ээс user_id авах
 const extractUserId = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -12,7 +15,7 @@ const extractUserId = (req, res, next) => {
 
   try {
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    const decoded = jwt.verify(token, JWT_SECRET);
     req.userId = decoded.id;
     next();
   } catch (error) {

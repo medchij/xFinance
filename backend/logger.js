@@ -77,7 +77,7 @@ const requestLogger = (req, res, next) => {
       const jwt = require('jsonwebtoken');
       const token = authHeader.substring(7);
       console.log("Token:", token);
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-very-secret-key');
       console.log("Decoded JWT:", decoded);
       user = decoded.username || decoded.email || decoded.id;
     } catch (err) {

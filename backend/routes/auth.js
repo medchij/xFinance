@@ -6,8 +6,13 @@ const crypto = require('crypto');
 const db = require('../db');
 const { sendPasswordResetEmail } = require('../services/emailService');
 
-// JWT Secret. Үүнийг .env файлд хадгалах нь илүү зөв.
+// JWT Secret - CRITICAL: Must be set in .env.local or Vercel environment variables
 const JWT_SECRET = process.env.JWT_SECRET || 'your-very-secret-key';
+
+// Warn if using default secret in production
+if (process.env.NODE_ENV === 'production' && JWT_SECRET === 'your-very-secret-key') {
+  console.warn('⚠️ WARNING: JWT_SECRET is using default value in production! This is a security risk. Set JWT_SECRET environment variable.');
+}
 
 // Middleware to verify JWT
 const verifyToken = (req, res, next) => {
