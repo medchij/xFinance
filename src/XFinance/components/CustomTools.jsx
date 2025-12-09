@@ -114,7 +114,7 @@ const groupedTools = [
       { icon: <Payment20Regular />, label: "PS Зээлийн төлөлт" },
       { icon: <DocumentArrowLeft20Regular />, label: "PS Зээлийн зориулалт, хугацаа" },
       { icon: <PeopleList20Regular />, label: "Топ 40 зээлийн тайлан" },
-      { icon: <ArrowSync20Regular />, label: "Поларис дата шинэчлэх" },
+      { icon: <ArrowSync20Regular />, label: "Зээлийн данс лавлах" },
       { icon: <DocumentTableSearchRegular />, label: "Зээлийн жагсаалт татах" },
       { icon: <DocumentTableSearchRegular />, label: "Харилцагчийн жагсаалт татах" },
      
@@ -184,7 +184,7 @@ const CustomTools = ({ isSidebarOpen }) => {
     "Daily бэлтгэл": () => pfns.processBalanceReconciliation(showMessage, setLoading),
     "GI Daily тооцоолол": () => pfns.GIprocessFinancialReport(showMessage, setLoading),
     "AP Daily тооцоолол": () => pfns.APprocessFinancialReport(showMessage, setLoading),
-    "Поларис дата шинэчлэх": () => pfns.fetchPolarisLoanData(showMessage, setLoading),
+    "Зээлийн данс лавлах": () => pfns.fetchPolarisLoanData(showMessage, setLoading),
     "Зээлийн жагсаалт татах": () => pfns.fetchPolarisLoanList(showMessage, setLoading),
     "Харилцагчийн жагсаалт татах": () => pfns.fetchPolarisCustomerList(showMessage, setLoading),
     "ЕДД данс үүсгэх": () => setActiveModal("createGL"),

@@ -3,6 +3,7 @@
 import { loadSettings, getSettingValue, withLoading, hideEmptyColumns } from "./apiHelpers";
 import { lastImportedData } from "./xFinance";
 import { BASE_URL } from "../config";
+import { getSelectedCompany } from "../config/token";
 
 // Sheet name helper (max 31 chars)
 function buildSheetName(prefix) {
@@ -33,6 +34,14 @@ async function parseJsonSafe(response) {
 
   throw new Error(`API JSON биш хариу ирлээ (status ${response.status}): ${text.substring(0, 200)}`);
 }
+
+const getCompanyId = () => {
+  const companyId = getSelectedCompany();
+  if (!companyId) {
+    throw new Error("⚠️ Компани сонгогдоогүй байна. Профайл хуудаснаас сонголт хийнэ үү.");
+  }
+  return companyId;
+};
 
 export function getTermInterval(daysOrMonths) {
   const days = Number(daysOrMonths);
@@ -1331,7 +1340,7 @@ export async function fetchPolarisLoanData(setMessage, setLoading) {
       }
 
       // 2. Зээлийн дугаар валидаци (16+ тэмдэгт, "1221"-ээр эхэлнэ)
-      if (loanNumber.toString().length < 16 || !loanNumber.toString().startsWith("1221")) {
+      if (loanNumber.toString().length < 16 ) {
         throw new Error("⚠️ Зээлийн дугаар буруу байна. 16+ тэмдэгт, '1221'-ээр эхэлнэ.");
       }
 
@@ -1341,12 +1350,14 @@ export async function fetchPolarisLoanData(setMessage, setLoading) {
       // 3. Backend proxy-аар дамжуулан Polaris API руу хандах (CORS шийдэл)
       // Authorization header нэмэх (JWT token)
       const token = localStorage.getItem('authToken');
+      const companyId = getCompanyId();
       
       const response = await fetch(`${BASE_URL}/api/polaris/loan-data`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
+          "x-company-id": companyId,
         },
         body: JSON.stringify({
           loanNumber: loanNumber.toString(),
@@ -1396,27 +1407,27 @@ export async function fetchPolarisLoanList(setMessage, setLoading, filters = {})
       // 1. Шүүлтүүр бэлтгэх (defaults)
       const {
         status = ['O', 'N'],
-        branchCode = '122101',
         prodType = ['LOAN', 'LINE'],
         page = 0,
         pageSize = 25
       } = filters;
 
-      console.log("🔍 Polaris loan list request:", { status, branchCode, prodType, page, pageSize });
+      console.log("🔍 Polaris loan list request:", { status, prodType, page, pageSize });
       setMessage("⏳ Backend API руу хүсэлт илгээж байна...");
 
       // 2. Backend proxy-аар дамжуулан Polaris API руу хандах (JWT token)
       const token = localStorage.getItem('authToken');
+      const companyId = getCompanyId();
       
       const response = await fetch(`${BASE_URL}/api/polaris/loan-list`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
+          "x-company-id": companyId,
         },
         body: JSON.stringify({
           status,
-          branchCode,
           prodType,
           page,
           pageSize
@@ -1519,7 +1530,7 @@ export async function fetchPolarisCustomerList(setMessage, setLoading, filters =
 
       const {
         status = ['1'],
-        page = 2000,
+        page = 0,
         pageSize = 1000
       } = filters;
 
@@ -1527,12 +1538,14 @@ export async function fetchPolarisCustomerList(setMessage, setLoading, filters =
       setMessage("⏳ Backend API руу хүсэлт илгээж байна...");
 
       const token = localStorage.getItem('authToken');
+      const companyId = getCompanyId();
 
       const response = await fetch(`${BASE_URL}/api/polaris/customer-list`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
+          "x-company-id": companyId,
         },
         body: JSON.stringify({ status, page, pageSize }),
       });
