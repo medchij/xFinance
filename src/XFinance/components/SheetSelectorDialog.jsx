@@ -118,7 +118,7 @@ const SheetSelectorDialog = ({ isOpen, onClose, onSelect }) => {
             <DialogTitle style={{ fontSize: "18px" }}>Sheet сонгох</DialogTitle>
             <DialogContent>
               <div className={classes.root}>
-                <div className={classes.field}>
+                <div className={classes.field} style={{ width: "100%" }}>
                  
                   <Dropdown
                     id="sheet-dropdown"

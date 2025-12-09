@@ -144,4 +144,44 @@ router.post("/loan-list", async (req, res) => {
   }
 });
 
+// Polaris NES API - Харилцагчийн жагсаалт татах endpoint
+router.post("/customer-list", async (req, res) => {
+  try {
+    const { status = ['1'], page = 0, pageSize = 1000 } = req.body;
+
+    const userId = getUserIdFromToken(req.headers['authorization']);
+    if (!userId) {
+      return res.status(401).json({ error: "Нэвтрэх шаардлагатай" });
+    }
+
+    const nesSession = await getNesSession(userId);
+
+    console.log("🔍 Polaris харилцагчийн жагсаалт хүсэлт:", {
+      userId,
+      status,
+      page,
+      pageSize,
+      nesSession: nesSession.substring(0, 20) + "...",
+    });
+
+    const filterConditions = [
+      {
+        "_iField": "STATUS",
+        "_iOperation": "IN",
+        "_iType": 1,
+        "_inValues": status,
+      }
+    ];
+
+    const requestBody = [filterConditions, page, pageSize];
+    const data = await callPolarisApi(nesSession, "10201000", requestBody);
+    res.json(data);
+  } catch (error) {
+    console.error("Polaris customer-list алдаа:", error);
+    res.status(error.message.includes("нессession") ? 404 : 500).json({
+      error: error.message || "Серверийн алдаа",
+    });
+  }
+});
+
 module.exports = router;

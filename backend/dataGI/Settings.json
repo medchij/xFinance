@@ -1,0 +1,57 @@
+[
+  {
+    "id": "1",
+    "tab": "Үндсэн тохиргоо",
+    "name": "khanbank_username",
+    "value": "",
+    "creade_date": "2023-10-01T00:00:00.000Z",
+    "update_date": "2025-06-29T05:21:18.931Z"
+  },
+  {
+    "id": "2",
+    "tab": "Үндсэн тохиргоо",
+    "name": "khanbank_password",
+    "value": "TWV0YTIwMjU=",
+    "creade_date": "2023-10-01T00:00:00.000Z",
+    "update_date": "2025-06-29T05:21:26.941Z"
+  },
+  {
+    "id": "3",
+    "tab": "Үндсэн тохиргоо",
+    "name": "access_token",
+    "value": "UW8G9Z9ETW26xdaS2ISqSVAk71kV",
+    "creade_date": "2023-10-01T00:00:00.000Z",
+    "update_date": "2025-08-04T08:24:35.029Z"
+  },
+  {
+    "id": "4",
+    "tab": "Бусад тохиргоо",
+    "name": "sheetname",
+    "value": "НӨАТ",
+    "creade_date": "2023-10-01T00:00:00.000Z",
+    "update_date": "2025-08-04T15:22:20.454Z"
+  },
+  {
+    "id": "5",
+    "tab": "Үндсэн тохиргоо",
+    "name": "device_token",
+    "value": "Basic Vm00eHFtV1BaQks3Vm5UYjNRRXJZbjlJZkxoWmF6enI6dElJQkFsU09pVXIwclV5cA==",
+    "create_date": "2025-05-22T06:24:32.662Z",
+    "update_date": "2025-05-26T14:56:05.534Z"
+  },
+  {
+    "id": "6",
+    "name": "refresh_token",
+    "value": "Am9cVeELxru1GBsqreYZdiTbDMOKwWxk",
+    "tab": "Үндсэн тохиргоо",
+    "create_date": "2025-05-22T08:29:35.676Z",
+    "update_date": "2025-08-04T08:24:35.042Z"
+  },
+  {
+    "id": "7",
+    "name": "device-id",
+    "value": "2E910D21-DB84-4B50-8A36-41DCF1757151",
+    "tab": "Үндсэн тохиргоо",
+    "create_date": "2025-05-22T09:39:01.271Z"
+  }
+]

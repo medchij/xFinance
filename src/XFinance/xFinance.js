@@ -627,22 +627,42 @@ export const pasteValuesOnly = async (setMessage, setLoading) => {
       }
       if (!text) throw new Error("Clipboard-д утга алга!");
 
-      const range = context.workbook.getSelectedRange();
-      range.load(["rowCount", "columnCount"]);
+      // Clipboard өгөгдлийг задлах
+      const rows = text.split(/\r?\n/).filter(row => row.length > 0).map(row => row.split('\t'));
+      
+      if (rows.length === 0) {
+        throw new Error("Clipboard-д өгөгдөл олдсонгүй!");
+      }
+
+      // Clipboard өгөгдлийн хэмжээг тодорхойлох
+      const dataRowCount = rows.length;
+      const dataColCount = Math.max(...rows.map(row => row.length));
+
+      // Идэвхитэй нүдээс эхлэх range үүсгэх
+      const activeCell = context.workbook.getActiveCell();
+      activeCell.load(["rowIndex", "columnIndex"]);
       await context.sync();
 
-      const rows = text.split(/\r?\n/).map(row => row.split('\t'));
-      // Range-ийн хэмжээнд тааруулна
-      const normalizedRows = [];
-      for (let i = 0; i < range.rowCount; i++) {
-        const row = rows[i] || [];
+      const sheet = context.workbook.worksheets.getActiveWorksheet();
+      const targetRange = sheet.getRangeByIndexes(
+        activeCell.rowIndex,
+        activeCell.columnIndex,
+        dataRowCount,
+        dataColCount
+      );
+
+      // Өгөгдлийг нормчлох (бүх мөр ижил урттай болгох, "-" утгыг "" болгох)
+      const normalizedRows = rows.map(row => {
         const normalizedRow = [];
-        for (let j = 0; j < range.columnCount; j++) {
-          normalizedRow.push(row[j] !== undefined ? row[j] : "");
+        for (let j = 0; j < dataColCount; j++) {
+          let cellValue = row[j] !== undefined && row[j] !== null ? row[j] : "";
+          cellValue = typeof cellValue === "string" ? cellValue.trim() : cellValue;
+          normalizedRow.push(cellValue === "-" ? "" : cellValue);
         }
-        normalizedRows.push(normalizedRow);
-      }
-      range.values = normalizedRows;
+          return normalizedRow;
+      });
+
+      targetRange.values = normalizedRows;
       await context.sync();
     });
     setMessage("✅ Clipboard утгыг зөвхөн value хэлбэрээр буулгалаа.");

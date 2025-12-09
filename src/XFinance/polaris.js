@@ -2,6 +2,37 @@
 // ⚠️ Note: Complex calculations like SUMIFS/COUNTIFS are replaced with manual filtering and aggregation
 import { loadSettings, getSettingValue, withLoading, hideEmptyColumns } from "./apiHelpers";
 import { lastImportedData } from "./xFinance";
+import { BASE_URL } from "../config";
+
+// Sheet name helper (max 31 chars)
+function buildSheetName(prefix) {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mi = String(now.getMinutes()).padStart(2, '0');
+  const ss = String(now.getSeconds()).padStart(2, '0');
+  const ts = `${yyyy}${mm}${dd}_${hh}${mi}${ss}`; // 15 chars
+  const raw = `${prefix}_${ts}`;
+  return raw.slice(0, 31);
+}
+
+// Helper to parse JSON safely and surface HTML/text responses
+async function parseJsonSafe(response) {
+  const contentType = response.headers.get("content-type") || "";
+  const text = await response.text();
+
+  if (contentType.includes("application/json")) {
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      throw new Error(`API JSON parse алдаа (status ${response.status}): ${text.substring(0, 200)}`);
+    }
+  }
+
+  throw new Error(`API JSON биш хариу ирлээ (status ${response.status}): ${text.substring(0, 200)}`);
+}
 
 export function getTermInterval(daysOrMonths) {
   const days = Number(daysOrMonths);
@@ -1311,7 +1342,7 @@ export async function fetchPolarisLoanData(setMessage, setLoading) {
       // Authorization header нэмэх (JWT token)
       const token = localStorage.getItem('authToken');
       
-      const response = await fetch("http://localhost:4000/api/polaris/loan-data", {
+      const response = await fetch(`${BASE_URL}/api/polaris/loan-data`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1327,7 +1358,7 @@ export async function fetchPolarisLoanData(setMessage, setLoading) {
         throw new Error(error.error || `❌ API хүсэлт амжилтгүй: ${response.status}`);
       }
 
-      const parsedResult = await response.json();
+      const parsedResult = await parseJsonSafe(response);
 
       // 4. repayAcntCode-ийг олж авах
       const repayAcntCode = parsedResult?.repayAcntCode || "";
@@ -1353,8 +1384,9 @@ export async function fetchPolarisLoanData(setMessage, setLoading) {
 /**
  * Polaris NES системээс зээлийн жагсаалт татах
  * @param {function} setMessage - Мэдэгдэл харуулах функц
- * @param {function} setLoading - Loading төлөв тохируулах функц
- * @param {Object} filters - Шүүлтүүр {status: ['O','N'], branchCode: '122101', prodType: ['LOAN','LINE']}
+ * @param {function} setLoading - Loading төлөcurlcurlcurlcurlcurlcurlcurlcurlcurlcurl -X POST http://localhost:4000/api/polaris/customer-list ^
+  -H "Content-Type: application/json" ^
+  -d "{\"status\":[\"1\"],\"page\":0,\"pageSize\":10}" * @param {Object} filters - Шүүлтүүр {status: ['O','N'], branchCode: '122101', prodType: ['LOAN','LINE']}
  */
 export async function fetchPolarisLoanList(setMessage, setLoading, filters = {}) {
   return withLoading(setLoading, setMessage, async () => {
@@ -1376,7 +1408,7 @@ export async function fetchPolarisLoanList(setMessage, setLoading, filters = {})
       // 2. Backend proxy-аар дамжуулан Polaris API руу хандах (JWT token)
       const token = localStorage.getItem('authToken');
       
-      const response = await fetch("http://localhost:4000/api/polaris/loan-list", {
+      const response = await fetch(`${BASE_URL}/api/polaris/loan-list`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1392,18 +1424,14 @@ export async function fetchPolarisLoanList(setMessage, setLoading, filters = {})
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || `❌ API хүсэлт амжилтгүй: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`❌ API хүсэлт амжилтгүй: ${response.status}. ${errorText.substring(0, 200)}`);
       }
 
-      const parsedResult = await response.json();
+      const parsedResult = await parseJsonSafe(response);
 
       // 3. Шинэ worksheet үүсгэх
-      const timestamp = new Date().toLocaleString('mn-MN', { 
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-      }).replace(/[/:]/g, '-').replace(/,/g, '');
-      const newSheetName = `Polaris_${timestamp}`;
+      const newSheetName = buildSheetName('Polaris');
       
       const newSheet = context.workbook.worksheets.add(newSheetName);
       newSheet.activate();
@@ -1411,9 +1439,13 @@ export async function fetchPolarisLoanList(setMessage, setLoading, filters = {})
 
       // 4. Хариу массив байвал бүх талбаруудыг динамикаар задлах
       if (Array.isArray(parsedResult) && parsedResult.length > 0) {
-        // Эхний объектоос бүх түлхүүрүүдийг авах
         const firstItem = parsedResult[0];
-        const headers = Object.keys(firstItem);
+        const headers = Object.keys(firstItem || {});
+
+        if (!headers.length) {
+          setMessage("⚠️ API хариунд бичих талбар алга (headers хоосон)." );
+          return;
+        }
         
         // Толгой мөр бичих (A1-ээс эхлэх)
         const headerRange = newSheet.getRangeByIndexes(0, 0, 1, headers.length);
@@ -1443,22 +1475,137 @@ export async function fetchPolarisLoanList(setMessage, setLoading, filters = {})
         
         await context.sync();
         setMessage(`✅ Polaris зээлийн жагсаалт: ${dataRows.length} зээл, ${headers.length} багана. Sheet: ${newSheetName}`);
+      } else if (Array.isArray(parsedResult) && parsedResult.length === 0) {
+        setMessage(`⚠️ Polaris зээлийн жагсаалт хоосон байна.`);
       } else if (typeof parsedResult === 'object' && parsedResult !== null) {
-        // Объект бол түлхүүр-утга хос байдлаар бичих
+        const entries = Object.entries(parsedResult);
+        if (!entries.length) {
+          setMessage("⚠️ Polaris хариу хоосон объект байна (талбар алга)." );
+          return;
+        }
+
+        const dataRows = entries.map(([key, value]) => [
+          key,
+          typeof value === 'object' ? JSON.stringify(value) : value
+        ]);
+
+        const range = newSheet.getRangeByIndexes(0, 0, dataRows.length, 2);
+        range.values = dataRows;
+        range.format.autofitColumns();
+
+        await context.sync();
+        setMessage(`✅ Polaris хариу: ${entries.length} талбар. Sheet: ${newSheetName}`);
+      } else if (typeof parsedResult === 'string') {
+        const cell = newSheet.getRange("A1");
+        cell.values = [[parsedResult]];
+        await context.sync();
+        setMessage(`⚠️ Polaris хариу текст байдлаар ирлээ. Sheet: ${newSheetName}`);
+      } else {
+        const fullResponse = JSON.stringify(parsedResult, null, 2);
+        const cell = newSheet.getRange("A1");
+        cell.values = [[fullResponse]];
+        await context.sync();
+        setMessage(`✅ Polaris хариу татагдлаа. Sheet: ${newSheetName}`);
+      }
+    });
+  });
+}
+
+// Polaris NES системээс харилцагчийн жагсаалт татах
+export async function fetchPolarisCustomerList(setMessage, setLoading, filters = {}) {
+  return withLoading(setLoading, setMessage, async () => {
+    await Excel.run(async (context) => {
+      setMessage("⏳ Polaris харилцагчийн жагсаалт татах эхэллээ...");
+
+      const {
+        status = ['1'],
+        page = 2000,
+        pageSize = 1000
+      } = filters;
+
+      console.log("🔍 Polaris customer list request:", { status, page, pageSize });
+      setMessage("⏳ Backend API руу хүсэлт илгээж байна...");
+
+      const token = localStorage.getItem('authToken');
+
+      const response = await fetch(`${BASE_URL}/api/polaris/customer-list`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status, page, pageSize }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`❌ API хүсэлт амжилтгүй: ${response.status}. ${errorText.substring(0, 200)}`);
+      }
+
+      const parsedResult = await parseJsonSafe(response);
+
+      const newSheetName = buildSheetName('PolarisCustomer');
+
+      const newSheet = context.workbook.worksheets.add(newSheetName);
+      newSheet.activate();
+      await context.sync();
+
+      if (Array.isArray(parsedResult) && parsedResult.length > 0) {
+        const firstItem = parsedResult[0];
+        const headers = Object.keys(firstItem || {});
+
+        if (!headers.length) {
+          setMessage("⚠️ API хариунд бичих талбар алга (headers хоосон)." );
+          return;
+        }
+
+        const headerRange = newSheet.getRangeByIndexes(0, 0, 1, headers.length);
+        headerRange.values = [headers];
+        headerRange.format.font.bold = true;
+        headerRange.format.fill.color = "#4472C4";
+        headerRange.format.font.color = "white";
+
+        const dataRows = parsedResult.map(item => {
+          return headers.map(key => {
+            const value = item[key];
+            if (value === null || value === undefined) return "";
+            if (typeof value === 'object') {
+              return JSON.stringify(value);
+            }
+            if (typeof value === 'string' && /^\d{16,}$/.test(value)) {
+              return "'" + value;
+            }
+            return value;
+          });
+        });
+
+        if (!dataRows.length) {
+          setMessage("⚠️ Polaris харилцагчийн жагсаалтад мөр алга." );
+          return;
+        }
+
+        const dataRange = newSheet.getRangeByIndexes(1, 0, dataRows.length, headers.length);
+        dataRange.values = dataRows;
+        dataRange.format.autofitColumns();
+
+        await context.sync();
+        setMessage(`✅ Polaris харилцагчийн жагсаалт: ${dataRows.length} мөр, ${headers.length} багана. Sheet: ${newSheetName}`);
+      } else if (Array.isArray(parsedResult) && parsedResult.length === 0) {
+        setMessage(`⚠️ Polaris харилцагчийн жагсаалт хоосон байна.`);
+      } else if (typeof parsedResult === 'object' && parsedResult !== null) {
         const entries = Object.entries(parsedResult);
         const dataRows = entries.map(([key, value]) => [
           key,
           typeof value === 'object' ? JSON.stringify(value) : value
         ]);
-        
+
         const range = newSheet.getRangeByIndexes(0, 0, dataRows.length, 2);
         range.values = dataRows;
         range.format.autofitColumns();
-        
+
         await context.sync();
         setMessage(`✅ Polaris хариу: ${entries.length} талбар. Sheet: ${newSheetName}`);
       } else {
-        // Бусад тохиолдолд JSON string бичих
         const fullResponse = JSON.stringify(parsedResult, null, 2);
         const cell = newSheet.getRange("A1");
         cell.values = [[fullResponse]];

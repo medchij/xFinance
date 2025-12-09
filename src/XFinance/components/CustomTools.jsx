@@ -116,6 +116,7 @@ const groupedTools = [
       { icon: <PeopleList20Regular />, label: "Топ 40 зээлийн тайлан" },
       { icon: <ArrowSync20Regular />, label: "Поларис дата шинэчлэх" },
       { icon: <DocumentTableSearchRegular />, label: "Зээлийн жагсаалт татах" },
+      { icon: <DocumentTableSearchRegular />, label: "Харилцагчийн жагсаалт татах" },
      
     ],
   },
@@ -185,6 +186,7 @@ const CustomTools = ({ isSidebarOpen }) => {
     "AP Daily тооцоолол": () => pfns.APprocessFinancialReport(showMessage, setLoading),
     "Поларис дата шинэчлэх": () => pfns.fetchPolarisLoanData(showMessage, setLoading),
     "Зээлийн жагсаалт татах": () => pfns.fetchPolarisLoanList(showMessage, setLoading),
+    "Харилцагчийн жагсаалт татах": () => pfns.fetchPolarisCustomerList(showMessage, setLoading),
     "ЕДД данс үүсгэх": () => setActiveModal("createGL"),
     "Данс үүсгэх": () => setActiveModal("createAccount"),
     "Харилцагч үүсгэх": () => setActiveModal("createCustomer"),
