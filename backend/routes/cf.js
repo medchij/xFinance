@@ -17,6 +17,11 @@ router.get('/', async (req, res) => {
     const { rows } = await query('SELECT * FROM cf_items WHERE company_id = $1', [company_id]);
     res.status(200).json(rows);
   } catch (error) {
+    // If table doesn't exist, return empty array instead of 500 error
+    if (error.code === '42P01') {
+      console.warn(`⚠️ cf_items table not found for company ${company_id}`);
+      return res.status(200).json([]);
+    }
     console.error(`API Error fetching cf_items for company ${company_id}:`, error);
     res.status(500).json({ message: 'Failed to fetch CF items' });
   }

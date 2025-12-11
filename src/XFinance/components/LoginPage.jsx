@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { Input, Button, Link, Text, makeStyles, shorthands } from "@fluentui/react-components";
-import Header from "./Header";
 import { useActivityTracking } from "../hooks/useActivityTracking";
 
 const useStyles = makeStyles({
@@ -58,7 +57,6 @@ const LoginPage = ({ onLogin, onCompanySelect, onNavigateToPublic }) => {
 
   return (
     <div className={styles.root}>
-      <Header logo="assets/logo-filled.png" title="XFinance" message="Системд нэвтрэх" />
       <form onSubmit={handleLogin} className={styles.form}>
         <Text size={500} weight="semibold" align="center" style={{ marginBottom: '8px' }}>
           Нэвтрэх

@@ -16,14 +16,14 @@ import {
 } from "@fluentui/react-components";
 import {
   EditRegular,
-  SaveRegular,
   CheckmarkCircle24Regular,
   DismissCircle24Regular,
   AddRegular,
   ArrowClockwise16Regular,
 } from "@fluentui/react-icons";
 import { useAppContext } from "./AppContext";
-import { withLoading } from "../apiHelpers";
+import { ACTION_CODES } from "../utils/actionCodes";
+import { withLoading, getUserSetting } from "../apiHelpers";
 import { BASE_URL } from "../../config";
 
 const useStyles = makeStyles({
@@ -41,7 +41,7 @@ const useStyles = makeStyles({
     width: "100%",
   },
   table: {
-    width: "auto",
+    width: "100%",
     marginBottom: "16px",
     tableLayout: "fixed",
     "& td, & th": {
@@ -65,13 +65,11 @@ const useStyles = makeStyles({
   },
 });
 
-// Check for sensitive keys to mask them
-const isSensitiveKey = (key) =>
-  ["khanbank_password", "access_token", "device_token", "refresh_token", "car_token"].includes(key);
-
 const SettingsPage = ({ isSidebarOpen }) => {
   const styles = useStyles();
-  const { selectedCompany, showMessage, setLoading, settings, fetchSettings, loading } = useAppContext();
+  const { selectedCompany, showMessage, setLoading, settings, fetchSettings, loading, hasAction } = useAppContext();
+  
+  const canEditSettings = hasAction && hasAction(ACTION_CODES.EDIT_SETTINGS);
     // Confirm dialog state for delete
   const [deleteId, setDeleteId] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -81,6 +79,25 @@ const SettingsPage = ({ isSidebarOpen }) => {
   const [editValue, setEditValue] = useState("");
   const [newSetting, setNewSetting] = useState({ name: "", value: "" });
   const [showNewInput, setShowNewInput] = useState(false);
+  const [sensitiveKeys, setSensitiveKeys] = useState([]);
+
+  // Load sensitive keys from user settings (admin can manage `isSensitiveKey` user setting)
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const val = await getUserSetting("isSensitiveKey");
+        const keys = val
+          ? val.split(",").map((k) => k.trim()).filter(Boolean)
+          : [];
+        if (mounted) setSensitiveKeys(keys);
+      } catch (err) {
+        if (mounted) setSensitiveKeys([]);
+      }
+    };
+    load();
+    return () => { mounted = false; };
+  }, []);
 
   useEffect(() => {
     if (selectedCompany) {
@@ -136,8 +153,7 @@ const handleDeleteConfirmed = async (confirmed) => {
   });
   setDeleteId(null);
 };
-  {/* Confirm dialog for delete */}
-  <ConfirmationDialog isOpen={showDeleteConfirm} onClose={handleDeleteConfirmed} />
+
   const handleRefresh = () => {
     showMessage("Тохиргоог дахин ачааллаж байна...");
     fetchSettings(true);
@@ -145,7 +161,7 @@ const handleDeleteConfirmed = async (confirmed) => {
 
   const handleEdit = (row) => {
     setEditId(row.id);
-    setEditValue(isSensitiveKey(row.name) ? "" : row.value);
+    setEditValue(sensitiveKeys.includes(row.name) ? "" : row.value);
   };
 
   const handleSave = async (id) => {
@@ -198,7 +214,7 @@ const handleDeleteConfirmed = async (confirmed) => {
         transition: "margin-left 0.3s ease-in-out",
       }}
     >
-      <ConfirmationDialog isOpen={showDeleteConfirm} onClose={handleDeleteConfirmed} />
+      <ConfirmationDialog isOpen={showDeleteConfirm} onClose={handleDeleteConfirmed} message="Та энэ тохиргоог устгахдаа итгэлтэй байна уу?" />
       {!selectedCompany ? (
         <h2>⚠️ Компани сонгогдоогүй байна. Профайл хуудаснаас сонгоно уу.</h2>
       ) : (
@@ -234,7 +250,7 @@ const handleDeleteConfirmed = async (confirmed) => {
             </TabList>
           )}
           <div className={styles.tableContainer}>
-            <Table className={styles.table} style={{ width: "auto" }}>
+            <Table className={styles.table} style={{ width: "100%" }}>
               <TableHeader>
                 <TableRow>
                   <TableHeaderCell style={{ width: "120px", padding: "2px" }}>Нэр</TableHeaderCell>
@@ -251,12 +267,12 @@ const handleDeleteConfirmed = async (confirmed) => {
                         <Input
                           fluid
                           value={editValue}
-                          placeholder={isSensitiveKey(row.name) ? "Шинэ утга оруулна уу" : ""}
+                          placeholder={sensitiveKeys.includes(row.name) ? "Шинэ утга оруулна уу" : ""}
                           onChange={(e, data) => setEditValue(data.value)}
                         />
                       ) : (
                         <span
-                          title={isSensitiveKey(row.name) ? "********" : row.value}
+                          title={sensitiveKeys.includes(row.name) ? "********" : row.value}
                           style={{
                             whiteSpace: "nowrap",
                             overflow: "hidden",
@@ -265,7 +281,7 @@ const handleDeleteConfirmed = async (confirmed) => {
                             display: "inline-block",
                           }}
                         >
-                          {isSensitiveKey(row.name) ? "********" : row.value}
+                          {sensitiveKeys.includes(row.name) ? "********" : row.value}
                         </span>
                       )}
                     </TableCell>
@@ -273,7 +289,12 @@ const handleDeleteConfirmed = async (confirmed) => {
                       {editId === row.id ? (
                         <>
                           <Tooltip content="Хадгалах" relationship="label">
-                            <Button icon={<CheckmarkCircle24Regular />} onClick={() => handleSave(row.id)} />
+                            <Button 
+                              icon={<CheckmarkCircle24Regular />} 
+                              onClick={() => handleSave(row.id)}
+                              disabled={!canEditSettings}
+                              title={!canEditSettings ? "Та энэ үйлдлийг хийх эрхгүй байна" : ""}
+                            />
                           </Tooltip>
                           <Tooltip content="Болих" relationship="label">
                             <Button icon={<DismissCircle24Regular />} onClick={() => setEditId(null)} />
@@ -282,10 +303,21 @@ const handleDeleteConfirmed = async (confirmed) => {
                       ) : (
                         <>
                           <Tooltip content="Засах" relationship="label">
-                            <Button icon={<EditRegular />} onClick={() => handleEdit(row)} />
+                            <Button 
+                              icon={<EditRegular />} 
+                              onClick={() => handleEdit(row)}
+                              disabled={!canEditSettings}
+                              title={!canEditSettings ? "Та энэ үйлдлийг хийх эрхгүй байна" : ""}
+                            />
                           </Tooltip>
                           <Tooltip content="Устгах" relationship="label">
-                            <Button icon={<DismissCircle24Regular />} onClick={() => handleDelete(row.id)} appearance="subtle" />
+                            <Button 
+                              icon={<DismissCircle24Regular />} 
+                              onClick={() => handleDelete(row.id)} 
+                              appearance="subtle"
+                              disabled={!canEditSettings}
+                              title={!canEditSettings ? "Та энэ үйлдлийг хийх эрхгүй байна" : ""}
+                            />
                           </Tooltip>
                         </>
                       )}
@@ -296,7 +328,13 @@ const handleDeleteConfirmed = async (confirmed) => {
             </Table>
           </div>
 
-          <Button appearance="primary" icon={<AddRegular />} onClick={() => setShowNewInput(!showNewInput)}>
+          <Button 
+            appearance="primary" 
+            icon={<AddRegular />} 
+            onClick={() => setShowNewInput(!showNewInput)}
+            disabled={!canEditSettings}
+            title={!canEditSettings ? "Та энэ үйлдлийг хийх эрхгүй байна" : ""}
+          >
             {showNewInput ? "Болих" : "Шинэ тохиргоо"}
           </Button>
 
@@ -306,13 +344,20 @@ const handleDeleteConfirmed = async (confirmed) => {
                 placeholder="Нэр"
                 value={newSetting.name}
                 onChange={(e, data) => setNewSetting({ ...newSetting, name: data.value })}
+                disabled={!canEditSettings}
               />
               <Input
                 placeholder="Утга"
                 value={newSetting.value}
                 onChange={(e, data) => setNewSetting({ ...newSetting, value: data.value })}
+                disabled={!canEditSettings}
               />
-              <Button appearance="primary" onClick={handleAdd}>
+              <Button 
+                appearance="primary" 
+                onClick={handleAdd}
+                disabled={!canEditSettings}
+                title={!canEditSettings ? "Та энэ үйлдлийг хийх эрхгүй байна" : ""}
+              >
                 Хадгалах
               </Button>
             </div>

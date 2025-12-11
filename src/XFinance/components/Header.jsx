@@ -4,11 +4,15 @@ import PropTypes from "prop-types";
 import { Image, tokens, makeStyles, Button, Badge, Menu, MenuTrigger, MenuPopover, MenuList, MenuItem, MenuDivider } from "@fluentui/react-components";
 import { PersonRegular, BuildingRegular, SignOutRegular, SettingsRegular } from "@fluentui/react-icons";
 import { useAppContext } from "./AppContext";
+import { BASE_URL } from "../../config";
 
 const useStyles = makeStyles({
   headerContainer: {
-    position: "relative",
-    
+    position: "fixed",
+    top: "0",
+    left: "0",
+    right: "0",
+    zIndex: 1000,
     backgroundColor: tokens.colorNeutralBackground3,
     paddingTop: "8px",
     paddingBottom: "8px",
@@ -82,18 +86,50 @@ const useStyles = makeStyles({
   },
 });
 
-const Header = ({ title, logo, message, isPublic, onNavigateToLogin, currentUser, onNavigateToProfile, isSidebarOpen = false }) => {
+const Header = ({ title, logo, message, isPublic, onNavigateToLogin, currentUser, onNavigateToProfile, onNavigateToSettings, isSidebarOpen = false }) => {
   const styles = useStyles();
-  const { companies, selectedCompany, setSelectedCompany, logout } = useAppContext();
+  const { companies, selectedCompany, setSelectedCompany, selectedRoleId, setSelectedRoleId, logout } = useAppContext();
+  const [userRoles, setUserRoles] = useState([]);
 
   // Detect environment
   const isLocalHost = typeof window !== "undefined" && /^localhost$|^127(\.\d+){3}$/.test(window.location.hostname);
   const isDevelopment = isLocalHost || (typeof window !== "undefined" && window.location.port === "3000");
 
+  // Fetch user roles
+  useEffect(() => {
+    if (currentUser && currentUser.id) {
+      fetchUserRoles(currentUser.id);
+    }
+  }, [currentUser]);
+
+  const fetchUserRoles = async (userId) => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(`${BASE_URL}/api/users/${userId}/roles`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const roles = await response.json();
+        setUserRoles(roles);
+        // If no role selected yet, select the first one
+        if (!selectedRoleId && roles.length > 0) {
+          handleRoleChange(roles[0].id);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching user roles:", err);
+    }
+  };
+
   const handleCompanyChange = (company) => {
     if (company) {
       setSelectedCompany(company.name);
     }
+  };
+
+  const handleRoleChange = (roleId) => {
+    setSelectedRoleId(roleId);
+    localStorage.setItem('selectedRoleId', roleId.toString());
   };
 
   const handleLogout = () => {
@@ -149,9 +185,39 @@ const Header = ({ title, logo, message, isPublic, onNavigateToLogin, currentUser
                 
                 <MenuDivider />
                 
+                {/* Тохиргооны холбоос */}
+                {onNavigateToSettings && (
+                  <MenuItem onClick={onNavigateToSettings} icon={<SettingsRegular />} className={styles.menuItem}>
+                    Тохиргоо
+                  </MenuItem>
+                )}
+                
+                {/* Ажил үүргүүд */}
+                {userRoles && userRoles.length > 0 && (
+                  <>
+                    <MenuDivider />
+                    <MenuItem disabled icon={<PersonRegular />} className={styles.menuItem}>
+                      Ажил үүрэг солих
+                    </MenuItem>
+                    {userRoles.map((role) => (
+                      <MenuItem
+                        key={role.id}
+                        onClick={() => handleRoleChange(role.id)}
+                        className={styles.companyMenuItem}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {selectedRoleId === role.id && <span>✓</span>}
+                          <span>{role.name}</span>
+                        </div>
+                      </MenuItem>
+                    ))}
+                  </>
+                )}
+                
                 {/* Компаниуд */}
                 {companies && companies.length > 0 && (
                   <>
+                    <MenuDivider />
                     <MenuItem disabled icon={<BuildingRegular />} className={styles.menuItem}>
                       Компани солих
                     </MenuItem>
@@ -167,7 +233,6 @@ const Header = ({ title, logo, message, isPublic, onNavigateToLogin, currentUser
                         </div>
                       </MenuItem>
                     ))}
-                    <MenuDivider />
                   </>
                 )}
                 
@@ -194,6 +259,7 @@ Header.propTypes = {
   onNavigateToLogin: PropTypes.func,
   currentUser: PropTypes.object,
   onNavigateToProfile: PropTypes.func,
+  onNavigateToSettings: PropTypes.func,
   isSidebarOpen: PropTypes.bool,
 };
 

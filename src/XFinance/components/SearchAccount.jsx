@@ -27,7 +27,8 @@ const SearchAccount = ({ isOpen, onClose, onSelect }) => {
       setHoveredRow(null);
       fetchSearchData(false);
     }
-  }, [isOpen, fetchSearchData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   const handleRefresh = () => {
     trackSearch("refresh", activeTab);

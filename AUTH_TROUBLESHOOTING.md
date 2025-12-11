@@ -1,71 +1,71 @@
-# Authentication Error Troubleshooting Guide
+# Нэвтрэх Эрхийн Алдаа Засварлах Гарын Авлага
 
-## Error: 403 Forbidden - "Access token required" on `/api/companies`
+## Алдаа: 403 Forbidden - "Access token required" `/api/companies` дээр
 
-### Causes:
-1. **JWT_SECRET Mismatch** - The secret used to sign the token doesn't match the secret used to verify it
-2. **Missing Environment Variable** - JWT_SECRET not set in production (Vercel)
-3. **Inconsistent Fallback Values** - Different files using different default secrets
+### Шалтгаанууд:
+1. **JWT_SECRET таарахгүй байна** - Токен үүсгэхэд ашигласан нууц түлхүүр, шалгахад ашиглаж байгаатай таарахгүй байна
+2. **Орчны хувьсагч байхгүй** - JWT_SECRET production орчинд (Vercel) тохируулаагүй байна
+3. **Өөр өөр нөөц утгууд** - Файлууд өөр өөр default secret ашиглаж байна
 
-### Solution:
+### Шийдэл:
 
-#### Step 1: Check Local Environment
+#### Алхам 1: Локал орчныг шалгах
 ```bash
-# In backend/.env or root/.env.local, ensure:
+# backend/.env эсвэл root/.env.local файлд:
 JWT_SECRET=your-very-secret-key
 ```
 
-#### Step 2: Verify All Backend Files Use Same Secret
-Files that should use JWT_SECRET:
-- ✓ `backend/routes/auth.js` - line 10
-- ✓ `backend/middleware/authenticateToken.js` - line 2
-- ✓ `backend/routes/user-settings.js` - line 7
-- ✓ `backend/logger.js` - line 80
+#### Алхам 2: Backend файлууд ижил secret ашиглаж байгааг баталгаажуулах
+JWT_SECRET ашиглах ёстой файлууд:
+- ✓ `backend/routes/auth.js` - мөр 10
+- ✓ `backend/middleware/authenticateToken.js` - мөр 2
+- ✓ `backend/routes/user-settings.js` - мөр 7
+- ✓ `backend/logger.js` - мөр 80
 
-All should use: `process.env.JWT_SECRET || 'your-very-secret-key'`
+Бүгд: `process.env.JWT_SECRET || 'your-very-secret-key'` ашиглах ёстой
 
-#### Step 3: Set JWT_SECRET in Vercel (if deploying to production)
-1. Go to: https://vercel.com/dashboard → Project → Settings → Environment Variables
-2. Add:
-   - **Name**: `JWT_SECRET`
-   - **Value**: Your secret (must match what you use locally for testing)
-   - **Environments**: Production, Preview, Development
-3. Redeploy: `vercel --prod`
+#### Алхам 3: Vercel дээр JWT_SECRET тохируулах (production руу deploy хийвэл)
+1. Очих: https://vercel.com/dashboard → Project → Settings → Environment Variables
+2. Нэмэх:
+   - **Нэр**: `JWT_SECRET`
+   - **Утга**: Таны нууц түлхүүр (локал дээрх утгатай ижил байх ёстой)
+   - **Орчнууд**: Production, Preview, Development
+3. Дахин deploy хийх: `vercel --prod`
 
-#### Step 4: Test Login Flow
-1. Login with credentials
-2. Check browser DevTools → Application → LocalStorage → `authToken`
-3. Token should be present after successful login
-4. API calls should include `Authorization: Bearer <token>` header
+#### Алхам 4: Нэвтрэх процессыг турших
+1. Нэвтрэх эрхээр нэвтрэх
+2. Хөтөч DevTools → Application → LocalStorage → `authToken` шалгах
+3. Амжилттай нэвтэрсний дараа токен байх ёстой
+4. API дуудлага `Authorization: Bearer <token>` header агуулсан байх ёстой
 
-## Error: 401 Unauthorized on `/api/user-settings`
+## Алдаа: 401 Unauthorized `/api/user-settings` дээр
 
-### Causes:
-Same as 403 error above - JWT token is invalid or not being sent.
+### Шалтгаанууд:
+Дээрх 403 алдаатай адил - JWT токен буруу эсвэл илгээгдээгүй байна.
 
-### Check:
-1. Is localStorage storing the token? (DevTools → Application → LocalStorage)
-2. Is the token being sent in API headers? (DevTools → Network → Headers)
-3. Is JWT_SECRET consistent across all files?
+### Шалгах:
+1. localStorage токен хадгалсан уу? (DevTools → Application → LocalStorage)
+2. Токен API headers дээр илгээгдсэн үү? (DevTools → Network → Headers)
+3. JWT_SECRET бүх файлд нэгэн адил байгаа юу?
 
-## Quick Debug Checklist:
-- [ ] JWT_SECRET set in `.env` or `.env.local`
-- [ ] JWT_SECRET set in Vercel environment variables (for production)
-- [ ] All backend files use `'your-very-secret-key'` as fallback
-- [ ] Token is stored in localStorage after login
-- [ ] Token is sent in Authorization header for API calls
-- [ ] Frontend has refreshed after backend changes
-- [ ] Backend has been redeployed after environment changes
+## Хурдан Алдаа Шалгах Жагсаалт:
+- [ ] JWT_SECRET `.env` эсвэл `.env.local` дээр тохируулсан
+- [ ] JWT_SECRET Vercel орчны хувьсагчид тохируулсан (production-д)
+- [ ] Бүх backend файлууд `'your-very-secret-key'` fallback ашиглаж байгаа
+- [ ] Токен нэвтрэсний дараа localStorage-д хадгалагдсан
+- [ ] Токен Authorization header дээр API дуудлагад илгээгдсэн
+- [ ] Backend өөрчлөлтийн дараа frontend refresh хийгдсэн
+- [ ] Орчны өөрчлөлтийн дараа backend дахин deploy хийгдсэн
 
-## Files Modified to Fix This Issue:
-- ✓ `backend/routes/user-settings.js` - Fixed JWT_SECRET fallback
-- ✓ `backend/middleware/authenticateToken.js` - Fixed JWT_SECRET fallback
-- ✓ `backend/routes/auth.js` - Added warning for production
-- ✓ `backend/logger.js` - Fixed JWT_SECRET fallback
-- ✓ Created `ENVIRONMENT_VARIABLES.md` - Configuration guide
+## Энэ асуудлыг засахын тулд өөрчилсөн файлууд:
+- ✓ `backend/routes/user-settings.js` - JWT_SECRET fallback засварласан
+- ✓ `backend/middleware/authenticateToken.js` - JWT_SECRET fallback засварласан
+- ✓ `backend/routes/auth.js` - Production-д анхааруулга нэмсэн
+- ✓ `backend/logger.js` - JWT_SECRET fallback засварласан
+- ✓ `ENVIRONMENT_VARIABLES.md` үүсгэсэн - Тохиргооны гарын авлага
 
-## Next Steps:
-1. Commit these changes to git
-2. Redeploy to Vercel with JWT_SECRET environment variable set
-3. Test login and API calls
-4. Monitor backend logs for JWT verification errors
+## Дараагийн алхамууд:
+1. Эдгээр өөрчлөлтүүдийг git руу commit хийх
+2. JWT_SECRET орчны хувьсагчтай Vercel руу дахин deploy хийх
+3. Нэвтрэх болон API дуудлагуудыг турших
+4. Backend logs дээр JWT баталгаажуулалтын алдаануудыг хянах

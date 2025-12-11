@@ -1530,7 +1530,7 @@ export async function fetchPolarisCustomerList(setMessage, setLoading, filters =
 
       const {
         status = ['1'],
-        page = 0,
+        page = 2000,
         pageSize = 1000
       } = filters;
 

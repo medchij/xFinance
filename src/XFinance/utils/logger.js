@@ -60,7 +60,35 @@ class Logger {
       level: level.toUpperCase(),
       message,
       data,
+      // Browser environment info
+      browser: navigator.userAgent,
+      url: window.location.href,
+      // Session info
+      sessionId: sessionStorage.getItem('sessionId') || 'unknown'
     };
+
+    // Error object бол stack trace нэмэх
+    if (data instanceof Error) {
+      logEntry.error = {
+        name: data.name,
+        message: data.message,
+        stack: data.stack,
+        cause: data.cause
+      };
+      logEntry.data = null; // Error-ийг error field-д шилжүүлсэн
+    }
+    // Error-тэй object бол stack авах
+    else if (data && typeof data === 'object' && data.error instanceof Error) {
+      logEntry.error = {
+        name: data.error.name,
+        message: data.error.message,
+        stack: data.error.stack,
+        cause: data.error.cause
+      };
+      // data-аас error-ийг салгаж бусад мэдээллийг үлдээх
+      const { error, ...restData } = data;
+      logEntry.data = Object.keys(restData).length > 0 ? restData : null;
+    }
 
     // Keep logs in memory
     this.logs.push(logEntry);
@@ -189,6 +217,36 @@ class Logger {
 
 // Create singleton instance
 const logger = new Logger();
+
+// Global error handlers - бүх catch хийгдээгүй алдааг барих
+if (typeof window !== 'undefined') {
+  // Unhandled JavaScript errors
+  window.addEventListener('error', (event) => {
+    logger.error('Uncaught Error', {
+      error: event.error,
+      message: event.message,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno
+    });
+  });
+
+  // Unhandled Promise rejections
+  window.addEventListener('unhandledrejection', (event) => {
+    logger.error('Unhandled Promise Rejection', {
+      error: event.reason,
+      promise: String(event.promise)
+    });
+  });
+
+  // React error boundary дээрээс ирэх алдаа
+  window.logReactError = (error, errorInfo) => {
+    logger.error('React Component Error', {
+      error: error,
+      componentStack: errorInfo?.componentStack
+    });
+  };
+}
 
 // Export default instance
 export default logger;

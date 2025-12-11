@@ -3,6 +3,7 @@ const router = express.Router();
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
+const db = require('../db');
 
 // In-memory log storage (for demo purposes)
 let logs = [];
@@ -34,14 +35,37 @@ router.post('/', async (req, res) => {
     const logEntry = req.body;
     
     // Add server timestamp
-  logEntry.serverTimestamp = new Date().toISOString();
-  logEntry.source = 'combined';
+    logEntry.serverTimestamp = new Date().toISOString();
+    logEntry.source = 'combined';
     
     // Store in memory
     logs.push(logEntry);
     if (logs.length > MAX_LOGS) {
       logs.shift(); // Remove oldest log
     }
+    
+    // Write to database - TEMPORARILY DISABLED
+    // try {
+    //   const query = `
+    //     INSERT INTO logs (timestamp, level, message, user_id, data, stack_trace, source, created_at)
+    //     VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+    //   `;
+    //   
+    //   const values = [
+    //     logEntry.timestamp || logEntry.serverTimestamp,
+    //     logEntry.level || 'info',
+    //     logEntry.message || '',
+    //     logEntry.userId || logEntry.user_id || null,
+    //     logEntry.data ? JSON.stringify(logEntry.data) : null,
+    //     logEntry.stack || logEntry.stackTrace || null,
+    //     logEntry.source || 'frontend'
+    //   ];
+    //   
+    //   await db.query(query, values);
+    // } catch (dbErr) {
+    //   console.warn('Database logging error:', dbErr?.message || dbErr);
+    //   // Continue even if DB fails
+    // }
     
     // Write to file (best-effort; skip if FS not writable)
     try {

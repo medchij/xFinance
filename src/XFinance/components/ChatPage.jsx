@@ -141,7 +141,7 @@ const useStyles = makeStyles({
   },
 });
 
-const ChatPage = () => {
+const ChatPage = ({ isSidebarOpen = false }) => {
   const classes = useStyles();
   const { showMessage } = useAppContext();
   const fileInputRef = useRef(null);
@@ -330,7 +330,13 @@ const ChatPage = () => {
   };
 
   return (
-    <div className={classes.container}>
+    <div 
+      className={classes.container}
+      style={{
+        marginLeft: isSidebarOpen ? 180 : 50,
+        transition: "margin-left 0.3s ease-in-out",
+      }}
+    >
       <div className={classes.header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <DocumentText24Regular />

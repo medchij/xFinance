@@ -1,5 +1,6 @@
 import React from "react";
 import { ActivityTracker } from "../utils/activityTracker";
+import logger from "../utils/logger";
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -20,6 +21,13 @@ class ErrorBoundary extends React.Component {
       stack: error.stack,
       componentStack: errorInfo?.componentStack || "No component stack available",
       timestamp: new Date().toISOString(),
+    });
+
+    // Log to enhanced logger with full stack trace
+    logger.error("React Component Error", {
+      error: error,
+      componentStack: errorInfo?.componentStack,
+      componentName: this.props.name || 'Unknown Component'
     });
 
     this.setState({

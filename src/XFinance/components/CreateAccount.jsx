@@ -3,10 +3,15 @@ import { useAppContext } from "./AppContext";
 import { BASE_URL } from "../../config";
 import { useActivityTracking } from "../hooks/useActivityTracking";
 import { withModalTracking, withFormTracking } from "./ActivityTrackingHOC";
+import { ACTION_CODES } from "../utils/actionCodes";
 
 const CreateAccount = ({ isOpen, onClose }) => {
-  const { showMessage, setLoading, selectedCompany, fetchSearchData } = useAppContext();
+  const { showMessage, setLoading, selectedCompany, fetchSearchData, hasAction } = useAppContext();
   const { trackFormStart, trackFieldChange, trackSubmit, trackApiCall, trackError } = useActivityTracking('CreateAccount');
+  
+  // Check permission
+  const canCreateAccount = hasAction && hasAction(ACTION_CODES.CREATE_ACCOUNT);
+  
   const [edd, setEdd] = useState("");
   const [dansniiNer, setDansniiNer] = useState("");
   const [currency, setCurrency] = useState("");
@@ -288,7 +293,16 @@ const CreateAccount = ({ isOpen, onClose }) => {
           />
         </div>
         <div style={styles.buttonRow}>
-          <button style={styles.submitButton} onClick={handleCreate}>
+          <button
+            style={{
+              ...styles.submitButton,
+              opacity: canCreateAccount ? 1 : 0.5,
+              cursor: canCreateAccount ? "pointer" : "not-allowed",
+            }}
+            onClick={handleCreate}
+            disabled={!canCreateAccount}
+            title={!canCreateAccount ? "Та энэ үйлдлийг хийх эрхгүй байна" : ""}
+          >
             Данс үүсгэх
           </button>
           <button style={styles.cancelButton} onClick={handleClose}>

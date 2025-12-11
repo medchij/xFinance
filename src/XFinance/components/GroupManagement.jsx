@@ -14,6 +14,7 @@ import {
 import { Add24Regular, Edit24Regular, Delete24Regular } from "@fluentui/react-icons";
 import { useAppContext } from "./AppContext";
 import { BASE_URL } from "../../config";
+import { ACTION_CODES } from "../utils/actionCodes";
 
 const GroupForm = lazy(() => import(/* webpackChunkName: "admin-group-form" */ "./GroupForm"));
 
@@ -42,7 +43,13 @@ const useStyles = makeStyles({
 
 const GroupManagement = () => {
   const styles = useStyles();
-  const { showMessage, setLoading } = useAppContext();
+  const { showMessage, setLoading, hasAction } = useAppContext();
+  
+  // Check permissions
+  const canCreateGroup = hasAction && hasAction(ACTION_CODES.CREATE_GROUP);
+  const canEditGroup = hasAction && hasAction(ACTION_CODES.EDIT_GROUP);
+  const canDeleteGroup = hasAction && hasAction(ACTION_CODES.DELETE_GROUP);
+  
   const [groups, setGroups] = useState([]);
   const [isFormOpen, setFormOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -119,7 +126,13 @@ const GroupManagement = () => {
     <div className={styles.root}>
       <div className={styles.header}>
         <h2 className={styles.title}>Хэрэглэгчийн бүлгийн удирдлага</h2>
-        <Button icon={<Add24Regular />} appearance="primary" onClick={handleAddGroup}>
+        <Button
+          icon={<Add24Regular />}
+          appearance="primary"
+          onClick={handleAddGroup}
+          disabled={!canCreateGroup}
+          title={!canCreateGroup ? "Та энэ үйлдлийг хийх эрхгүй байна" : ""}
+        >
           Шинэ бүлэг
         </Button>
       </div>
@@ -139,8 +152,20 @@ const GroupManagement = () => {
               <TableCell>{group.description}</TableCell>
               <TableCell>
                 <div className={styles.actionCell}>
-                  <Button icon={<Edit24Regular />} aria-label="Засах" onClick={() => handleEditGroup(group)} />
-                  <Button icon={<Delete24Regular />} aria-label="Устгах" onClick={() => handleDeleteGroup(group.id)} />
+                  <Button
+                    icon={<Edit24Regular />}
+                    aria-label="Засах"
+                    onClick={() => handleEditGroup(group)}
+                    disabled={!canEditGroup}
+                    title={!canEditGroup ? "Та энэ үйлдлийг хийх эрхгүй байна" : ""}
+                  />
+                  <Button
+                    icon={<Delete24Regular />}
+                    aria-label="Устгах"
+                    onClick={() => handleDeleteGroup(group.id)}
+                    disabled={!canDeleteGroup}
+                    title={!canDeleteGroup ? "Та энэ үйлдлийг хийх эрхгүй байна" : ""}
+                  />
                 </div>
               </TableCell>
             </TableRow>

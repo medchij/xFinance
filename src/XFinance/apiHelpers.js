@@ -2,6 +2,7 @@ import { BASE_URL } from "../config";
 import { getAuthToken } from "../config/token";
 import { ActivityTracker } from "./utils/activityTracker";
 import logger from "./utils/logger";
+import performanceMonitor from "./utils/performanceMonitor";
 
 // Initialize activity tracker for API helpers
 const activityTracker = ActivityTracker.getInstance();
@@ -43,12 +44,26 @@ export async function withLoading(setLoading, setMessage, fn, functionName = nul
 // ЗАСВАР: externalAPI.js-д ашиглахын тулд company_id-аар дууддаг хувилбарыг сэргээв.
 export async function loadSettings(company_id) {
   if (!company_id) throw new Error("⚠️ Тохиргоог ачаалахын тулд компани ID шаардлагатай.");
-  const res = await fetch(`${BASE_URL}/api/settings?company_id=${company_id}`);
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.message || "⚠️ Тохиргоог татаж чадсангүй.");
+  
+  const startTime = performance.now();
+  const url = `${BASE_URL}/api/settings?company_id=${company_id}`;
+  
+  try {
+    const res = await fetch(url);
+    const duration = performance.now() - startTime;
+    
+    performanceMonitor.trackApiCall(url, 'GET', duration, res.status);
+    
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || "⚠️ Тохиргоог татаж чадсангүй.");
+    }
+    return await res.json();
+  } catch (error) {
+    const duration = performance.now() - startTime;
+    performanceMonitor.trackApiCall(url, 'GET', duration, null, error.message);
+    throw error;
   }
-  return await res.json();
 }
 
 export function getSettingValue(settings, name) {

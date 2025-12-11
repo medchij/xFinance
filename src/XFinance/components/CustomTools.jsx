@@ -221,15 +221,17 @@ const CustomTools = ({ isSidebarOpen }) => {
       style={{
         display: "flex",
         flexDirection: isNarrowScreen ? "column" : "row",
-        alignItems: "stretch",
-        justifyContent: "flex-start",
+        alignItems: "flex-start",
+        justifyContent: "center",
+        gap: isNarrowScreen ? 12 : 20,
         minHeight: "100vh",
         backgroundColor: "#f3f4f6",
         maxWidth: "100%",
         overflowX: "hidden",
         boxSizing: "border-box",
-        marginLeft: isSidebarOpen ? 180 : 50,
-        transition: "margin-left 0.3s ease-in-out",
+        padding: "12px 16px",
+        paddingLeft: isSidebarOpen ? 196 : 56,
+        transition: "padding-left 0.3s ease-in-out",
       }}
     >
       {activeModal === "AccountDateDialog" && (
@@ -251,11 +253,12 @@ const CustomTools = ({ isSidebarOpen }) => {
           borderRight: isNarrowScreen ? "none" : "2px solid #ccc",
           minHeight: "calc(100vh - 20px)",
           marginBottom: isNarrowScreen ? "0" : "0",
-          marginRight: isNarrowScreen ? "0" : "16px",
+          marginRight: isNarrowScreen ? "0" : "0",
           order: isNarrowScreen ? 2 : 0,
           maxWidth: "100%",
           overflowX: "hidden",
           boxSizing: "border-box",
+          //margin: isNarrowScreen ? "0 auto" : "0",
         }}
       >
         <Calculator />
@@ -274,6 +277,7 @@ const CustomTools = ({ isSidebarOpen }) => {
           flexDirection: "column",
           alignItems: "center",
           order: isNarrowScreen ? 1 : 0,
+          //margin: isNarrowScreen ? "0 auto" : "0",
         }}
       >
         {groupedTools.map((group, groupIndex) => (

@@ -8,9 +8,17 @@ import { useAppContext } from "./AppContext";
 import logger from "../utils/logger"; // Logger import нэмэх
 import { fetchCurrencyRatesByAPI } from "../externalAPI"; // API функц import
 import { getLastEmptyRowInColumn } from "../xFinance"; // B баганы сүүлийн мөр олох функц
+import { ACTION_CODES } from "../utils/actionCodes";
 
 const TransactionModal = ({ isOpen, onClose }) => {
-  const { showMessage, currentUser } = useAppContext(); // currentUser нэмэх
+  const { showMessage, currentUser, hasAction } = useAppContext(); // currentUser нэмэх
+  
+  // Check permissions for transaction actions
+  const canCreateTransaction = hasAction && hasAction(ACTION_CODES.CREATE_TRANSACTION);
+  const canSubmitTransaction = hasAction && hasAction(ACTION_CODES.SUBMIT_TRANSACTION);
+  const canApproveTransaction = hasAction && hasAction(ACTION_CODES.APPROVE_TRANSACTION);
+  const canRejectTransaction = hasAction && hasAction(ACTION_CODES.REJECT_TRANSACTION);
+  
   const [transactionDate, setTransactionDate] = useState("");
   const [debitAccount, setDebitAccount] = useState("");
   const [creditAccount, setCreditAccount] = useState("");
@@ -646,7 +654,12 @@ const TransactionModal = ({ isOpen, onClose }) => {
           </Field>
 
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-            <Button appearance="primary" onClick={handleSubmit}>
+            <Button
+              appearance="primary"
+              onClick={handleSubmit}
+              disabled={!canSubmitTransaction}
+              title={!canSubmitTransaction ? "Та энэ үйлдлийг хийх эрхгүй байна" : ""}
+            >
               Гүйлгээ хийх
             </Button>
             <Button onClick={onClose}>Болих</Button>

@@ -107,6 +107,14 @@ const sendPasswordResetEmail = async (to, resetToken, userName) => {
     return { success: true };
   } catch (error) {
     console.error('❌ Error sending email:', error);
+    
+    // Development орчинд имэйл илгээхэд алдаа гарсан ч token-ийг буцаах
+    // Ингэснээр password reset үргэлжилж чадна
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('⚠️ Development mode: Email not sent, but returning success with token');
+      return { success: true, testMode: true, token: resetToken, emailError: error.message };
+    }
+    
     throw new Error('Имэйл илгээхэд алдаа гарлаа');
   }
 };

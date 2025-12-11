@@ -15,6 +15,7 @@ import {
   TableHeaderCell,
   TableRow,
   Tooltip,
+  makeStyles,
 } from "@fluentui/react-components";
 import { 
   ArrowClockwise16Regular, 
@@ -27,8 +28,51 @@ import {
   DismissCircle24Regular,
 } from "@fluentui/react-icons";
 import { useAppContext } from "./AppContext";
+import ConfirmationDialog from "./ConfirmationDialog";
+
+const useStyles = makeStyles({
+  container: {
+    padding: "12px",
+    minHeight: "100vh",
+    boxSizing: "border-box",
+    backgroundColor: tokens.colorNeutralBackground1,
+  },
+  card: {
+    background: "#fff",
+    padding: "16px",
+    borderRadius: "8px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+    marginBottom: "12px",
+    maxWidth: "100%",
+    boxSizing: "border-box",
+  },
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "12px",
+    flexWrap: "wrap",
+    gap: "8px",
+  },
+  title: {
+    fontSize: "18px",
+    margin: 0,
+  },
+  tableContainer: {
+    overflowX: "auto",
+    width: "100%",
+    marginBottom: "16px",
+  },
+  newSettingRow: {
+    display: "flex",
+    gap: "10px",
+    marginTop: "16px",
+    alignItems: "flex-end",
+  },
+});
 
 const Profile = ({ isSidebarOpen }) => {
+  const styles = useStyles();
   const {
     currentUser,
     selectedCompany,
@@ -56,6 +100,8 @@ const Profile = ({ isSidebarOpen }) => {
   const [showNewInput, setShowNewInput] = useState(false);
   const [newSetting, setNewSetting] = useState({ key: "", value: "" });
   const [editKey, setEditKey] = useState(null);
+  const [deleteKey, setDeleteKey] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -145,28 +191,60 @@ const Profile = ({ isSidebarOpen }) => {
       console.log('🔵 Token:', token ? 'байна' : 'алга');
       
       if (token) {
-        console.log('🔵 API дуудаж байна:', `${BASE_URL}/api/user-settings/batch`);
-        const response = await fetch(`${BASE_URL}/api/user-settings/batch`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify(settings),
-        });
-
-        console.log('🔵 Response status:', response.status);
+        // Зөвхөн өөрчлөгдсөн key-үүдийг олох
+        const changedKeys = Object.keys(settings).filter(
+          key => settings[key] !== originalSettings[key]
+        );
         
-        if (response.ok) {
-          const result = await response.json();
-          console.log('✅ Амжилттай хадгалагдлаа:', result);
-          setOriginalSettings(settings);
+        console.log('🔵 Өөрчлөгдсөн key-үүд:', changedKeys);
+        
+        let savedCount = 0;
+        let errorCount = 0;
+        
+        // Өөрчлөгдсөн бүрийг нэг бүрчлэн хадгалах
+        for (const key of changedKeys) {
+          try {
+            const response = await fetch(`${BASE_URL}/api/user-settings`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+              },
+              body: JSON.stringify({ 
+                setting_key: key, 
+                setting_value: String(settings[key]) 
+              }),
+            });
+
+            if (response.ok) {
+              savedCount++;
+            } else {
+              errorCount++;
+              console.error(`❌ ${key} хадгалахад алдаа:`, response.status);
+            }
+          } catch (err) {
+            errorCount++;
+            console.error(`❌ ${key} хадгалахад алдаа:`, err);
+          }
+        }
+        
+        if (errorCount === 0) {
+          console.log(`✅ ${savedCount} тохиргоо амжилттай хадгалагдлаа`);
+          // originalSettings-г шинэчлэх - энэ нь hasChanges-г false болгоно
+          const updatedSettings = { ...settings };
+          setOriginalSettings(updatedSettings);
           setHasChanges(false);
-          showMessage('✅ Тохиргоонууд амжилттай хадгалагдлаа!');
+          showMessage(`✅ ${savedCount} тохиргоо амжилттай хадгалагдлаа!`);
         } else {
-          const errorText = await response.text();
-          console.error('❌ Server алдаа:', response.status, errorText);
-          showMessage('⚠️ Тохиргоо хадгалахад алдаа гарлаа.');
+          showMessage(`⚠️ ${savedCount} амжилттай, ${errorCount} алдаатай.`, 'warning');
+          // Амжилттай хадгалагдсан key-үүдийг originalSettings-д нэмэх
+          const updatedOriginal = { ...originalSettings };
+          changedKeys.forEach(key => {
+            if (settings[key] !== originalSettings[key]) {
+              updatedOriginal[key] = settings[key];
+            }
+          });
+          setOriginalSettings(updatedOriginal);
         }
       } else {
         console.warn('⚠️ Token олдсонгүй');
@@ -188,7 +266,7 @@ const Profile = ({ isSidebarOpen }) => {
     showMessage('🔄 Өөрчлөлтүүд цуцлагдлаа.');
   };
 
-  const handleAddNewSetting = () => {
+  const handleAddNewSetting = async () => {
     if (!newSetting.key.trim() || !newSetting.value.trim()) {
       showMessage('⚠️ Түлхүүр болон утга шаардлагатай.', 'warning');
       return;
@@ -199,12 +277,36 @@ const Profile = ({ isSidebarOpen }) => {
       return;
     }
 
-    const newSettings = { ...settings, [newSetting.key]: newSetting.value };
-    setSettings(newSettings);
-    localStorage.setItem('userSettings', JSON.stringify(newSettings));
-    setNewSetting({ key: "", value: "" });
-    setShowNewInput(false);
-    showMessage('✅ Шинэ тохиргоо нэмэгдлээ.');
+    try {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        // Шууд POST API дуудах
+        const response = await fetch(`${BASE_URL}/api/user-settings`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ setting_key: newSetting.key, setting_value: newSetting.value }),
+        });
+
+        if (response.ok) {
+          // Амжилттай нэмэгдсэн бол local state шинэчлэх
+          const newSettings = { ...settings, [newSetting.key]: newSetting.value };
+          setSettings(newSettings);
+          setOriginalSettings(newSettings);
+          localStorage.setItem('userSettings', JSON.stringify(newSettings));
+          setNewSetting({ key: "", value: "" });
+          setShowNewInput(false);
+          showMessage('✅ Шинэ тохиргоо амжилттай нэмэгдлээ.');
+        } else {
+          showMessage('⚠️ Тохиргоо нэмэхэд алдаа гарлаа.', 'error');
+        }
+      }
+    } catch (error) {
+      console.error('Тохиргоо нэмэх алдаа:', error);
+      showMessage('❌ Сервертэй холбогдож чадсангүй.', 'error');
+    }
   };
 
   const handleDeleteSetting = (key) => {
@@ -213,19 +315,80 @@ const Profile = ({ isSidebarOpen }) => {
       showMessage('⚠️ Үндсэн тохиргоог устгах боломжгүй.', 'warning');
       return;
     }
-
-    const newSettings = { ...settings };
-    delete newSettings[key];
-    setSettings(newSettings);
-    localStorage.setItem('userSettings', JSON.stringify(newSettings));
-    showMessage('🗑️ Тохиргоо устгагдлаа.');
+    
+    // Баталгаажуулалт харуулах
+    setDeleteKey(key);
+    setShowDeleteConfirm(true);
   };
 
-  const handleEditSetting = (key, value) => {
-    const newSettings = { ...settings, [key]: value };
-    setSettings(newSettings);
-    localStorage.setItem('userSettings', JSON.stringify(newSettings));
-    setEditKey(null);
+  const handleDeleteConfirmed = async (confirmed) => {
+    setShowDeleteConfirm(false);
+    if (!confirmed || !deleteKey) {
+      setDeleteKey(null);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        // Шууд DELETE API дуудах
+        const response = await fetch(`${BASE_URL}/api/user-settings/${deleteKey}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          // Амжилттай устгагдсан бол local state-г шинэчлэх
+          const newSettings = { ...settings };
+          delete newSettings[deleteKey];
+          setSettings(newSettings);
+          setOriginalSettings(newSettings);
+          localStorage.setItem('userSettings', JSON.stringify(newSettings));
+          showMessage('✅ Тохиргоо амжилттай устгагдлаа.');
+        } else {
+          showMessage('⚠️ Тохиргоо устгахад алдаа гарлаа.', 'error');
+        }
+      }
+    } catch (error) {
+      console.error('Тохиргоо устгах алдаа:', error);
+      showMessage('❌ Сервертэй холбогдож чадсангүй.', 'error');
+    } finally {
+      setDeleteKey(null);
+    }
+  };
+
+  const handleEditSetting = async (key, value) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        // Шууд POST API дуудах (single update)
+        const response = await fetch(`${BASE_URL}/api/user-settings`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ setting_key: key, setting_value: String(value) }),
+        });
+
+        if (response.ok) {
+          // Амжилттай хадгалагдсан бол local state шинэчлэх
+          const newSettings = { ...settings, [key]: value };
+          setSettings(newSettings);
+          setOriginalSettings(newSettings);
+          localStorage.setItem('userSettings', JSON.stringify(newSettings));
+          setEditKey(null);
+          showMessage('✅ Тохиргоо амжилттай хадгалагдлаа.');
+        } else {
+          showMessage('⚠️ Тохиргоо хадгалахад алдаа гарлаа.', 'error');
+        }
+      }
+    } catch (error) {
+      console.error('Тохиргоо засах алдаа:', error);
+      showMessage('❌ Сервертэй холбогдож чадсангүй.', 'error');
+    }
   };
 
   const getSettingDisplayValue = (key, value) => {
@@ -259,34 +422,23 @@ const Profile = ({ isSidebarOpen }) => {
 
   return (
     <div
+      className={styles.container}
       style={{
-        flexGrow: 1,
-        backgroundColor: tokens.colorNeutralBackground1,
-        minHeight: "100vh",
         marginLeft: isSidebarOpen ? 180 : 50,
         transition: "margin-left 0.3s ease-in-out",
-        display: "flex",
-        flexDirection: "column",
-        padding: "12px",
-        maxWidth: "100%",
-        overflowX: "hidden",
-        boxSizing: "border-box",
       }}
     >
+      {/* Устгах баталгаажуулалт */}
+      <ConfirmationDialog 
+        isOpen={showDeleteConfirm} 
+        onClose={handleDeleteConfirmed}
+        message="Та энэ тохиргоог устгахдаа итгэлтэй байна уу?"
+      />
+      
       {/* Компани сонгох хэсэг */}
-      <div
-        style={{
-          background: "#fff",
-          padding: "16px",
-          borderRadius: "8px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          marginBottom: "12px",
-          maxWidth: "100%",
-          boxSizing: "border-box",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
-          <h2 style={{ fontSize: "18px", margin: 0 }}>Компани Сонголт</h2>
+      <div className={styles.card}>
+        <div className={styles.header}>
+          <h2 className={styles.title}>Компани Сонголт</h2>
           <Button
             icon={<ArrowClockwise16Regular />}
             appearance="subtle"
@@ -320,21 +472,11 @@ const Profile = ({ isSidebarOpen }) => {
       </div>
 
       {/* Системийн ерөнхий тохиргоо */}
-      <div
-        style={{
-          background: "#fff",
-          padding: "16px",
-          borderRadius: "8px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          maxWidth: "100%",
-          boxSizing: "border-box",
-          overflowX: "hidden",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <Settings24Regular style={{ marginRight: "8px" }} />
-            <h2 style={{ fontSize: "18px", margin: 0 }}>Системийн Ерөнхий Тохиргоо</h2>
+      <div className={styles.card}>
+        <div className={styles.header}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Settings24Regular />
+            <h2 className={styles.title}>Системийн Ерөнхий Тохиргоо</h2>
           </div>
           <Button 
             appearance="primary" 
@@ -347,41 +489,28 @@ const Profile = ({ isSidebarOpen }) => {
 
         {/* Шинэ тохиргоо нэмэх хэсэг */}
         {showNewInput && (
-          <div style={{ 
-            marginBottom: "16px", 
-            padding: "12px", 
-            backgroundColor: tokens.colorNeutralBackground2,
-            borderRadius: "8px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "12px",
-          }}>
-            <Field label="Түлхүүр нэр" style={{ width: "100%" }}>
-              <Input
-                placeholder="Жишээ: polaris_nessession"
-                value={newSetting.key}
-                onChange={(_, data) => setNewSetting({ ...newSetting, key: data.value })}
-              />
-            </Field>
-            <Field label="Утга" style={{ width: "100%" }}>
-              <Input
-                placeholder="Утга оруулна уу"
-                value={newSetting.value}
-                onChange={(_, data) => setNewSetting({ ...newSetting, value: data.value })}
-              />
-            </Field>
+          <div className={styles.newSettingRow}>
+            <Input
+              placeholder="Түлхүүр нэр (жишээ: polaris_nessession)"
+              value={newSetting.key}
+              onChange={(_, data) => setNewSetting({ ...newSetting, key: data.value })}
+            />
+            <Input
+              placeholder="Утга"
+              value={newSetting.value}
+              onChange={(_, data) => setNewSetting({ ...newSetting, value: data.value })}
+            />
             <Button 
               appearance="primary" 
               onClick={handleAddNewSetting}
-              style={{ alignSelf: "flex-start" }}
             >
-              Нэмэх
+              Хадгалах
             </Button>
           </div>
         )}
 
         {/* Тохиргоо хүснэгт */}
-        <div style={{ marginBottom: "16px", overflowX: "auto", overflowY: "visible", maxWidth: "100%" }}>
+        <div className={styles.tableContainer}>
           <h3 style={{ marginBottom: "12px", fontSize: "16px" }}>📋 Бүх тохиргоо</h3>
           <Table style={{ width: "100%", tableLayout: "fixed" }}>
             <TableHeader>
@@ -406,18 +535,65 @@ const Profile = ({ isSidebarOpen }) => {
                   </TableCell>
                   <TableCell style={{ verticalAlign: "middle" }}>
                     {editKey === key ? (
-                      <Input
-                        value={typeof value === 'boolean' ? String(value) : String(value)}
-                        onChange={(_, data) => {
-                          const newValue = key === 'emailNotifications' || key === 'autoSync' 
-                            ? data.value === 'true' 
-                            : key === 'sessionTimeout' 
-                            ? parseInt(data.value) || 30
-                            : data.value;
-                          setSettings({ ...settings, [key]: newValue });
-                        }}
-                        style={{ width: "100%" }}
-                      />
+                      <>
+                        {key === 'language' ? (
+                          <Dropdown
+                            value={value === 'mn' ? 'Монгол' : 'English'}
+                            onOptionSelect={(_, data) => {
+                              setSettings({ ...settings, [key]: data.optionValue });
+                            }}
+                            style={{ width: "100%" }}
+                          >
+                            <Option value="mn">🇲🇳 Монгол</Option>
+                            <Option value="en">🇬🇧 English</Option>
+                          </Dropdown>
+                        ) : key === 'currency' ? (
+                          <Dropdown
+                            value={value}
+                            onOptionSelect={(_, data) => {
+                              setSettings({ ...settings, [key]: data.optionValue });
+                            }}
+                            style={{ width: "100%" }}
+                          >
+                            <Option value="MNT">₮ MNT</Option>
+                            <Option value="USD">$ USD</Option>
+                            <Option value="EUR">€ EUR</Option>
+                          </Dropdown>
+                        ) : key === 'theme' ? (
+                          <Dropdown
+                            value={value === 'light' ? 'Гэрэл' : 'Харанхуй'}
+                            onOptionSelect={(_, data) => {
+                              setSettings({ ...settings, [key]: data.optionValue });
+                            }}
+                            style={{ width: "100%" }}
+                          >
+                            <Option value="light">☀️ Гэрэл</Option>
+                            <Option value="dark">🌙 Харанхуй</Option>
+                          </Dropdown>
+                        ) : key === 'emailNotifications' || key === 'autoSync' ? (
+                          <Dropdown
+                            value={value ? 'Тийм' : 'Үгүй'}
+                            onOptionSelect={(_, data) => {
+                              setSettings({ ...settings, [key]: data.optionValue === 'true' });
+                            }}
+                            style={{ width: "100%" }}
+                          >
+                            <Option value="true">✅ Тийм</Option>
+                            <Option value="false">❌ Үгүй</Option>
+                          </Dropdown>
+                        ) : (
+                          <Input
+                            value={typeof value === 'boolean' ? String(value) : String(value)}
+                            onChange={(_, data) => {
+                              const newValue = key === 'sessionTimeout' 
+                                ? parseInt(data.value) || 30
+                                : data.value;
+                              setSettings({ ...settings, [key]: newValue });
+                            }}
+                            style={{ width: "100%" }}
+                          />
+                        )}
+                      </>
                     ) : (
                       <span style={{ 
                         display: "block",
@@ -516,7 +692,7 @@ const Profile = ({ isSidebarOpen }) => {
         )}
 
         {/* Системээс гарах */}
-        <div style={{ borderTop: `1px solid ${tokens.colorNeutralStroke1}`, paddingTop: "16px" }}>
+        <div style={{ marginTop: "16px" }}>
           <h3 style={{ marginBottom: "8px", fontSize: "16px" }}>🚪 Системээс гарах</h3>
           <p style={{ marginBottom: "12px", color: tokens.colorNeutralForeground3, fontSize: "14px" }}>
             Та системээс гарч, нэвтрэх хуудас руу шилжих болно.

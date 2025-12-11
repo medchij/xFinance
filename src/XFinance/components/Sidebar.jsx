@@ -20,6 +20,7 @@ import SearchAccount from "./SearchAccount";
 import SheetSelectorDialog from "./SheetSelectorDialog";
 import { writeToImportSheet, handleFileImport, loadXLSX } from "../xFinance";
 import { useAppContext } from "./AppContext";
+import { ACTION_CODES } from "../utils/actionCodes";
 
 const SidebarItem = ({ icon, text, isOpen, onClick }) => (
   <li style={{ width: "100%", marginBottom: "4px" }}>
@@ -49,7 +50,7 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage, onOpenLogViewer }) => {
   const [sheetData, setSheetData] = useState();
   const [selectedSheet, setSelectedSheet] = useState(null);
 
-  const { setLoading, showMessage, hasPermission } = useAppContext();
+  const { setLoading, showMessage, hasPermission, hasAction } = useAppContext();
 
   const menuItems = [
     { icon: <Home24Regular />, text: "Нүүр хуудас", action: () => setActivePage("Maincontent") },
@@ -61,7 +62,7 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage, onOpenLogViewer }) => {
       icon: <ShieldKeyhole24Regular />,
       text: "Админ",
       action: () => setActivePage("admin"),
-      permission: "view_admin_page",
+      requiredAction: ACTION_CODES.VIEW_ADMIN_PAGE,
     },
     { icon: <Settings24Regular />, text: "Settings", action: () => setActivePage("settings") },
     { icon: <DocumentText24Regular />, text: "Лог харах", action: () => onOpenLogViewer && onOpenLogViewer() },
@@ -149,7 +150,7 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage, onOpenLogViewer }) => {
 
           {menuItems.map(
             (item, index) =>
-              (!item.permission || hasPermission(item.permission)) && (
+              (!item.requiredAction || hasAction(item.requiredAction)) && (
                 <SidebarItem key={index} icon={item.icon} text={item.text} isOpen={isOpen} onClick={item.action} />
               )
           )}

@@ -63,7 +63,10 @@ router.post('/', extractUserId, async (req, res) => {
 
     res.status(200).json(rows[0]);
   } catch (error) {
-    console.error('Тохиргоо хадгалах алдаа:', error);
+    console.error('❌ Тохиргоо хадгалах алдаа:', error.message);
+    console.error('Stack:', error.stack);
+    console.error('Request body:', req.body);
+    console.error('User ID:', req.userId);
     res.status(500).json({ message: 'Тохиргоо хадгалах явцад алдаа гарлаа.' });
   }
 });
@@ -77,32 +80,44 @@ router.put('/batch', extractUserId, async (req, res) => {
   }
 
   try {
-    let savedCount = 0;
+    // 1. Өмнөх бүх тохиргоог авах
+    const existingSettings = await query(
+      'SELECT setting_key FROM user_settings WHERE user_id = $1',
+      [req.userId]
+    );
     
-    for (const [key, value] of Object.entries(settings)) {
-      // Эхлээд байгаа эсэхийг шалгах
-      const checkResult = await query(
-        'SELECT id FROM user_settings WHERE user_id = $1 AND setting_key = $2',
+    const existingKeys = existingSettings.rows.map(row => row.setting_key);
+    const newKeys = Object.keys(settings);
+    
+    // 2. Устгах ёстой key-үүдийг олох (өмнө байсан гэхдээ одоо байхгүй)
+    const keysToDelete = existingKeys.filter(key => !newKeys.includes(key));
+    
+    // 3. Устгах key-үүдийг устгах
+    for (const key of keysToDelete) {
+      await query(
+        'DELETE FROM user_settings WHERE user_id = $1 AND setting_key = $2',
         [req.userId, key]
       );
-
-      if (checkResult.rows.length > 0) {
-        // Шинэчлэх
-        await query(
-          'UPDATE user_settings SET setting_value = $1, updated_at = NOW() WHERE user_id = $2 AND setting_key = $3',
-          [String(value), req.userId, key]
-        );
-      } else {
-        // Нэмэх
-        await query(
-          'INSERT INTO user_settings (user_id, setting_key, setting_value, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW())',
-          [req.userId, key, String(value)]
-        );
-      }
+    }
+    
+    // 4. Шинэ/шинэчлэх key-үүдийг хадгалах
+    let savedCount = 0;
+    for (const [key, value] of Object.entries(settings)) {
+      await query(
+        `INSERT INTO user_settings (user_id, setting_key, setting_value, created_at, updated_at)
+         VALUES ($1, $2, $3, NOW(), NOW())
+         ON CONFLICT (user_id, setting_key)
+         DO UPDATE SET setting_value = $3, updated_at = NOW()`,
+        [req.userId, key, String(value)]
+      );
       savedCount++;
     }
 
-    res.status(200).json({ message: 'Бүх тохиргоо амжилттай хадгалагдлаа.', count: savedCount });
+    res.status(200).json({ 
+      message: 'Бүх тохиргоо амжилттай хадгалагдлаа.', 
+      saved: savedCount,
+      deleted: keysToDelete.length 
+    });
   } catch (error) {
     console.error('Batch тохиргоо хадгалах алдаа:', error);
     res.status(500).json({ message: 'Тохиргоо хадгалах явцад алдаа гарлаа.' });

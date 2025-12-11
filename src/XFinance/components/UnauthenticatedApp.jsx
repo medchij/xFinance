@@ -16,7 +16,7 @@ const UnauthenticatedApp = ({ onLogin, onCompanySelect }) => {
   };
 
   return (
-    <div className="unauth-container">
+    <div className="unauth-container" style={{ paddingTop: showLogin ? "0px" : "56px" }}>
       {showLogin ? (
         <LoginPage onLogin={onLogin} onCompanySelect={onCompanySelect} onNavigateToPublic={handleNavigateToPublic} />
       ) : (

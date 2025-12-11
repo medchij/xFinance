@@ -1,13 +1,20 @@
 import React, { useState } from "react";
 import { useAppContext } from "./AppContext";
 import { BASE_URL } from "../../config";
+import { ACTION_CODES } from "../utils/actionCodes";
 
 const CreateCustomer = ({ isOpen, onClose }) => {
-  const { showMessage, setLoading, selectedCompany, fetchSearchData } = useAppContext();
+  const { showMessage, setLoading, selectedCompany, fetchSearchData, hasAction } = useAppContext();
+  const canCreateCustomer = hasAction && hasAction(ACTION_CODES.CREATE_CUSTOMER);
+  
   const [name, setName] = useState("");
   const [status, setStatus] = useState("Идэвхитэй");
 
   const handleCreate = async () => {
+    if (!canCreateCustomer) {
+      showMessage("Та энэ үйлдлийг хийх эрхгүй байна", "warning");
+      return;
+    }
     if (!selectedCompany) {
       showMessage("⚠️ Эхлээд компани сонгоно уу.");
       return;
@@ -107,7 +114,16 @@ const CreateCustomer = ({ isOpen, onClose }) => {
         </div>
 
         <div style={styles.buttonRow}>
-          <button style={styles.submitButton} onClick={handleCreate}>
+          <button
+            style={{
+              ...styles.submitButton,
+              opacity: canCreateCustomer ? 1 : 0.5,
+              cursor: canCreateCustomer ? "pointer" : "not-allowed",
+            }}
+            onClick={handleCreate}
+            disabled={!canCreateCustomer}
+            title={!canCreateCustomer ? "Та энэ үйлдлийг хийх эрхгүй байна" : ""}
+          >
             Хадгалах
           </button>
           <button style={styles.cancelButton} onClick={handleClose}>

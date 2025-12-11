@@ -76,7 +76,7 @@ const AuthenticatedApp = ({ title }) => {
   const pageProps = pages[activePage]?.props || {};
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", paddingTop: "56px" }}>
       {/* Header бүх хуудсанд */}
       <Header
         logo="assets/logo-filled.png"

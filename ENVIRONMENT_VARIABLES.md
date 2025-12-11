@@ -1,65 +1,65 @@
-# Environment Variables Configuration
+# Орчны Хувьсагчдын Тохиргоо
 
-## Critical: JWT_SECRET
+## Чухал: JWT_SECRET
 
-The `JWT_SECRET` environment variable is **CRITICAL** for authentication to work. This secret is used to:
-- Sign JWT tokens during login (`/api/auth/login`)
-- Verify JWT tokens on API requests
+`JWT_SECRET` орчны хувьсагч нь нэвтрэх эрхийн баталгаажуулалтад **МАШ ЧУХАЛ**. Энэ нууц түлхүүр:
+- Нэвтрэх үед JWT токен үүсгэхэд ашиглагдана (`/api/auth/login`)
+- API хүсэлт дээр JWT токен шалгахад ашиглагдана
 
-### Issues:
+### Асуудлууд:
 
-If `JWT_SECRET` is not consistent across all files or not set in production:
-- ✗ 403 Forbidden error on `/api/companies` 
-- ✗ 401 Unauthorized error on `/api/user-settings`
-- ✗ Users cannot log in or access API endpoints
+Хэрэв `JWT_SECRET` бүх файлд нэгэн адил биш эсвэл production орчинд тохируулаагүй бол:
+- ✗ `/api/companies` дээр 403 Forbidden алдаа гарна
+- ✗ `/api/user-settings` дээр 401 Unauthorized алдаа гарна
+- ✗ Хэрэглэгчид нэвтрэх эсвэл API ашиглах боломжгүй болно
 
-### Solution:
+### Шийдэл:
 
-#### For Local Development:
-1. Ensure `.env.local` exists in the project root with:
+#### Локал хөгжүүлэлтэд:
+1. Төслийн үндсэн хавтаст `.env.local` файл байгаа эсэхийг шалгана уу:
    ```
    JWT_SECRET=your-very-secret-key
    ```
-2. The backend will load this from `backend/.env` or the root `.env.local`
+2. Backend `backend/.env` эсвэл үндсэн `.env.local` файлаас уншина
 
-#### For Vercel Production:
-1. Go to Vercel Dashboard → Project Settings → Environment Variables
-2. Add a new variable:
-   - **Name**: `JWT_SECRET`
-   - **Value**: Generate a strong secret (at least 32 characters)
-     - Example: `openssl rand -base64 32`
-   - **Environments**: Select all (Production, Preview, Development)
-3. Redeploy your application for the changes to take effect
+#### Vercel Production-д:
+1. Vercel Dashboard → Project Settings → Environment Variables руу орно уу
+2. Шинэ хувьсагч нэмнэ:
+   - **Нэр**: `JWT_SECRET`
+   - **Утга**: Хүчтэй нууц үүсгэнэ (дор хаяж 32 тэмдэгт)
+     - Жишээ: `openssl rand -base64 32`
+   - **Орчнууд**: Бүгдийг сонгоно (Production, Preview, Development)
+3. Өөрчлөлтүүдийг идэвхжүүлэхийн тулд дахин deploy хийнэ
 
-#### Security Recommendations:
-- **DO NOT** commit the JWT_SECRET to GitHub
-- Use a strong, random secret in production (minimum 32 characters)
-- Never use the default value `'your-very-secret-key'` in production
-- Rotate JWT_SECRET if compromised
-- Keep JWT_SECRET secret and never share it
+#### Аюулгүй байдлын зөвлөмжүүд:
+- **БИТГИЙ** JWT_SECRET-г GitHub руу commit хийгээрэй
+- Production орчинд хүчтэй, санамсаргүй нууц ашиглана уу (доод тал нь 32 тэмдэгт)
+- Production орчинд хэзээ ч `'your-very-secret-key'` анхдагч утгыг бүү ашигла
+- Хэрэв JWT_SECRET задруулсан бол шинэчилнэ
+- JWT_SECRET-г нууцалж, хэнтэй ч битгий хуваалц
 
-### Files That Use JWT_SECRET:
-- `backend/routes/auth.js` - Signs tokens
-- `backend/middleware/authenticateToken.js` - Verifies tokens
-- `backend/routes/user-settings.js` - Verifies tokens
+### JWT_SECRET ашигладаг файлууд:
+- `backend/routes/auth.js` - Токен үүсгэнэ
+- `backend/middleware/authenticateToken.js` - Токен шалгана
+- `backend/routes/user-settings.js` - Токен шалгана
 
-All three files MUST use the same JWT_SECRET value.
+Гурван файл бүгд ИЖИЛ JWT_SECRET утга ашиглах ЁСТОЙ.
 
-## Other Environment Variables
+## Бусад Орчны Хувьсагчид
 
-### Database:
-- `DATABASE_URL` - PostgreSQL connection string (already configured in `.env`)
+### Өгөгдлийн сан:
+- `DATABASE_URL` - PostgreSQL холболтын мөр (`.env` дээр аль хэдийн тохируулагдсан)
 
-### Email Service:
-- `EMAIL_USER` - Gmail or email service username
-- `EMAIL_PASS` - Email service password or app-specific password
-- `FRONTEND_URL` - Frontend URL for password reset links
+### Имэйл үйлчилгээ:
+- `EMAIL_USER` - Gmail эсвэл имэйл үйлчилгээний хэрэглэгчийн нэр
+- `EMAIL_PASS` - Имэйл үйлчилгээний нууц үг эсвэл програмын нууц үг
+- `FRONTEND_URL` - Нууц үг сэргээх холбоосонд зориулсан frontend URL
 
-### Frontend (if needed):
-- `NEXT_PUBLIC_*` - Variables prefixed with `NEXT_PUBLIC_` are exposed to browser
+### Frontend (шаардлагатай бол):
+- `NEXT_PUBLIC_*` - `NEXT_PUBLIC_` угтвар бүхий хувьсагчид хөтөч рүү дамжина
 
-## Testing:
-To verify JWT_SECRET is working:
-1. Login with valid credentials → Should receive a token
-2. Copy the token and test an API call with Authorization header
-3. If 403 or 401 errors appear, JWT_SECRET mismatch or not set
+## Тестлэх:
+JWT_SECRET ажиллаж байгааг баталгаажуулах:
+1. Зөв нэвтрэх эрхээр нэвтрэх → Токен авах ёстой
+2. Токеныг хуулж Authorization header-тэй API дуудлага туршина
+3. Хэрэв 403 эсвэл 401 алдаа гарвал, JWT_SECRET таарахгүй эсвэл тохируулаагүй байна

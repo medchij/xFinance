@@ -6,6 +6,20 @@ const crypto = require('crypto');
 const db = require('../db');
 const { sendPasswordResetEmail } = require('../services/emailService');
 
+// Ensure password_reset_tokens table exists (idempotent)
+async function ensurePasswordResetTable() {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token VARCHAR(255) NOT NULL UNIQUE,
+      expires_at TIMESTAMP NOT NULL,
+      used BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+}
+
 // JWT Secret - CRITICAL: Must be set in .env.local or Vercel environment variables
 const JWT_SECRET = process.env.JWT_SECRET || 'your-very-secret-key';
 
@@ -217,6 +231,9 @@ router.post('/forgot-password', async (req, res) => {
   }
 
   try {
+    // Make sure the reset token table exists (safe to run repeatedly)
+    await ensurePasswordResetTable();
+
     // Хэрэглэгч байгаа эсэхийг шалгах
     const userResult = await db.query(
       'SELECT id, username, email, full_name FROM users WHERE email = $1',
@@ -256,8 +273,13 @@ router.post('/forgot-password', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Forgot password error:', error);
-    res.status(500).json({ message: 'Нууц үг сэргээх хүсэлт илгээхэд алдаа гарлаа' });
+    console.error('❌ Forgot password error:', error);
+    console.error('   Stack:', error.stack);
+    console.error('   Message:', error.message);
+    res.status(500).json({ 
+      message: 'Нууц үг сэргээх хүсэлт илгээхэд алдаа гарлаа',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 

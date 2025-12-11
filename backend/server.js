@@ -3,12 +3,18 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const { logger, requestLogger, logAPI } = require('./logger');
+// const logRotationService = require('./services/logRotationService');
 
 // Load environment variables from .env.local file in the root directory
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
 // Initialize database connection (and test it)
 require('./db.js');
+
+// Initialize log rotation service - TEMPORARILY DISABLED
+// logRotationService.initialize().catch(err => {
+//   console.error('Failed to initialize log rotation:', err);
+// });
 
 const app = express();
 
@@ -72,8 +78,30 @@ app.use('/api/roles', rolesRouter);
 const permissionsRouter = require('./routes/permissions');
 app.use('/api/permissions', permissionsRouter);
 
+const actionsRouter = require('./routes/actions');
+app.use('/api/actions', actionsRouter);
+
 const logsRouter = require('./routes/logs');
 app.use('/api/logs', logsRouter);
+
+// Log rotation admin endpoints - TEMPORARILY DISABLED
+// app.get('/api/logs/stats', async (req, res) => {
+//   try {
+//     const stats = await logRotationService.getLogStats();
+//     res.json(stats);
+//   } catch (error) {
+//     res.status(500).json({ error: 'Failed to get log stats' });
+//   }
+// });
+
+// app.post('/api/logs/cleanup', async (req, res) => {
+//   try {
+//     await logRotationService.forceCleanup();
+//     res.json({ message: 'Cleanup completed successfully' });
+//   } catch (error) {
+//     res.status(500).json({ error: 'Cleanup failed' });
+//   }
+// });
 
 const currencyRouter = require('./routes/currency');
 app.use('/api/currency', currencyRouter);

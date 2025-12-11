@@ -1,18 +1,18 @@
-# Fix Summary: Authentication Error (403/401)
+# Засварын Хураангуй: Нэвтрэх Эрхийн Алдаа (403/401)
 
-## Problem
-Users were receiving:
-- **403 Forbidden** on `/api/companies` with message "Access token required"
-- **401 Unauthorized** on `/api/user-settings`
+## Асуудал
+Хэрэглэгчид дараах алдаануудыг хүлээн авч байсан:
+- **403 Forbidden** `/api/companies` дээр "Access token required" мессежтэй
+- **401 Unauthorized** `/api/user-settings` дээр
 
-## Root Cause
-JWT_SECRET environment variable had **inconsistent fallback values** across different backend files:
-- `auth.js` used fallback: `'your-very-secret-key'`
-- `authenticateToken.js` used fallback: `'your-secret-key'`  ← **MISMATCH!**
-- `user-settings.js` used fallback: `'your-secret-key'`  ← **MISMATCH!**
-- `logger.js` used fallback: `'your-secret-key'`  ← **MISMATCH!**
+## Үндсэн шалтгаан
+JWT_SECRET орчны хувьсагч өөр өөр backend файлуудад **нийцэхгүй нөөц утгууд** ашигласан:
+- `auth.js` нөөц утга: `'your-very-secret-key'`
+- `authenticateToken.js` нөөц утга: `'your-secret-key'`  ← **ТААРАХГҮЙ!**
+- `user-settings.js` нөөц утга: `'your-secret-key'`  ← **ТААРАХГҮЙ!**
+- `logger.js` нөөц утга: `'your-secret-key'`  ← **ТААРАХГҮЙ!**
 
-When tokens were signed with one secret and verified with a different secret, JWT verification failed.
+Токенууд нэг нууцаар үүсгэгдэж, өөр нууцаар шалгагдсан тул JWT баталгаажуулалт амжилтгүй болсон.
 
 ## Changes Made
 
@@ -65,38 +65,38 @@ const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
 const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-very-secret-key');
 ```
 
-## Result
-Now all backend files consistently use the same JWT_SECRET fallback value, ensuring:
-- Tokens signed in `auth.js` can be verified in `authenticateToken.js`
-- User settings can be authenticated properly
-- Logging can decode JWT tokens correctly
+## Үр дүн
+Одоо бүх backend файлууд ижил JWT_SECRET нөөц утга ашиглаж байгаа нь:
+- `auth.js` дээр үүсгэсэн токенууд `authenticateToken.js` дээр шалгагдах боломжтой
+- Хэрэглэгчийн тохиргоо зөв баталгаажих боломжтой
+- Logging JWT токенуудыг зөв тайлж чадна
 
-## Deployment Instructions
+## Deploy хийх заавар
 
-### For Local Testing:
-1. Backend already has `JWT_SECRET=your-very-secret-key` in `.env`
-2. Just restart the backend: `npm run start:desktop` or `npm run dev-server`
+### Локал турших:
+1. Backend `.env` файлд аль хэдийн `JWT_SECRET=your-very-secret-key` байгаа
+2. Зүгээр л backend дахин эхлүүлнэ: `npm run start:desktop` эсвэл `npm run dev-server`
 
-### For Vercel Production:
-1. Generate a strong secret:
+### Vercel Production-д:
+1. Хүчтэй нууц үүсгэнэ:
    ```bash
    openssl rand -base64 32
    ```
-   Example output: `aBc+DeFgHijKlMnOpQrStUvWxYzAbCdEfGhIjKlMn+O=`
+   Жишээ гаралт: `aBc+DeFgHijKlMnOpQrStUvWxYzAbCdEfGhIjKlMn+O=`
 
-2. Add to Vercel Environment Variables:
-   - Go to: https://vercel.com/dashboard
-   - Select your project
+2. Vercel Орчны Хувьсагчид нэмнэ:
+   - Очих: https://vercel.com/dashboard
+   - Төслөө сонгох
    - Settings → Environment Variables
-   - Add new: `JWT_SECRET = <your-generated-secret>`
-   - Apply to: Production, Preview, Development
+   - Шинэ нэмэх: `JWT_SECRET = <таны-үүсгэсэн-нууц>`
+   - Хамааруулах: Production, Preview, Development
 
-3. Redeploy:
+3. Дахин deploy хийх:
    ```bash
    vercel --prod
    ```
 
-4. Verify in Vercel logs that the warning about default secret is gone
+4. Vercel logs дээр анхдагч нууцын тухай анхааруулга алга болсныг шалгах
 
 ## Testing Verification
 After deployment, verify the fix:

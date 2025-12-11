@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "./AppContext";
+import { ACTION_CODES } from "../utils/actionCodes";
 import { BASE_URL } from "../../config";
 
 const CreateGL = ({ isOpen, onClose }) => {
-  const { showMessage, setLoading, selectedCompany, fetchSearchData } = useAppContext();
+  const { showMessage, setLoading, selectedCompany, fetchSearchData, hasAction } = useAppContext();
+  
+  const canCreateAccount = hasAction && hasAction(ACTION_CODES.CREATE_ACCOUNT);
 
   const [dansniiNer, setDansniiNer] = useState("");
   const [edDugaar, setEdDugaar] = useState("");
@@ -201,7 +204,12 @@ const CreateGL = ({ isOpen, onClose }) => {
         </div>
 
         <div style={styles.buttonRow}>
-          <button style={styles.submitButton} onClick={handleCreate}>
+          <button 
+            style={{...styles.submitButton, opacity: canCreateAccount ? 1 : 0.5, cursor: canCreateAccount ? 'pointer' : 'not-allowed'}} 
+            onClick={handleCreate}
+            disabled={!canCreateAccount}
+            title={!canCreateAccount ? "Та энэ үйлдлийг хийх эрхгүй байна" : ""}
+          >
             Данс үүсгэх
           </button>
           <button style={styles.cancelButton} onClick={handleClose}>
