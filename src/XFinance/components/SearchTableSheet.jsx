@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {Button, Input, Checkbox, Switch } from "@fluentui/react-components";
-import { Search16Regular, ArrowSortUp16Regular, ArrowSortDown16Regular,ArrowUndoRegular,CheckmarkRegular } from "@fluentui/react-icons";
+import { Search16Regular, ArrowSortUp16Regular, ArrowSortDown16Regular,ArrowUndoRegular,CheckmarkRegular, ArrowClockwise16Regular } from "@fluentui/react-icons";
 import { getActiveCellFormula, setActiveCellValue } from "../xFinance";
 import { getSettingValue } from "../apiHelpers"; // ЗАСВАР: loadSettings-г устгав
 import { useAppContext } from "./AppContext";
@@ -262,6 +262,15 @@ const SearchTableSheet = ({ isOpen, onClose }) => {
             onChange={(_, d) => setSearchText(d.value)}
             style={{ flex: 1 }}
           />
+          <Button 
+            appearance="secondary" 
+            size="small"
+            icon={<ArrowClockwise16Regular />}
+            onClick={fetchDataFromSheet}
+            title="Дата шинэчлэх"
+          >
+            Шинэчлэх
+          </Button>
           <span style={{ marginLeft: 16 }}>Сонгосон мөрийг нуух</span>
           <Switch
             checked={hideSelected}

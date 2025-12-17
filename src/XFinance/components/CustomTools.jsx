@@ -115,9 +115,9 @@ const groupedTools = [
       { icon: <DocumentArrowLeft20Regular />, label: "PS Зээлийн зориулалт, хугацаа" },
       { icon: <PeopleList20Regular />, label: "Топ 40 зээлийн тайлан" },
       { icon: <ArrowSync20Regular />, label: "Зээлийн данс лавлах" },
-      { icon: <DocumentTableSearchRegular />, label: "Зээлийн жагсаалт татах" },
-      { icon: <DocumentTableSearchRegular />, label: "Харилцагчийн жагсаалт татах" },
-     
+      { icon: <DocumentData20Regular />, label: "Зээлийн жагсаалт татах" },
+      { icon: <PeopleList20Regular />, label: "Харилцагчийн жагсаалт татах" },
+      { icon: <PeopleList20Regular />, label: "Зээлийн Depo данс лавлах" },
     ],
   },
   {
@@ -187,6 +187,7 @@ const CustomTools = ({ isSidebarOpen }) => {
     "Зээлийн данс лавлах": () => pfns.fetchPolarisLoanData(showMessage, setLoading),
     "Зээлийн жагсаалт татах": () => pfns.fetchPolarisLoanList(showMessage, setLoading),
     "Харилцагчийн жагсаалт татах": () => pfns.fetchPolarisCustomerList(showMessage, setLoading),
+    "Зээлийн Depo данс лавлах": () => pfns.fetchPolarisDepoAccount(showMessage, setLoading),
     "ЕДД данс үүсгэх": () => setActiveModal("createGL"),
     "Данс үүсгэх": () => setActiveModal("createAccount"),
     "Харилцагч үүсгэх": () => setActiveModal("createCustomer"),

@@ -231,4 +231,59 @@ router.post("/customer-list", async (req, res) => {
   }
 });
 
+// Polaris NES API - Харилцагчийн зээлийн статус (NESFront 13050017)
+router.post("/loan-status", async (req, res) => {
+  try {
+    const { custCode, status = ["O", "N"], page = 0, pageSize = 25 } = req.body;
+    const companyId = req.company_id;
+
+    if (!custCode) {
+      return res.status(400).json({ error: "custCode шаардлагатай" });
+    }
+
+    const userId = getUserIdFromToken(req.headers['authorization']);
+    if (!userId) {
+      return res.status(401).json({ error: "Нэвтрэх шаардлагатай" });
+    }
+
+    const polarisConfig = await getPolarisConfig(userId, companyId);
+
+    console.log("🔍 Polaris loan-status хүсэлт:", {
+      userId,
+      custCode,
+      status,
+      page,
+      pageSize,
+      companyId,
+      apiUrl: polarisConfig.apiUrl,
+      company: polarisConfig.company,
+      nesSession: polarisConfig.nesSession.substring(0, 20) + "...",
+    });
+
+    const filterConditions = [
+      {
+        "_iField": "STATUS_SYS",
+        "_iOperation": "IN",
+        "_iType": 3,
+        "_inValues": status,
+      },
+      {
+        "_iField": "CUST_CODE",
+        "_iOperation": "=",
+        "_iValue": custCode,
+        "_iType": 3,
+      },
+    ];
+
+    const requestBody = [filterConditions, page, pageSize];
+    const data = await callPolarisApi(polarisConfig, "13050017", requestBody);
+    res.json(data);
+  } catch (error) {
+    console.error("Polaris loan-status алдаа:", error);
+    res.status(error.message.includes("нессession") ? 404 : 500).json({
+      error: error.message || "Серверийн алдаа",
+    });
+  }
+});
+
 module.exports = router;

@@ -1392,6 +1392,66 @@ export async function fetchPolarisLoanData(setMessage, setLoading) {
   });
 }
 
+// Polaris NES API-аас харилцагчийн зээлийн статус татах (acntCode-г clipboard рүү хуулна)
+// Polaris NES API-аас зээлийн Depo данс (acntCode) лавлах, clipboard руу хуулна
+export async function fetchPolarisDepoAccount(setMessage, setLoading) {
+  return withLoading(setLoading, setMessage, async () => {
+    await Excel.run(async (context) => {
+      setMessage("⏳ Polaris статус татаж байна...");
+
+      const activeCell = context.workbook.getSelectedRange();
+      activeCell.load("values");
+      await context.sync();
+
+      const customerCode = (activeCell.values[0][0] || "").toString().trim();
+      if (!customerCode) {
+        throw new Error("⚠️ Харилцагчийн код (CIF) идэвхтэй нүдэнд оруулна уу.");
+      }
+
+      // Backend proxy ашиглаж CORS болон credentials-ийг сервер талд шийднэ
+      const token = localStorage.getItem('authToken');
+      const companyId = getCompanyId();
+
+      const response = await fetch(`${BASE_URL}/api/polaris/loan-status`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+          "x-company-id": companyId,
+        },
+        body: JSON.stringify({ custCode: customerCode, status: ["O", "N"], page: 0, pageSize: 25 }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`❌ API хүсэлт амжилтгүй: ${response.status}. ${errorText.substring(0, 200)}`);
+      }
+
+      const parsedResult = await parseJsonSafe(response);
+
+      // Хариунаас acntCode-г олох (жагсаалтын эхний элемент)
+      let acntCode = "";
+      if (Array.isArray(parsedResult) && parsedResult.length > 0) {
+        acntCode = parsedResult[0]?.acntCode || parsedResult[0]?.ACNT_CODE || "";
+      } else if (typeof parsedResult === 'object' && parsedResult !== null) {
+        acntCode = parsedResult.acntCode || parsedResult.ACNT_CODE || "";
+      }
+
+      if (!acntCode) {
+        throw new Error("⚠️ API хариунаас acntCode олдсонгүй. Полноценный ответ: " + JSON.stringify(parsedResult).substring(0, 100));
+      }
+
+      // acntCode-г Clipboard рүү хуулна
+      await navigator.clipboard.writeText(acntCode);
+
+      setMessage(`✅ Данс код clipboard-т хуулагдлаа: ${acntCode}`);
+    });
+  });
+}
+
+// Backward compatibility alias (хуучин нэрийг дэмжинэ)
+export const fetchPolarisLoanStatus = fetchPolarisDepoAccount;
+
 /**
  * Polaris NES системээс зээлийн жагсаалт татах
  * @param {function} setMessage - Мэдэгдэл харуулах функц

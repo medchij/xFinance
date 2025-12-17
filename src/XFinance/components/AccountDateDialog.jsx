@@ -241,12 +241,82 @@ export default function AccountDateDialog({ open, onClose, onSearch }) {
                   onChange={(_, data) => setToDate(data.value)}
                   style={{ width: "140px", minWidth: "120px", flex: "0 1 140px" }}
                 />
-                
+              </div>
+              {/* Quick range buttons under date line */}
+              <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8, flexWrap: "wrap" }}>
+                <Button 
+                  appearance="secondary" 
+                  size="small"
+                  onClick={() => {
+                    const today = new Date().toISOString().split("T")[0];
+                    setFromDate(today);
+                    setToDate(today);
+                  }}
+                >
+                  Өнөөдөр
+                </Button>
+                <Button 
+                  appearance="secondary" 
+                  size="small"
+                  onClick={() => {
+                    const d = new Date();
+                    d.setDate(d.getDate() - 1);
+                    const y = d.toISOString().split("T")[0];
+                    setFromDate(y);
+                    setToDate(y);
+                  }}
+                >
+                  Өчигдөр
+                </Button>
+                <Button 
+                  appearance="secondary" 
+                  size="small"
+                  onClick={() => {
+                    const today = new Date();
+                    const toDateStr = today.toISOString().split("T")[0];
+                    const sevenDaysAgo = new Date(today);
+                    sevenDaysAgo.setDate(today.getDate() - 7);
+                    const fromDateStr = sevenDaysAgo.toISOString().split("T")[0];
+                    setFromDate(fromDateStr);
+                    setToDate(toDateStr);
+                  }}
+                >
+                  7 хоног
+                </Button>
+                <Button 
+                  appearance="secondary" 
+                  size="small"
+                  onClick={() => {
+                    const today = new Date();
+                    const toDateStr = today.toISOString().split("T")[0];
+                    const oneMonthAgo = new Date(today);
+                    oneMonthAgo.setMonth(today.getMonth() - 1);
+                    const fromDateStr = oneMonthAgo.toISOString().split("T")[0];
+                    setFromDate(fromDateStr);
+                    setToDate(toDateStr);
+                  }}
+                >
+                  1 сар
+                </Button>
+                <Button 
+                  appearance="secondary" 
+                  size="small"
+                  onClick={() => {
+                    const today = new Date();
+                    const toDateStr = today.toISOString().split("T")[0];
+                    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                    const fromDateStr = startOfMonth.toISOString().split("T")[0];
+                    setFromDate(fromDateStr);
+                    setToDate(toDateStr);
+                  }}
+                >
+                  Сарын эхнээс
+                </Button>
                 <Button 
                   appearance="primary" 
                   onClick={handleSearch}
                   icon={<Search20Regular />}
-                  style={{ minWidth: "40px", padding: "6px", flexShrink: 0 }}
+                  style={{ minWidth: "40px", padding: "6px" }}
                 />
               </div>
               {error && <div style={{ color: "#d32f2f", marginTop: 8, fontWeight: 500, fontSize: 13 }}>{error}</div>}
