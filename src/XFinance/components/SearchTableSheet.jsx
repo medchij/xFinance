@@ -29,8 +29,12 @@ const SearchTableSheet = ({ isOpen, onClose }) => {
     try {
       // ЗАСВАР: AppContext-ээс авсан settings-г шууд ашиглана
       if (settings.length === 0) {
-        showMessage("⚠️ Тохиргоо ачаалагдаагүй байна. Settings хуудсыг шалгана уу.", 0);
-        return;
+        await fetchSettings(true); // Cache хоосон бол settings-г хүчээр дахин татна
+
+        if (settings.length === 0) {
+          showMessage("⚠️ Тохиргоо ачаалагдаагүй байна. Settings хуудсыг шалгана уу.", 0);
+          return;
+        }
       }
 
       const sheetname = getSettingValue(settings, "sheetname");

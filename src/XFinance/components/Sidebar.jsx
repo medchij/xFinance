@@ -54,9 +54,9 @@ const Sidebar = ({ isOpen, toggleSidebar, setActivePage, onOpenLogViewer }) => {
 
   const menuItems = [
     { icon: <Home24Regular />, text: "Нүүр хуудас", action: () => setActivePage("Maincontent") },
+    { icon: <Wrench24Regular />, text: "Нэмэлтүүд", action: () => setActivePage("CustomTools") },
     { icon: <ArrowSwap24Regular />, text: "Гүйлгээ хийх", action: () => setTransactionOpen(true) },
     { icon: <DocumentArrowDown24Regular />, text: "Import Sheet", action: () => setSheetDialogOpen(true) },
-    { icon: <Wrench24Regular />, text: "Нэмэлтүүд", action: () => setActivePage("CustomTools") },
     { icon: <Search24Regular />, text: "Дансны хайлт", action: () => setSearchOpen(true) },
     {
       icon: <ShieldKeyhole24Regular />,

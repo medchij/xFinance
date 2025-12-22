@@ -51,3 +51,5 @@
 {"error":"{\"error\":\"Polaris API алдаа: 501 Not Implemented\"}","level":"error","message":"HTTP Error Response","method":"POST","service":"xfinance-backend","statusCode":500,"timestamp":"16.12.2025 09:52:30","url":"/loan-list"}
 {"error":"{\"error\":\"Polaris API алдаа: 501 Not Implemented\"}","level":"error","message":"HTTP Error Response","method":"POST","service":"xfinance-backend","statusCode":500,"timestamp":"16.12.2025 09:53:00","url":"/loan-data"}
 {"error":"{\"message\":\"Token хүчингүй байна\"}","level":"error","message":"HTTP Error Response","method":"GET","service":"xfinance-backend","statusCode":403,"timestamp":"16.12.2025 14:09:35","url":"/me"}
+{"error":"{\"message\":\"Token хүчингүй байна\"}","level":"error","message":"HTTP Error Response","method":"GET","service":"xfinance-backend","statusCode":403,"timestamp":"17.12.2025 15:48:16","url":"/me"}
+{"error":"{\"message\":\"Token хүчингүй байна\"}","level":"error","message":"HTTP Error Response","method":"GET","service":"xfinance-backend","statusCode":403,"timestamp":"18.12.2025 17:08:35","url":"/me"}

@@ -150,7 +150,7 @@ const ChatPage = ({ isSidebarOpen = false }) => {
   const [imagePreview, setImagePreview] = useState(null);
   const [extractedText, setExtractedText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [language, setLanguage] = useState('eng');
+  const [language, setLanguage] = useState('mon');
   const [confidence, setConfidence] = useState(null);
   const [fileName, setFileName] = useState('');
   const [isDragging, setIsDragging] = useState(false);
