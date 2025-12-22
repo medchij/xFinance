@@ -269,12 +269,13 @@ export const handleNegativeConversion = async (setMessage, setLoading) => {
 
       const originalValues = range.values;
 
+      // Эерэгийг сөрөг, сөргийг эерэг болгож, тэг хэвээр үлдээнэ
       const newValues = originalValues.map((row) =>
         row.map((cell) =>
           typeof cell === "number" && !isNaN(cell)
-            ? cell > 0
-              ? -cell
-              : cell // эерэгийг сөрөг болгоно
+            ? cell === 0
+              ? cell
+              : -cell
             : cell
         )
       );

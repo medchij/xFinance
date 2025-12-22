@@ -1688,3 +1688,53 @@ export async function fetchPolarisCustomerList(setMessage, setLoading, filters =
     });
   });
 }
+// NES системд нэвтрэж NESSESSION cookie авах (settings-с credentials авна)
+export async function authenticateNES(setMessage, setLoading) {
+  return withLoading(setLoading, setMessage, async () => {
+    try {
+      setMessage("⏳ NES системд нэвтэрж байна...");
+
+      const token = localStorage.getItem('authToken');
+      const companyId = getCompanyId();
+
+      // Settings-с NES credentials авах (legacy нэршил fallback)
+      const settings = await loadSettings(companyId);
+      const nesEmail = getSettingValue(settings, "polaris_nes_email") || getSettingValue(settings, "nesEmail");
+      const nesCredId = getSettingValue(settings, "polaris_nes_cred_id") || getSettingValue(settings, "nesCredId");
+      const nesCredVal = getSettingValue(settings, "polaris_nes_cred_val") || getSettingValue(settings, "nesCredVal");
+      const nesUuid =
+        getSettingValue(settings, "polaris_nes_uuid") ||
+        getSettingValue(settings, "nesUuid") ||
+        "1e9b0cdd-7c31-42f0-b46e-3203815ce832";
+
+      if (!nesEmail || !nesCredId || !nesCredVal) {
+        throw new Error("⚠️ NES учин зүйлс settings-д байхгүй. 'NES тохиргоо хийх' товчийг дарна уу.");
+      }
+
+      const response = await fetch(`${BASE_URL}/api/polaris/authenticate-nes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+          "x-company-id": companyId,
+        },
+        body: JSON.stringify({ 
+          email: nesEmail, 
+          credId: parseInt(nesCredId), 
+          credVal: nesCredVal, 
+          uuid: nesUuid 
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`❌ NES authentication амжилтгүй: ${response.status}. ${errorText.substring(0, 200)}`);
+      }
+
+      const result = await response.json();
+      setMessage(`✅ ${result.message}`);
+    } catch (error) {
+      setMessage(`❌ ${error.message}`);
+    }
+  });
+}

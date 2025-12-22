@@ -286,4 +286,104 @@ router.post("/loan-status", async (req, res) => {
   }
 });
 
+// NES API Authentication - NESSESSION cookie авох болон settings-д хадгалах
+router.post("/authenticate-nes", async (req, res) => {
+  try {
+    const { email, credId, credVal, uuid } = req.body;
+    const companyId = req.company_id;
+
+    if (!email || !credId || !credVal) {
+      return res.status(400).json({ error: "email, credId, credVal шаардлагатай" });
+    }
+
+    const userId = getUserIdFromToken(req.headers['authorization']);
+    if (!userId) {
+      return res.status(401).json({ error: "Нэвтрэх шаардлагатай" });
+    }
+
+    // Settings-с утгуудыг авах (байхгүй бол алдаа)
+    const origin = await getSettingValue(companyId, 'polaris_origin');
+    const referer = await getSettingValue(companyId, 'polaris_referer');
+    const role = await getSettingValue(companyId, 'polaris_role');
+    const company = await getSettingValue(companyId, 'polaris_company');
+    const apiUrl = await getSettingValue(companyId, 'polaris_api_url');
+
+    // NES API headers
+    const myHeaders = {
+      "Cookie": "NESSESSION=",
+      "Op": "10002000",
+      "origin": origin,
+      "company": company,
+      "referer": referer,
+      "Role": role,
+      "Content-Type": "application/json",
+    };
+
+    const raw = JSON.stringify([
+      email,
+      [
+        {
+          credId: credId,
+          credVal: credVal,
+          uuid: uuid || "1e9b0cdd-7c31-42f0-b46e-3203815ce832",
+        },
+      ],
+      "",
+    ]);
+
+    console.log("🔍 NES Authentication хүсэлт:", { 
+      email, 
+      companyId, 
+      origin,
+      company,
+      role,
+      apiUrl
+    });
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: myHeaders,
+      body: raw,
+      redirect: "follow",
+    });
+
+    if (!response.ok) {
+      throw new Error(`NES API алдаа: ${response.status}`);
+    }
+
+    const responseText = await response.text();
+    
+    // Cookie хэсгээс NESSESSION утгыг задлах
+    const setCookieHeader = response.headers.get("set-cookie") || "";
+    const nesSessionMatch = setCookieHeader.match(/NESSESSION=([^;]+)/);
+    const nesSessionValue = nesSessionMatch ? nesSessionMatch[1] : responseText;
+
+    if (!nesSessionValue) {
+      throw new Error("NESSESSION cookie авах боломжгүй байна");
+    }
+
+    // Settings дээр polaris_nessession-г хадгалах
+    const updateQuery = `
+      INSERT INTO settings (company_id, name, value, created_at, updated_at)
+      VALUES ($1, $2, $3, NOW(), NOW())
+      ON CONFLICT (company_id, name) 
+      DO UPDATE SET value = $3, updated_at = NOW()
+    `;
+    await db.query(updateQuery, [companyId, "polaris_nessession", nesSessionValue]);
+
+    console.log("✅ NESSESSION saved:", nesSessionValue.substring(0, 20) + "...");
+
+    res.json({
+      success: true,
+      message: `NESSESSION амжилттай авч хадгалагдлаа: ${email}`,
+      nesSession: nesSessionValue.substring(0, 20) + "...",
+    });
+  } catch (error) {
+    console.error("NES Authentication алдаа:", error);
+    res.status(500).json({
+      error: error.message || "Серверийн алдаа",
+    });
+  }
+});
+
 module.exports = router;
