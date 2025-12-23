@@ -30,14 +30,14 @@
 
   <Requirements>
     <Sets DefaultMinVersion="1.1">
-      <Set Name="ExcelApi" MinVersion="1.7"/>
+      <Set Name="ExcelApi" MinVersion="1.1"/>
     </Sets>
   </Requirements>
 
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
     <Requirements>
       <bt:Sets>
-        <bt:Set Name="ExcelApi" MinVersion="1.7"/>
+        <bt:Set Name="ExcelApi" MinVersion="1.1"/>
       </bt:Sets>
     </Requirements>
     <Hosts>
@@ -80,6 +80,32 @@
             </OfficeTab>
           </ExtensionPoint>
         </DesktopFormFactor>
+
+        <MobileFormFactor>
+          <FunctionFile resid="Commands.Url"/>
+          <ExtensionPoint xsi:type="MobileMessageReadCommandSurface">
+            <Group id="mobileMsgRead">
+              <Label resid="CommandsGroup.Label"/>
+              <Control xsi:type="MobileButton" id="XFinanceMobileButton">
+                <Label resid="XFinanceButton.Label"/>
+                <Icon>
+                  <bt:Image size="25" scale="1" resid="Icon.16x16"/>
+                  <bt:Image size="25" scale="2" resid="Icon.32x32"/>
+                  <bt:Image size="25" scale="3" resid="Icon.80x80"/>
+                  <bt:Image size="32" scale="1" resid="Icon.32x32"/>
+                  <bt:Image size="32" scale="2" resid="Icon.32x32"/>
+                  <bt:Image size="32" scale="3" resid="Icon.80x80"/>
+                  <bt:Image size="48" scale="1" resid="Icon.32x32"/>
+                  <bt:Image size="48" scale="2" resid="Icon.80x80"/>
+                  <bt:Image size="48" scale="3" resid="Icon.80x80"/>
+                </Icon>
+                <Action xsi:type="ShowTaskpane">
+                  <SourceLocation resid="XFinance.Url"/>
+                </Action>
+              </Control>
+            </Group>
+          </ExtensionPoint>
+        </MobileFormFactor>
       </Host>
     </Hosts>
 
