@@ -20,19 +20,20 @@ import { getSelectedCompany } from "../config/token";
   const fluentColors = [
         "#0078D4", // Accent Blue
         "#107C10", // Accent Green
-        "#FF8C00", // Accent Orange
+        "#D83B01", // Accent Red
         "#C239B3", // Accent Purple
         "#00B7C3", // Accent Teal
         "#FFB900", // Accent Yellow
+        "#8764B8", // Accent Violet
+        "#E3008C", // Accent Pink
+        "#00CC6A", // Accent Lime
+        "#FF8C00", // Accent Orange
         "#0099BC", // Accent Cyan
         "#5C2D91", // Accent Indigo
-        "#00BCF2", // Accent Light Blue
-        "#498205", // Accent Light Green
-        "#FF4343", // Accent Light Red
-        "#FF8C00", // Accent Light Orange (duplicate, but ok)
-        "#881798", // Accent Magenta
-        "#2D7D32", // Accent Dark Green
-        "#6B69D6", // Accent Lavender
+        "#A4262C", // Accent Dark Red
+        "#498205", // Accent Olive
+        "#CA5010", // Accent Rust
+        "#4A5459", // Accent Steel
       ];
 const getRandomColor = () => fluentColors[Math.floor(Math.random() * fluentColors.length)];
 
@@ -515,6 +516,50 @@ export async function fetchKhanbankAccountInfo(setMessage, setLoading) {
   });
 }
 
+// ==================== Fetch Account Name by IBAN ====================
+
+export async function fetchAccountNameByIban(iban, setMessage = null) {
+  try {
+    const companyId = getCompanyId();
+    const settings = await loadSettings(companyId);
+    let token = getSettingValue(settings, "access_token");
+    
+    const makeRequest = async (access_token) => {
+      const headers = new Headers();
+      headers.append("Authorization", `Bearer ${access_token}`);
+      headers.append("Referer", "https://corp.khanbank.com");
+      headers.append("Origin", "https://corp.khanbank.com");
+      headers.append("Host", "api.khanbank.com:9003");
+
+      const response = await fetch(
+        `https://api.khanbank.com:9003/v3/omni/accounts/inquiry/${iban}`,
+        { method: "GET", headers, redirect: "follow" }
+      );
+
+      const result = await response.json();
+      return { response, result };
+    };
+
+    let { response, result } = await makeRequest(token);
+
+    // Token шинэчлэх шаардлагатай бол
+    if (response.status === 401) {
+      const tokenResp = await getKhanbankToken(setMessage || (() => {}), () => {});
+      token = tokenResp.result.access_token;
+      ({ response, result } = await makeRequest(token));
+    }
+
+    if (response.ok && result?.name) {
+      return { success: true, name: result.name };
+    } else {
+      return { success: false, name: "❌ Нэр олдсонгүй" };
+    }
+  } catch (error) {
+    console.error("Данс лавлах алдаа:", error);
+    return { success: false, name: "❌ Алдаа гарлаа" };
+  }
+}
+
 // ==================== IBAN Generator ====================
 
 const banks = {
@@ -522,6 +567,7 @@ const banks = {
   "0004": "0004", // ХХБанк
   "0015": "0015", // Голомт банк
   "0001": "0001", // Төрийн банк
+  "0090": "0090", // Төрийн сан
   "0047": "0047", // Капитрон банк
   "0043": "0043", // Ариг банк
   "0020": "0020", // Богд банк

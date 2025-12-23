@@ -159,9 +159,44 @@ const Header = ({ title, logo, message, isPublic, onNavigateToLogin, currentUser
             Нэвтрэх
           </Button>
         ) : currentUser ? (
-          <Menu>
+          <div style={{ position: "absolute", right: "15px", top: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
+            {/* Ажил үүргийн dropdown */}
+            {userRoles && userRoles.length > 0 && selectedRoleId && (
+              <Menu>
+                <MenuTrigger disableButtonEnhancement>
+                  <Button
+                    appearance="subtle"
+                    style={{
+                      fontSize: tokens.fontSizeBase200,
+                      color: tokens.colorNeutralForeground1,
+                      padding: "6px 12px",
+                    }}
+                  >
+                    {userRoles.find(r => r.id === selectedRoleId)?.name || "Үүрэг"} ▼
+                  </Button>
+                </MenuTrigger>
+                <MenuPopover>
+                  <MenuList>
+                    {userRoles.map((role) => (
+                      <MenuItem
+                        key={role.id}
+                        onClick={() => handleRoleChange(role.id)}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {selectedRoleId === role.id && <span>✓</span>}
+                          <span>{role.name}</span>
+                        </div>
+                      </MenuItem>
+                    ))}
+                  </MenuList>
+                </MenuPopover>
+              </Menu>
+            )}
+            
+            {/* Хэрэглэгчийн аватар & меню */}
+            <Menu>
             <MenuTrigger disableButtonEnhancement>
-              <div className={styles.userInfo}>
+              <div className={styles.userInfo} style={{ position: "relative", right: 0, top: 0 }}>
                 <div className={styles.userAvatar}>
                   {(currentUser.name || currentUser.username || 'Х').charAt(0).toUpperCase()}
                 </div>
@@ -190,28 +225,6 @@ const Header = ({ title, logo, message, isPublic, onNavigateToLogin, currentUser
                   <MenuItem onClick={onNavigateToSettings} icon={<SettingsRegular />} className={styles.menuItem}>
                     Тохиргоо
                   </MenuItem>
-                )}
-                
-                {/* Ажил үүргүүд */}
-                {userRoles && userRoles.length > 0 && (
-                  <>
-                    <MenuDivider />
-                    <MenuItem disabled icon={<PersonRegular />} className={styles.menuItem}>
-                      Ажил үүрэг солих
-                    </MenuItem>
-                    {userRoles.map((role) => (
-                      <MenuItem
-                        key={role.id}
-                        onClick={() => handleRoleChange(role.id)}
-                        className={styles.companyMenuItem}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          {selectedRoleId === role.id && <span>✓</span>}
-                          <span>{role.name}</span>
-                        </div>
-                      </MenuItem>
-                    ))}
-                  </>
                 )}
                 
                 {/* Компаниуд */}
@@ -243,6 +256,7 @@ const Header = ({ title, logo, message, isPublic, onNavigateToLogin, currentUser
               </MenuList>
             </MenuPopover>
           </Menu>
+          </div>
         ) : null}
       </div>
       {/* ============================================================= */}

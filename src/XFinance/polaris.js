@@ -1438,7 +1438,12 @@ export async function fetchPolarisDepoAccount(setMessage, setLoading) {
       }
 
       if (!acntCode) {
-        throw new Error("⚠️ API хариунаас acntCode олдсонгүй. Полноценный ответ: " + JSON.stringify(parsedResult).substring(0, 100));
+        // Хоосон хариу буюу зээлгүй тохиолдолд илүү тодорхой мэдээлэл өгөх
+        if (Array.isArray(parsedResult) && parsedResult.length === 0) {
+          setMessage(`⚠️ Харилцагч (${customerCode}) зээлгүй эсвэл идэвхгүй зээл олдсонгүй.`);
+          return;
+        }
+        throw new Error("⚠️ API хариунаас acntCode олдсонгүй. Хариу: " + JSON.stringify(parsedResult).substring(0, 100));
       }
 
       // acntCode-г Clipboard рүү хуулна

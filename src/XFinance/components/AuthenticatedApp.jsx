@@ -89,13 +89,14 @@ const AuthenticatedApp = ({ title }) => {
       />
       
       <div style={{ display: "flex", flex: 1 }}>
-        <Suspense fallback={<div style={{ padding: 12 }}>Түр хүлээгээрэй…</div>}>
-          <Sidebar
+        <Sidebar
             isOpen={isSidebarOpen}
             toggleSidebar={toggleSidebar}
             setActivePage={handlePageChange}
             onOpenLogViewer={() => setLogViewerOpen(true)} // Лог товч функц нэмэв
           />
+        <Suspense fallback={<div style={{ padding: 12 }}>Түр хүлээгээрэй…</div>}>
+          
           <div
             style={{
               flexGrow: 1,

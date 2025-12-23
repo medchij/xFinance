@@ -11,15 +11,17 @@ import {
   Option,
   Input,
   tokens,
+  Spinner,
 } from "@fluentui/react-components";
 import { Dismiss24Regular } from "@fluentui/react-icons";
-import { generateMongoliaIban } from "../externalAPI";
+import { generateMongoliaIban, fetchAccountNameByIban } from "../externalAPI";
 
 const banks = [
   { name: "Хаан банк", code: "0005" },
   { name: "ХХБанк", code: "0004" },
   { name: "Голомт банк", code: "0015" },
   { name: "Төрийн банк", code: "0001" },
+  //{ name: "Төрийн сан", code: "0090" },
   { name: "Капитрон банк", code: "0047" },
   { name: "Ариг банк", code: "0043" },
   { name: "Богд банк", code: "0020" },
@@ -32,6 +34,8 @@ const BankSelectDialog = ({ isOpen, onClose, onSubmit }) => {
   const [selectedBank, setSelectedBank] = useState("0005");
   const [accountNumber, setAccountNumber] = useState("");
   const [generatedIban, setGeneratedIban] = useState("");
+  const [accountName, setAccountName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   // Дансны дугаар эсвэл банк солигдох бүрд IBAN автоматаар үүсгэх
   useEffect(() => {
@@ -63,6 +67,17 @@ const BankSelectDialog = ({ isOpen, onClose, onSubmit }) => {
     }
   }, [accountNumber, selectedBank]);
 
+  const handleLookup = async () => {
+    if (!generatedIban) return;
+    
+    setIsLoading(true);
+    setAccountName("");
+    
+    const result = await fetchAccountNameByIban(generatedIban);
+    setAccountName(result.name);
+    setIsLoading(false);
+  };
+
   const handleSubmit = async () => {
     if (generatedIban) {
       try {
@@ -74,15 +89,16 @@ const BankSelectDialog = ({ isOpen, onClose, onSubmit }) => {
       }
       onSubmit(selectedBank, accountNumber.trim(), generatedIban);
       // Reset
-      setAccountNumber("");
+      //setAccountNumber("");
       setGeneratedIban("");
       onClose();
     }
   };
 
   const handleClose = () => {
-    setAccountNumber("");
+    //setAccountNumber("");
     setGeneratedIban("");
+    setAccountName("");
     setSelectedBank("0005");
     onClose();
   };
@@ -124,9 +140,29 @@ const BankSelectDialog = ({ isOpen, onClose, onSubmit }) => {
                   onChange={(_, data) => setAccountNumber(data.value)}
                   style={{ flex: 1 }}
                 />
-                <Button appearance="secondary">Лавлах</Button>
+                <Button
+                  appearance="secondary" 
+                  onClick={handleLookup}
+                  disabled={!generatedIban || isLoading}
+                >
+                  {isLoading ? <Spinner size="tiny" /> : "Лавлах"}
+                </Button>
               </div>
             </Field>
+
+            {accountName && (
+              <Field label="Дансны эзэмшигч" style={{ marginBottom: "16px" }}>
+                <Input
+                  value={accountName}
+                  readOnly
+                  style={{ 
+                    width: "100%",
+                    backgroundColor: tokens.colorNeutralBackground2,
+                    fontWeight: "600"
+                  }}
+                />
+              </Field>
+            )}
 
             <Field label="IBAN код автоматаар үүсэх болно" style={{ marginBottom: "16px" }}>
               <Input

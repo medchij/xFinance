@@ -277,6 +277,14 @@ router.post("/loan-status", async (req, res) => {
 
     const requestBody = [filterConditions, page, pageSize];
     const data = await callPolarisApi(polarisConfig, "13050017", requestBody);
+    
+    console.log("📥 Polaris loan-status хариу:", {
+      responseType: typeof data,
+      isArray: Array.isArray(data),
+      length: Array.isArray(data) ? data.length : 'N/A',
+      data: JSON.stringify(data).substring(0, 500)
+    });
+    
     res.json(data);
   } catch (error) {
     console.error("Polaris loan-status алдаа:", error);
