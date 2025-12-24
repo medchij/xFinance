@@ -127,6 +127,8 @@ const groupedTools = [
       { icon: <DocumentSettings20Regular />, label: "Daily бэлтгэл" },
       { icon: <Calculator20Regular />, label: "GI Daily тооцоолол" },
       { icon: <DocumentCheckmark20Regular />, label: "AP Daily тооцоолол" },
+{ icon: <DocumentBulletListMultiple20Regular />, label: "Давтагдашгүй утга олох" },
+      
       
     ],
   },
@@ -185,6 +187,7 @@ const CustomTools = ({ isSidebarOpen }) => {
     "Daily бэлтгэл": () => pfns.processBalanceReconciliation(showMessage, setLoading),
     "GI Daily тооцоолол": () => pfns.GIprocessFinancialReport(showMessage, setLoading),
     "AP Daily тооцоолол": () => pfns.APprocessFinancialReport(showMessage, setLoading),
+    "Давтагдашгүй утга олох": () => pfns.extractUniqueAndSum(showMessage, setLoading),
     "Зээлийн данс лавлах": () => pfns.fetchPolarisLoanData(showMessage, setLoading),
     "Зээлийн жагсаалт татах": () => pfns.fetchPolarisLoanList(showMessage, setLoading),
     "Харилцагчийн жагсаалт татах": () => pfns.fetchPolarisCustomerList(showMessage, setLoading),

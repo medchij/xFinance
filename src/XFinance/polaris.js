@@ -1322,6 +1322,106 @@ export async function APprocessFinancialReport(setMessage, setLoading) {
   });
 }
 
+// Давтагдашгүй утга олж, нэр хайж, дүн бодох функц (VBA ExtractUniqueAndSum-ийг хөрвүүлсэн)
+export async function extractUniqueAndSum(setMessage, setLoading) {
+  return withLoading(setLoading, setMessage, async () => {
+    await Excel.run(async (context) => {
+      setMessage("⏳ Давтагдашгүй утга олж, боловсруулж байна...");
+
+      const sheet = context.workbook.worksheets.getActiveWorksheet();
+      
+      // I баганын сүүлийн мөр олох
+      const usedRange = sheet.getUsedRange();
+      usedRange.load("rowCount");
+      await context.sync();
+      
+      const lastRowI = usedRange.rowCount;
+      
+      // I1 нүдэнд "dans" гэж бичих
+      sheet.getCell(0, 8).values = [["dans"]]; // I1 (row 0, col 8)
+      
+      // I баганаас өгөгдөл унших
+      const columnI = sheet.getRange(`I1:I${lastRowI}`);
+      columnI.load("values");
+      await context.sync();
+      
+      // Давтагдашгүй утгуудыг олох (AdvancedFilter-ийн оронд)
+      const uniqueValues = new Set();
+      uniqueValues.add("dans"); // Толгой мөр
+      for (let i = 1; i < columnI.values.length; i++) {
+        const val = columnI.values[i][0];
+        if (val !== null && val !== undefined && val !== "") {
+          uniqueValues.add(val.toString());
+        }
+      }
+      
+      const uniqueArray = Array.from(uniqueValues);
+      
+      // N баганад давтагдашгүй утгуудыг бичих
+      const columnNRange = sheet.getRange(`N1:N${uniqueArray.length}`);
+      columnNRange.values = uniqueArray.map(v => [v]);
+      
+      // A, B, G багануудаас өгөгдөл унших
+      const lastRowB = usedRange.rowCount;
+      const columnA = sheet.getRange(`A1:A${lastRowB}`);
+      const columnB = sheet.getRange(`B1:B${lastRowB}`);
+      const columnG = sheet.getRange(`G1:G${lastRowI}`);
+      
+      columnA.load("values");
+      columnB.load("values");
+      columnG.load("values");
+      await context.sync();
+      
+      // N баганын хувьд (толгой мөрөөс бусад) O болон P утгуудыг бодох
+      const resultsO = [["Нэр"]]; // Толгой мөр O1
+      const resultsP = [["Дүн"]]; // Толгой мөр P1
+      
+      for (let i = 1; i < uniqueArray.length; i++) {
+        const criteria = uniqueArray[i];
+        
+        // A баганаас criteria-г хайх (эхнээс нь тохирох - VBA Find with xlPart)
+        let foundValue = "Not Found";
+        for (let j = 0; j < columnA.values.length; j++) {
+          const aValue = columnA.values[j][0];
+          if (aValue && aValue.toString().indexOf(criteria) === 0) { // эхнээс эхлэн тохирох
+            foundValue = columnB.values[j][0] || "";
+            break;
+          }
+        }
+        resultsO.push([foundValue]);
+        
+        // I баганад criteria-тай тэнцэх утгуудын G баганын нийлбэр (SUMIFS)
+        let sum = 0;
+        for (let j = 0; j < columnI.values.length; j++) {
+          const iValue = columnI.values[j][0];
+          if (iValue && iValue.toString() === criteria) {
+            const gValue = columnG.values[j][0];
+            if (typeof gValue === 'number') {
+              sum += gValue;
+            } else if (typeof gValue === 'string' && !isNaN(parseFloat(gValue))) {
+              sum += parseFloat(gValue);
+            }
+          }
+        }
+        resultsP.push([sum / 2]);
+      }
+      
+      // O болон P багануудад үр дүн бичих
+      const columnORange = sheet.getRange(`O1:O${uniqueArray.length}`);
+      const columnPRange = sheet.getRange(`P1:P${uniqueArray.length}`);
+      columnORange.values = resultsO;
+      columnPRange.values = resultsP;
+      
+      // Мөрийн өндөрийг 15 болгох
+      const allRowsRange = sheet.getRange(`1:${lastRowI}`);
+      allRowsRange.format.rowHeight = 15;
+      
+      await context.sync();
+
+      setMessage(`✅ Амжилттай боловсруулагдлаа. ${uniqueArray.length - 1} давтагдашгүй утга олдлоо.`);
+    });
+  });
+}
 
 // Polaris NES API-аас зээлийн мэдээлэл татах функц
 export async function fetchPolarisLoanData(setMessage, setLoading) {
