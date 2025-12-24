@@ -50,7 +50,7 @@ const useStyles = makeStyles({
     transition: "all 0.2s ease-in-out",
     display: "flex",
     alignItems: "center",
-    gap: "8px",
+    gap: "4px",
     "&:hover": {
       backgroundColor: tokens.colorNeutralBackground1Hover,
     },
@@ -90,10 +90,28 @@ const Header = ({ title, logo, message, isPublic, onNavigateToLogin, currentUser
   const styles = useStyles();
   const { companies, selectedCompany, setSelectedCompany, selectedRoleId, setSelectedRoleId, logout } = useAppContext();
   const [userRoles, setUserRoles] = useState([]);
+  const [avatarUrl, setAvatarUrl] = useState(currentUser?.avatar_url);
 
   // Detect environment
   const isLocalHost = typeof window !== "undefined" && /^localhost$|^127(\.\d+){3}$/.test(window.location.hostname);
   const isDevelopment = isLocalHost || (typeof window !== "undefined" && window.location.port === "3000");
+
+  // Listen for avatar updates from Profile component
+  useEffect(() => {
+    const handleUserUpdated = (event) => {
+      if (event.detail?.avatar_url !== undefined) {
+        setAvatarUrl(event.detail.avatar_url);
+      }
+    };
+
+    window.addEventListener('userUpdated', handleUserUpdated);
+    return () => window.removeEventListener('userUpdated', handleUserUpdated);
+  }, []);
+
+  // Update avatar URL when currentUser changes
+  useEffect(() => {
+    setAvatarUrl(currentUser?.avatar_url);
+  }, [currentUser?.avatar_url]);
 
   // Fetch user roles
   useEffect(() => {
@@ -198,9 +216,9 @@ const Header = ({ title, logo, message, isPublic, onNavigateToLogin, currentUser
             <MenuTrigger disableButtonEnhancement>
               <div className={styles.userInfo} style={{ position: "relative", right: 0, top: 0 }}>
                 <div className={styles.userAvatar}>
-                  {currentUser.avatar_url ? (
+                  {avatarUrl ? (
                     <img 
-                      src={`${BASE_URL}${currentUser.avatar_url}`} 
+                      src={`${BASE_URL}${avatarUrl}`} 
                       alt="Avatar" 
                       style={{ 
                         width: '100%', 

@@ -16,6 +16,11 @@ import {
   TableRow,
   Tooltip,
   makeStyles,
+  Menu,
+  MenuTrigger,
+  MenuPopover,
+  MenuList,
+  MenuItem,
 } from "@fluentui/react-components";
 import { 
   ArrowClockwise16Regular, 
@@ -26,6 +31,7 @@ import {
   DeleteRegular,
   CheckmarkCircle24Regular,
   DismissCircle24Regular,
+  CameraRegular,
 } from "@fluentui/react-icons";
 import { useAppContext } from "./AppContext";
 import ConfirmationDialog from "./ConfirmationDialog";
@@ -393,8 +399,17 @@ const Profile = ({ isSidebarOpen }) => {
       if (response.ok) {
         const data = await response.json();
         showMessage('✅ Зураг амжилттай солигдлоо.');
-        // Refresh user data
-        window.location.reload();
+        // Update currentUser object to trigger re-render
+        const updatedUser = { ...currentUser, avatar_url: data.avatar_url };
+        // Update localStorage
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        // Emit custom event to update other components
+        window.dispatchEvent(new CustomEvent('userUpdated', { detail: updatedUser }));
+        // Update avatar image src directly
+        const preview = document.getElementById('avatar-preview');
+        if (preview) {
+          preview.src = `${BASE_URL}${data.avatar_url}`;
+        }
       } else {
         const error = await response.json();
         showMessage(`⚠️ ${error.error || 'Зураг оруулахад алдаа гарлаа.'}`, 'error');
@@ -422,7 +437,17 @@ const Profile = ({ isSidebarOpen }) => {
 
       if (response.ok) {
         showMessage('✅ Зураг амжилттай устгагдлаа.');
-        window.location.reload();
+        // Update currentUser object to trigger re-render
+        const updatedUser = { ...currentUser, avatar_url: null };
+        // Update localStorage
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        // Emit custom event to update other components
+        window.dispatchEvent(new CustomEvent('userUpdated', { detail: updatedUser }));
+        // Remove avatar preview
+        const preview = document.getElementById('avatar-preview');
+        if (preview) {
+          preview.style.display = 'none';
+        }
       } else {
         const error = await response.json();
         showMessage(`⚠️ ${error.error || 'Зураг устгахад алдаа гарлаа.'}`, 'error');
@@ -511,7 +536,7 @@ const Profile = ({ isSidebarOpen }) => {
         message="Та энэ тохиргоог устгахдаа итгэлтэй байна уу?"
       />
             {/* Хэрэглэгчийн профайл зураг */}
-      <div className={styles.card}>
+      <div className={styles.card} style={{ marginBottom: '24px' }}>
         <div className={styles.header}>
           <h2 className={styles.title}>👤 Профайл зураг</h2>
         </div>
@@ -536,6 +561,7 @@ const Profile = ({ isSidebarOpen }) => {
             }}>
               {currentUser?.avatar_url ? (
                 <img 
+                  id="avatar-preview"
                   src={`${BASE_URL}${currentUser.avatar_url}`} 
                   alt="Avatar" 
                   style={{ 
@@ -549,35 +575,50 @@ const Profile = ({ isSidebarOpen }) => {
               )}
             </div>
             
-            {/* Camera button */}
-            <button
-              onClick={() => document.getElementById('avatar-upload').click()}
-              style={{
-                position: 'absolute',
-                bottom: '0',
-                right: '0',
-                width: '44px',
-                height: '44px',
-                borderRadius: '50%',
-                backgroundColor: tokens.colorBrandBackground,
-                border: `3px solid ${tokens.colorNeutralBackground1}`,
-                color: 'white',
-                fontSize: '20px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-                transition: 'all 0.2s ease',
-                ':hover': {
-                  transform: 'scale(1.1)',
-                },
-              }}
-              disabled={uploadingAvatar}
-              title="Зураг оруулах"
-            >
-              📷
-            </button>
+            {/* Camera button with menu */}
+            <Menu>
+              <MenuTrigger disableButtonEnhancement>
+                <button
+                  style={{
+                    position: 'absolute',
+                    bottom: '0',
+                    right: '0',
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '50%',
+                    backgroundColor: tokens.colorNeutralBackground3,
+                    border: `3px solid ${tokens.colorNeutralBackground1}`,
+                    color: tokens.colorNeutralForeground1,
+                    fontSize: '20px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                    transition: 'all 0.2s ease',
+                    padding: 0,
+                    border: 'none',
+                    zIndex: 100,
+                  }}
+                  disabled={uploadingAvatar}
+                  title="Зураг оруулах/устгах"
+                >
+                  <CameraRegular style={{ fontSize: '20px' }} />
+                </button>
+              </MenuTrigger>
+              <MenuPopover style={{ zIndex: 1000 }}>
+                <MenuList>
+                  <MenuItem onClick={() => document.getElementById('avatar-upload').click()}>
+                    📤 Зураг оруулах
+                  </MenuItem>
+                  {currentUser?.avatar_url && (
+                    <MenuItem onClick={handleDeleteAvatar} style={{ color: '#d13438' }}>
+                      🗑️ Устгах
+                    </MenuItem>
+                  )}
+                </MenuList>
+              </MenuPopover>
+            </Menu>
             
             <input
               id="avatar-upload"
@@ -608,26 +649,7 @@ const Profile = ({ isSidebarOpen }) => {
               </p>
             </div>
             
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <Button
-                appearance="primary"
-                disabled={uploadingAvatar}
-                onClick={() => document.getElementById('avatar-upload').click()}
-              >
-                {uploadingAvatar ? 'Оруулж байна...' : 'Зураг оруулах'}
-              </Button>
-              
-              {currentUser?.avatar_url && (
-                <Button
-                  appearance="secondary"
-                  disabled={uploadingAvatar}
-                  onClick={handleDeleteAvatar}
-                >
-                  Устгах
-                </Button>
-              )}
-            </div>
-            
+            {/* Buttons removed - using camera menu instead */}
             <p style={{ 
               margin: 0, 
               fontSize: '12px', 
@@ -641,7 +663,7 @@ const Profile = ({ isSidebarOpen }) => {
       </div>
       
       {/* Компани сонгох хэсэг */}
-      <div className={styles.card}>
+      <div className={styles.card} style={{ marginTop: '32px' }}>
         <div className={styles.header}>
           <h2 className={styles.title}>Компани Сонголт</h2>
           <Button
