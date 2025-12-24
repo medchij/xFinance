@@ -164,7 +164,7 @@ router.get('/me', verifyToken, async (req, res) => {
 
     // *** ЗАСВАРЛАСАН ХЭСЭГ: JOIN ашиглан role_id-г авах ***
     const userQuery = `
-      SELECT u.id, u.username, u.email, u.full_name, u.allowed_companies, u.is_active, ur.role_id
+      SELECT u.id, u.username, u.email, u.full_name, u.allowed_companies, u.is_active, u.avatar_url, ur.role_id
       FROM users u
       LEFT JOIN user_roles ur ON u.id = ur.user_id
       WHERE u.id = $1

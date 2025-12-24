@@ -102,6 +102,7 @@ const Profile = ({ isSidebarOpen }) => {
   const [editKey, setEditKey] = useState(null);
   const [deleteKey, setDeleteKey] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -359,6 +360,81 @@ const Profile = ({ isSidebarOpen }) => {
     }
   };
 
+  const handleAvatarUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      showMessage('⚠️ Зургийн хэмжээ 5MB-с бага байх ёстой.', 'error');
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      showMessage('⚠️ Зөвхөн зураг файл оруулах боломжтой.', 'error');
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      const response = await fetch(`${BASE_URL}/api/users/${currentUser.id}/avatar`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        showMessage('✅ Зураг амжилттай солигдлоо.');
+        // Refresh user data
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        showMessage(`⚠️ ${error.error || 'Зураг оруулахад алдаа гарлаа.'}`, 'error');
+      }
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      showMessage('❌ Сервертэй холбогдож чадсангүй.', 'error');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleDeleteAvatar = async () => {
+    if (!currentUser.avatar_url) return;
+
+    setUploadingAvatar(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${BASE_URL}/api/users/${currentUser.id}/avatar`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        showMessage('✅ Зураг амжилттай устгагдлаа.');
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        showMessage(`⚠️ ${error.error || 'Зураг устгахад алдаа гарлаа.'}`, 'error');
+      }
+    } catch (error) {
+      console.error('Avatar delete error:', error);
+      showMessage('❌ Сервертэй холбогдож чадсангүй.', 'error');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const handleEditSetting = async (key, value) => {
     try {
       const token = localStorage.getItem('authToken');
@@ -434,6 +510,135 @@ const Profile = ({ isSidebarOpen }) => {
         onClose={handleDeleteConfirmed}
         message="Та энэ тохиргоог устгахдаа итгэлтэй байна уу?"
       />
+            {/* Хэрэглэгчийн профайл зураг */}
+      <div className={styles.card}>
+        <div className={styles.header}>
+          <h2 className={styles.title}>👤 Профайл зураг</h2>
+        </div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '16px' }}>
+          {/* Avatar preview with camera button */}
+          <div style={{ position: 'relative' }}>
+            <div style={{
+              width: '140px',
+              height: '140px',
+              borderRadius: '50%',
+              backgroundColor: tokens.colorBrandBackground,
+              color: tokens.colorNeutralForegroundOnBrand,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '56px',
+              fontWeight: tokens.fontWeightSemibold,
+              overflow: 'hidden',
+              border: `4px solid ${tokens.colorNeutralBackground1}`,
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+            }}>
+              {currentUser?.avatar_url ? (
+                <img 
+                  src={`${BASE_URL}${currentUser.avatar_url}`} 
+                  alt="Avatar" 
+                  style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    objectFit: 'cover'
+                  }} 
+                />
+              ) : (
+                (currentUser?.name || currentUser?.username || 'Х').charAt(0).toUpperCase()
+              )}
+            </div>
+            
+            {/* Camera button */}
+            <button
+              onClick={() => document.getElementById('avatar-upload').click()}
+              style={{
+                position: 'absolute',
+                bottom: '0',
+                right: '0',
+                width: '44px',
+                height: '44px',
+                borderRadius: '50%',
+                backgroundColor: tokens.colorBrandBackground,
+                border: `3px solid ${tokens.colorNeutralBackground1}`,
+                color: 'white',
+                fontSize: '20px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                transition: 'all 0.2s ease',
+                ':hover': {
+                  transform: 'scale(1.1)',
+                },
+              }}
+              disabled={uploadingAvatar}
+              title="Зураг оруулах"
+            >
+              📷
+            </button>
+            
+            <input
+              id="avatar-upload"
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleAvatarUpload}
+            />
+          </div>
+          
+          {/* User info and controls */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
+            <div>
+              <h3 style={{ 
+                margin: '0 0 4px 0', 
+                fontSize: '20px',
+                fontWeight: tokens.fontWeightSemibold,
+                color: tokens.colorNeutralForeground1
+              }}>
+                {currentUser?.name || currentUser?.username || 'Хэрэглэгч'}
+              </h3>
+              <p style={{ 
+                margin: 0, 
+                fontSize: '14px', 
+                color: tokens.colorNeutralForeground3 
+              }}>
+                {currentUser?.email || ''}
+              </p>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <Button
+                appearance="primary"
+                disabled={uploadingAvatar}
+                onClick={() => document.getElementById('avatar-upload').click()}
+              >
+                {uploadingAvatar ? 'Оруулж байна...' : 'Зураг оруулах'}
+              </Button>
+              
+              {currentUser?.avatar_url && (
+                <Button
+                  appearance="secondary"
+                  disabled={uploadingAvatar}
+                  onClick={handleDeleteAvatar}
+                >
+                  Устгах
+                </Button>
+              )}
+            </div>
+            
+            <p style={{ 
+              margin: 0, 
+              fontSize: '12px', 
+              color: tokens.colorNeutralForeground3,
+              lineHeight: '1.4'
+            }}>
+              💡 JPG, PNG эсвэл GIF форматтай зураг оруулна уу. Хамгийн ихдээ 5MB.
+            </p>
+          </div>
+        </div>
+      </div>
       
       {/* Компани сонгох хэсэг */}
       <div className={styles.card}>

@@ -198,7 +198,20 @@ const Header = ({ title, logo, message, isPublic, onNavigateToLogin, currentUser
             <MenuTrigger disableButtonEnhancement>
               <div className={styles.userInfo} style={{ position: "relative", right: 0, top: 0 }}>
                 <div className={styles.userAvatar}>
-                  {(currentUser.name || currentUser.username || 'Х').charAt(0).toUpperCase()}
+                  {currentUser.avatar_url ? (
+                    <img 
+                      src={`${BASE_URL}${currentUser.avatar_url}`} 
+                      alt="Avatar" 
+                      style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        borderRadius: '50%',
+                        objectFit: 'cover'
+                      }} 
+                    />
+                  ) : (
+                    (currentUser.name || currentUser.username || 'Х').charAt(0).toUpperCase()
+                  )}
                 </div>
               </div>
             </MenuTrigger>

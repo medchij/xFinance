@@ -23,6 +23,9 @@ app.use(requestLogger); // Logging middleware эхлээд
 app.use(cors()); 
 app.use(express.json()); 
 
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); 
+
 // Test route to check if the server is running
 app.get('/api', (req, res) => {
   logger.info('Health check endpoint accessed');
@@ -126,6 +129,9 @@ app.use('/api/polaris', polarisRouter);
 
 const merchantCategoryRoute = require('./routes/merchant-category');
 merchantCategoryRoute(app);
+
+const avatarRouter = require('./routes/avatar');
+app.use('/api/users', avatarRouter);
 
 // Export the app for Vercel
 module.exports = app;

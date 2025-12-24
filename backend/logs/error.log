@@ -57,3 +57,8 @@
 {"error":"{\"message\":\"company_id is required as a query parameter or x-company-id header.\"}","level":"error","message":"HTTP Error Response","method":"GET","service":"xfinance-backend","statusCode":400,"timestamp":"22.12.2025 20:53:55","url":"/dataGI"}
 {"error":"{\"error\":\"Polaris API алдаа: 501 Not Implemented\"}","level":"error","message":"HTTP Error Response","method":"POST","service":"xfinance-backend","statusCode":500,"timestamp":"22.12.2025 21:24:55","url":"/loan-list"}
 {"error":"{\"message\":\"Token хүчингүй байна\"}","level":"error","message":"HTTP Error Response","method":"GET","service":"xfinance-backend","statusCode":403,"timestamp":"24.12.2025 10:57:55","url":"/me"}
+{"error":"{\"message\":\"Token хүчингүй байна\"}","level":"error","message":"HTTP Error Response","method":"GET","service":"xfinance-backend","statusCode":403,"timestamp":"24.12.2025 22:11:07","url":"/me"}
+{"error":"{\"error\":\"Unauthorized\"}","level":"error","message":"HTTP Error Response","method":"POST","service":"xfinance-backend","statusCode":403,"timestamp":"24.12.2025 22:11:39","url":"/1/avatar"}
+{"error":"{\"error\":\"Unauthorized\"}","level":"error","message":"HTTP Error Response","method":"POST","service":"xfinance-backend","statusCode":403,"timestamp":"24.12.2025 22:13:07","url":"/1/avatar"}
+{"error":"{\"error\":\"Unauthorized\"}","level":"error","message":"HTTP Error Response","method":"POST","service":"xfinance-backend","statusCode":403,"timestamp":"24.12.2025 22:14:13","url":"/1/avatar"}
+{"error":"{\"error\":\"Unauthorized\"}","level":"error","message":"HTTP Error Response","method":"POST","service":"xfinance-backend","statusCode":403,"timestamp":"24.12.2025 22:15:38","url":"/1/avatar"}
