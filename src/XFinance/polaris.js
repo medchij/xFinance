@@ -1236,8 +1236,8 @@ export async function GIprocessFinancialReport(setMessage, setLoading) {
         ["Зээлийн багц цэвэр дүнгээр", "=SUMPRODUCT(G:G, --(LEFT(I:I, 2) = \"12\"))/2"],
         ["Хүлээж болзошгүй үүрэг", "0"],
         ["Нийт зээлийн багц", "=S14+S15"],
-        ["Зээлийн эрсдлийн сан", "=-SUMPRODUCT(G:G, --(LEFT(I:I, 3) = \"128\"))/2"],
-        ["ЗЕСангийн дараах цэвэр зээл", "=S14-S17"],
+        ["Зээлийн эрсдэлийн сан", "=-SUMPRODUCT(G:G, --(LEFT(I:I, 3) = \"128\"))/2"],
+        ["ЗЭСангийн дараах цэвэр зээл", "=S14-S17"],
         ["Хүүгийн орлого тэнцлийн дотуур", "=-SUMPRODUCT(G:G, --(ISNUMBER(SEARCH(LEFT(I:I, 2), \"41\"))))/2"],
         ["Хүүгийн орлого тэнцлийн гадуур", "0"],
         ["Хадгаламжийн хүүгийн орлого", "0"],
@@ -1249,7 +1249,7 @@ export async function GIprocessFinancialReport(setMessage, setLoading) {
         ["Татварын өмнөх ашиг", "=S23-S24-S25"],
         ["Татварын зардал", "=S27*10%"],
         ["Татварын дараах ашиг", "=S27-S28"],
-        ["2022 оны ААНОТын буцаалтын орлого", ""],
+        ["2022 оны ААНОТ-ын буцаалтын орлого", ""],
         ["Нийт цэвэр ашиг", "=S29+S30"],
         ["Зорилт", "0"]
       ];
@@ -1265,6 +1265,12 @@ export async function GIprocessFinancialReport(setMessage, setLoading) {
         }
       }
 
+
+      await context.sync();
+
+      // Томьёо ажиллаж дуусны дараа мөрийн өндрийг авто болгох
+      const rowsToAutoHeight = sheet.getRange(`R13:S${12 + formulas.length}`);
+      rowsToAutoHeight.format.autofitRows();
 
       await context.sync();
 
@@ -1286,7 +1292,7 @@ export async function APprocessFinancialReport(setMessage, setLoading) {
         ["Хүлээж болзошгүй үүрэг", "0"],
         ["Нийт зээлийн багц", "=S14+S15"],
         ["Зээлийн эрсдлийн сан", "=-SUMPRODUCT(G:G, --(LEFT(I:I, 3) = \"139\"))/2"],
-        ["ЗЕСангийн дараах цэвэр зээл", "=S14-S17"],
+        ["ЗЭСангийн дараах цэвэр зээл", "=S14-S17"],
         ["Хүүгийн орлого тэнцлийн дотуур", "=-SUMPRODUCT(G:G, --(ISNUMBER(SEARCH(LEFT(I:I, 2), \"41\"))))/2"],
         ["Хүүгийн орлого тэнцлийн гадуур", "0"],
         ["Хадгаламжийн хүүгийн орлого", "0"],
@@ -1298,7 +1304,7 @@ export async function APprocessFinancialReport(setMessage, setLoading) {
         ["Татварын өмнөх ашиг", "=S23-S24"],
         ["Татварын зардал", "=S27*10%"],
         ["Татварын дараах ашиг", "=S27-S28"],
-        ["2022 оны ААНОТын буцаалтын орлого", ""],
+        ["2022 оны ААНОТ-ын буцаалтын орлого", ""],
         ["Нийт цэвэр ашиг", "=S29+S30"],
         ["Зорилт", "0"]
       ];
@@ -1313,7 +1319,11 @@ export async function APprocessFinancialReport(setMessage, setLoading) {
           sheet.getCell(rowIdx, 18).values = [[""]]; // Хоосон утга
         }
       }
+   await context.sync();
 
+      // Томьёо ажиллаж дуусны дараа мөрийн өндрийг авто болгох
+      const rowsToAutoHeight = sheet.getRange(`R13:S${12 + formulas.length}`);
+      rowsToAutoHeight.format.autofitRows();
 
       await context.sync();
 
