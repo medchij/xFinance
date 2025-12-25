@@ -2,39 +2,6 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../db');
 const authenticateToken = require('../middleware/authenticateToken');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-
-// Configure multer for task image uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadPath = path.join(__dirname, '../uploads/tasks');
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = `task-${Date.now()}-${Math.random().toString(36).substring(7)}${path.extname(file.originalname)}`;
-    cb(null, uniqueName);
-  }
-});
-
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (extname && mimetype) {
-      cb(null, true);
-    } else {
-      cb(new Error('Зөвхөн зураг файл оруулах боломжтой! (JPG, PNG, GIF)'));
-    }
-  }
-});
 
 // Get daily tasks for specific date (default: today)
 router.get('/', authenticateToken, async (req, res) => {
@@ -142,11 +109,12 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Upload task image
-router.post('/:id/image', authenticateToken, upload.single('image'), async (req, res) => {
+// Upload task image (base64)
+router.post('/:id/image', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id || req.user.userId;
     const taskId = req.params.id;
+    const { imageBase64, imagePosition } = req.body;
     
     // Check if task belongs to user
     const checkResult = await pool.query(
@@ -155,39 +123,32 @@ router.post('/:id/image', authenticateToken, upload.single('image'), async (req,
     );
     
     if (checkResult.rows.length === 0) {
-      if (req.file) {
-        fs.unlinkSync(req.file.path); // Delete uploaded file
-      }
       return res.status(404).json({ error: 'Ажил олдсонгүй эсвэл танд хандах эрх байхгүй.' });
     }
     
-    if (!req.file) {
+    if (!imageBase64) {
       return res.status(400).json({ error: 'Зураг оруулна уу.' });
     }
     
-    const imageUrl = `/uploads/tasks/${req.file.filename}`;
-    
-    // Delete old image if exists
-    const oldTask = checkResult.rows[0];
-    if (oldTask.image_url) {
-      const oldImagePath = path.join(__dirname, '..', oldTask.image_url);
-      if (fs.existsSync(oldImagePath)) {
-        fs.unlinkSync(oldImagePath);
-      }
+    // Validate base64 format
+    if (!imageBase64.startsWith('data:image/')) {
+      return res.status(400).json({ error: 'Буруу зургийн формат.' });
     }
     
-    // Update task with new image URL
+    // Check size (approx 1MB for base64)
+    if (imageBase64.length > 1400000) {
+      return res.status(400).json({ error: 'Зургийн хэмжээ хэтэрхий том байна (max 1MB).' });
+    }
+    
+    // Update task with base64 image
     const result = await pool.query(
-      'UPDATE daily_tasks SET image_url = $1 WHERE id = $2 RETURNING *',
-      [imageUrl, taskId]
+      'UPDATE daily_tasks SET image_url = $1, image_position = $2 WHERE id = $3 RETURNING *',
+      [imageBase64, imagePosition || 'contain', taskId]
     );
     
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Upload task image error:', error);
-    if (req.file) {
-      fs.unlinkSync(req.file.path);
-    }
     res.status(500).json({ error: 'Зураг upload хийхэд алдаа гарлаа.' });
   }
 });
@@ -239,7 +200,7 @@ router.patch('/:id/image/settings', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete task image
+// Delete task image (base64)
 router.delete('/:id/image', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id || req.user.userId;
@@ -254,14 +215,7 @@ router.delete('/:id/image', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Ажил олдсонгүй эсвэл танд хандах эрх байхгүй.' });
     }
     
-    const task = checkResult.rows[0];
-    if (task.image_url) {
-      const imagePath = path.join(__dirname, '..', task.image_url);
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
-      }
-    }
-    
+    // Just set image_url to NULL (no file deletion needed for base64)
     await pool.query(
       'UPDATE daily_tasks SET image_url = NULL WHERE id = $1',
       [taskId]

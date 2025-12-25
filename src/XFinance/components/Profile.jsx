@@ -647,16 +647,16 @@ const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStor
         
         // Upload image if selected
         if (taskImage) {
-          const formData = new FormData();
-          formData.append('image', taskImage);
-          formData.append('imagePosition', imagePosition);
-          
           const imageResponse = await fetch(`${BASE_URL}/api/daily-tasks/${data.id}/image`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
             },
-            body: formData,
+            body: JSON.stringify({ 
+              imageBase64: taskImage, 
+              imagePosition 
+            }),
           });
           
           if (imageResponse.ok) {
@@ -844,14 +844,9 @@ const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStor
         return;
       }
       
-      // Convert base64 to blob for FormData
-      fetch(base64String)
-        .then(res => res.blob())
-        .then(blob => {
-          const compressedFile = new File([blob], file.name, { type: 'image/jpeg' });
-          setTaskImage(compressedFile);
-          setTaskImagePreview(base64String);
-        });
+      // Store base64 directly
+      setTaskImage(base64String);
+      setTaskImagePreview(base64String);
     };
     
     img.onerror = () => {
