@@ -427,7 +427,7 @@ const StoryModal = ({
                         </div>
                       )}
                       <img 
-                        src={`${BASE_URL}${dailyTasks[currentStoryIndex].image_url}`} 
+                        src={dailyTasks[currentStoryIndex].image_url.startsWith('data:') ? dailyTasks[currentStoryIndex].image_url : `${BASE_URL}${dailyTasks[currentStoryIndex].image_url}`} 
                         alt="Task" 
                         style={{ 
                           maxWidth: '100%',

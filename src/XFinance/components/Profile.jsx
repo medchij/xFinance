@@ -1461,7 +1461,7 @@ const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStor
                       {task.image_url && (
                         <div style={{ position: 'relative', display: 'inline-block' }}>
                           <img 
-                            src={`${BASE_URL}${task.image_url}`} 
+                            src={task.image_url.startsWith('data:') ? task.image_url : `${BASE_URL}${task.image_url}`} 
                             alt="Task" 
                             style={{ 
                               width: '50px', 
@@ -1476,7 +1476,7 @@ const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStor
                               modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:10000;';
                               modal.onclick = () => modal.remove();
                               const img = document.createElement('img');
-                              img.src = `${BASE_URL}${task.image_url}`;
+                              img.src = task.image_url.startsWith('data:') ? task.image_url : `${BASE_URL}${task.image_url}`;
                               img.style.cssText = 'max-width:90%;max-height:90%;border-radius:12px;';
                               modal.appendChild(img);
                               document.body.appendChild(modal);
