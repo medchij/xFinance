@@ -2,7 +2,7 @@ import * as React from "react";
 import { useState, useRef, useEffect } from "react";
 import PropTypes from "prop-types";
 import { Image, tokens, makeStyles, Button, Badge, Menu, MenuTrigger, MenuPopover, MenuList, MenuItem, MenuDivider } from "@fluentui/react-components";
-import { PersonRegular, BuildingRegular, SignOutRegular, SettingsRegular } from "@fluentui/react-icons";
+import { PersonRegular, BuildingRegular, SignOutRegular, SettingsRegular, BookmarkMultiple20Regular } from "@fluentui/react-icons";
 import { useAppContext } from "./AppContext";
 import { BASE_URL } from "../../config";
 
@@ -86,7 +86,7 @@ const useStyles = makeStyles({
   },
 });
 
-const Header = ({ title, logo, message, isPublic, onNavigateToLogin, currentUser, onNavigateToProfile, onNavigateToSettings, isSidebarOpen = false }) => {
+const Header = ({ title, logo, message, isPublic, onNavigateToLogin, currentUser, onNavigateToProfile, onNavigateToSettings, isSidebarOpen = false, onOpenStories }) => {
   const styles = useStyles();
   const { companies, selectedCompany, setSelectedCompany, selectedRoleId, setSelectedRoleId, logout } = useAppContext();
   const [userRoles, setUserRoles] = useState([]);
@@ -177,7 +177,43 @@ const Header = ({ title, logo, message, isPublic, onNavigateToLogin, currentUser
             Нэвтрэх
           </Button>
         ) : currentUser ? (
-          <div style={{ position: "absolute", right: "15px", top: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ position: "absolute", right: "15px", top: "8px", display: "flex", alignItems: "center", gap: "4px" }}>
+            {/* Компани сонгох dropdown */}
+            {companies && companies.length > 0 && (
+              <Menu>
+                <MenuTrigger disableButtonEnhancement>
+                  <Button
+                    appearance="subtle"
+                    style={{
+                      fontSize: tokens.fontSizeBase200,
+                      color: tokens.colorNeutralForeground1,
+                      padding: "6px 12px",
+                    }}
+                  >
+                    {selectedCompany && typeof selectedCompany === 'string' 
+                      ? selectedCompany
+                      : selectedCompany?.name
+                      || 'Компани'} ▼
+                  </Button>
+                </MenuTrigger>
+                <MenuPopover>
+                  <MenuList>
+                    {companies.map((company) => (
+                      <MenuItem
+                        key={company.id}
+                        onClick={() => handleCompanyChange(company)}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {selectedCompany === company.name && <span>✓</span>}
+                          <span>{company.name}</span>
+                        </div>
+                      </MenuItem>
+                    ))}
+                  </MenuList>
+                </MenuPopover>
+              </Menu>
+            )}
+
             {/* Ажил үүргийн dropdown */}
             {userRoles && userRoles.length > 0 && selectedRoleId && (
               <Menu>
@@ -211,11 +247,17 @@ const Header = ({ title, logo, message, isPublic, onNavigateToLogin, currentUser
               </Menu>
             )}
             
-            {/* Хэрэглэгчийн аватар & меню */}
+            {/* Хэрэглэгчийн аватар меню */}
             <Menu>
-            <MenuTrigger disableButtonEnhancement>
-              <div className={styles.userInfo} style={{ position: "relative", right: 0, top: 0 }}>
-                <div className={styles.userAvatar}>
+              <MenuTrigger disableButtonEnhancement>
+                <div
+                  className={styles.userAvatar}
+                  style={{
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s ease',
+                  }}
+                  title="Профайл"
+                >
                   {avatarUrl ? (
                     <img 
                       src={`${BASE_URL}${avatarUrl}`} 
@@ -224,69 +266,54 @@ const Header = ({ title, logo, message, isPublic, onNavigateToLogin, currentUser
                         width: '100%', 
                         height: '100%', 
                         borderRadius: '50%',
-                        objectFit: 'cover'
+                        objectFit: 'cover',
+                        cursor: 'pointer'
                       }} 
                     />
                   ) : (
                     (currentUser.name || currentUser.username || 'Х').charAt(0).toUpperCase()
                   )}
                 </div>
-              </div>
-            </MenuTrigger>
-            <MenuPopover>
-              <MenuList>
-                {/* Хэрэглэгчийн мэдээлэл */}
-                <MenuItem onClick={onNavigateToProfile} icon={<PersonRegular />} className={styles.menuItem}>
-                  <div>
-                    <div style={{ fontWeight: tokens.fontWeightSemibold }}>
-                      {currentUser.name || currentUser.username || 'Хэрэглэгч'}
-                    </div>
-                    {currentUser.role && (
-                      <div style={{ fontSize: tokens.fontSizeBase100, opacity: 0.7 }}>
-                        {currentUser.role}
-                      </div>
-                    )}
-                  </div>
-                </MenuItem>
-                
-                <MenuDivider />
-                
-                {/* Тохиргооны холбоос */}
-                {onNavigateToSettings && (
-                  <MenuItem onClick={onNavigateToSettings} icon={<SettingsRegular />} className={styles.menuItem}>
-                    Тохиргоо
+              </MenuTrigger>
+              <MenuPopover>
+                <MenuList>
+                  {/* Story товч */}
+                  <MenuItem onClick={onOpenStories} icon={<BookmarkMultiple20Regular />} className={styles.menuItem}>
+                    Өнөөдрийн ажлууд
                   </MenuItem>
-                )}
-                
-                {/* Компаниуд */}
-                {companies && companies.length > 0 && (
-                  <>
-                    <MenuDivider />
-                    <MenuItem disabled icon={<BuildingRegular />} className={styles.menuItem}>
-                      Компани солих
-                    </MenuItem>
-                    {companies.map((company) => (
-                      <MenuItem
-                        key={company.id}
-                        onClick={() => handleCompanyChange(company)}
-                        className={styles.companyMenuItem}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          {selectedCompany === company.name && <span>✓</span>}
-                          <span>{company.name}</span>
+
+                  <MenuDivider />
+                  
+                  {/* Хэрэглэгчийн мэдээлэл */}
+                  <MenuItem onClick={onNavigateToProfile} icon={<PersonRegular />} className={styles.menuItem}>
+                    <div>
+                      <div style={{ fontWeight: tokens.fontWeightSemibold }}>
+                        {currentUser.name || currentUser.username || 'Хэрэглэгч'}
+                      </div>
+                      {currentUser.role && (
+                        <div style={{ fontSize: tokens.fontSizeBase100, opacity: 0.7 }}>
+                          {currentUser.role}
                         </div>
-                      </MenuItem>
-                    ))}
-                  </>
-                )}
-                
-                {/* Гарах */}
-                <MenuItem onClick={handleLogout} icon={<SignOutRegular />} className={styles.menuItem}>
-                  Гарах
-                </MenuItem>
-              </MenuList>
-            </MenuPopover>
-          </Menu>
+                      )}
+                    </div>
+                  </MenuItem>
+                  
+                  <MenuDivider />
+                  
+                  {/* Тохиргооны холбоос */}
+                  {onNavigateToSettings && (
+                    <MenuItem onClick={onNavigateToSettings} icon={<SettingsRegular />} className={styles.menuItem}>
+                      Тохиргоо
+                    </MenuItem>
+                  )}
+                  
+                  {/* Гарах */}
+                  <MenuItem onClick={handleLogout} icon={<SignOutRegular />} className={styles.menuItem}>
+                    Гарах
+                  </MenuItem>
+                </MenuList>
+              </MenuPopover>
+            </Menu>
           </div>
         ) : null}
       </div>
@@ -306,6 +333,7 @@ Header.propTypes = {
   onNavigateToProfile: PropTypes.func,
   onNavigateToSettings: PropTypes.func,
   isSidebarOpen: PropTypes.bool,
+  onOpenStories: PropTypes.func,
 };
 
 export default Header;

@@ -1,0 +1,267 @@
+const express = require('express');
+const router = express.Router();
+const { pool } = require('../db');
+const authenticateToken = require('../middleware/authenticateToken');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Configure multer for task image uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadPath = path.join(__dirname, '../uploads/tasks');
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `task-${Date.now()}-${Math.random().toString(36).substring(7)}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) {
+      cb(null, true);
+    } else {
+      cb(new Error('Зөвхөн зураг файл оруулах боломжтой! (JPG, PNG, GIF)'));
+    }
+  }
+});
+
+// Get daily tasks for specific date (default: today)
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id || req.user.userId;
+    const date = req.query.date || new Date().toISOString().split('T')[0];
+    
+    const result = await pool.query(
+      'SELECT * FROM daily_tasks WHERE user_id = $1 AND due_date = $2 ORDER BY created_at ASC',
+      [userId, date]
+    );
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get tasks error:', error);
+    res.status(500).json({ error: 'Ажлууд татахад алдаа гарлаа.' });
+  }
+});
+
+// Create new task
+router.post('/', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id || req.user.userId;
+    const { task, due_date, image_url, image_position } = req.body;
+    
+    if (!task || !task.trim()) {
+      return res.status(400).json({ error: 'Ажлын агуулга оруулна уу.' });
+    }
+    
+    const dueDate = due_date || new Date().toISOString().split('T')[0];
+    
+    const result = await pool.query(
+      'INSERT INTO daily_tasks (user_id, task, due_date, image_url, image_position) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [userId, task.trim(), dueDate, image_url || null, image_position || 'contain']
+    );
+    
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Create task error:', error);
+    res.status(500).json({ error: 'Ажил үүсгэхэд алдаа гарлаа.' });
+  }
+});
+
+// Update task (toggle completion)
+router.patch('/:id', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id || req.user.userId;
+    const taskId = req.params.id;
+    const { completed } = req.body;
+    
+    // Check if task belongs to user
+    const checkResult = await pool.query(
+      'SELECT * FROM daily_tasks WHERE id = $1 AND user_id = $2',
+      [taskId, userId]
+    );
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Ажил олдсонгүй эсвэл танд хандах эрх байхгүй.' });
+    }
+    
+    const result = await pool.query(
+      'UPDATE daily_tasks SET completed = $1 WHERE id = $2 RETURNING *',
+      [completed, taskId]
+    );
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Update task error:', error);
+    res.status(500).json({ error: 'Ажил шинэчлэхэд алдаа гарлаа.' });
+  }
+});
+
+// Delete task
+router.delete('/:id', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id || req.user.userId;
+    const taskId = req.params.id;
+    
+    // Check if task belongs to user
+    const checkResult = await pool.query(
+      'SELECT * FROM daily_tasks WHERE id = $1 AND user_id = $2',
+      [taskId, userId]
+    );
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Ажил олдсонгүй эсвэл танд хандах эрх байхгүй.' });
+    }
+    
+    await pool.query('DELETE FROM daily_tasks WHERE id = $1', [taskId]);
+    
+    res.json({ message: 'Ажил амжилттай устгагдлаа.' });
+  } catch (error) {
+    console.error('Delete task error:', error);
+    res.status(500).json({ error: 'Ажил устгахад алдаа гарлаа.' });
+  }
+});
+
+// Upload task image
+router.post('/:id/image', authenticateToken, upload.single('image'), async (req, res) => {
+  try {
+    const userId = req.user.id || req.user.userId;
+    const taskId = req.params.id;
+    
+    // Check if task belongs to user
+    const checkResult = await pool.query(
+      'SELECT * FROM daily_tasks WHERE id = $1 AND user_id = $2',
+      [taskId, userId]
+    );
+    
+    if (checkResult.rows.length === 0) {
+      if (req.file) {
+        fs.unlinkSync(req.file.path); // Delete uploaded file
+      }
+      return res.status(404).json({ error: 'Ажил олдсонгүй эсвэл танд хандах эрх байхгүй.' });
+    }
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'Зураг оруулна уу.' });
+    }
+    
+    const imageUrl = `/uploads/tasks/${req.file.filename}`;
+    
+    // Delete old image if exists
+    const oldTask = checkResult.rows[0];
+    if (oldTask.image_url) {
+      const oldImagePath = path.join(__dirname, '..', oldTask.image_url);
+      if (fs.existsSync(oldImagePath)) {
+        fs.unlinkSync(oldImagePath);
+      }
+    }
+    
+    // Update task with new image URL
+    const result = await pool.query(
+      'UPDATE daily_tasks SET image_url = $1 WHERE id = $2 RETURNING *',
+      [imageUrl, taskId]
+    );
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Upload task image error:', error);
+    if (req.file) {
+      fs.unlinkSync(req.file.path);
+    }
+    res.status(500).json({ error: 'Зураг upload хийхэд алдаа гарлаа.' });
+  }
+});
+
+// Update image settings (position, scale, title offset, text styling)
+router.patch('/:id/image/settings', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id || req.user.userId;
+    const taskId = req.params.id;
+    const { image_position, image_scale, title_offset_x, title_offset_y, title_font_size, title_color } = req.body;
+  
+    // Check if task belongs to user
+    const checkResult = await pool.query(
+      'SELECT * FROM daily_tasks WHERE id = $1 AND user_id = $2',
+      [taskId, userId]
+    );
+  
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Ажил олдсонгүй эсвэл танд хандах эрх байхгүй.' });
+    }
+  
+    const offsetX = Number.isFinite(parseInt(title_offset_x)) ? parseInt(title_offset_x) : 0;
+    const offsetY = Number.isFinite(parseInt(title_offset_y)) ? parseInt(title_offset_y) : 0;
+  
+    const fontSize = Number.isFinite(parseInt(title_font_size)) ? parseInt(title_font_size) : 17;
+    const color = title_color || '#ffffff';
+  
+    const result = await pool.query(
+      `UPDATE daily_tasks 
+       SET image_position = $1, image_scale = $2, title_offset_x = $3, title_offset_y = $4, title_font_size = $5, title_color = $6
+       WHERE id = $7 AND user_id = $8 
+       RETURNING *`,
+      [
+        image_position || 'contain',
+        image_scale || 1,
+        offsetX,
+        offsetY,
+        fontSize,
+        color,
+        taskId,
+        userId
+      ]
+    );
+  
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Update image settings error:', error);
+    res.status(500).json({ error: 'Зургийн тохиргоо шинэчлэхэд алдаа гарлаа.' });
+  }
+});
+
+// Delete task image
+router.delete('/:id/image', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id || req.user.userId;
+    const taskId = req.params.id;
+    
+    const checkResult = await pool.query(
+      'SELECT * FROM daily_tasks WHERE id = $1 AND user_id = $2',
+      [taskId, userId]
+    );
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Ажил олдсонгүй эсвэл танд хандах эрх байхгүй.' });
+    }
+    
+    const task = checkResult.rows[0];
+    if (task.image_url) {
+      const imagePath = path.join(__dirname, '..', task.image_url);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+    
+    await pool.query(
+      'UPDATE daily_tasks SET image_url = NULL WHERE id = $1',
+      [taskId]
+    );
+    
+    res.json({ message: 'Зураг амжилттай устгагдлаа.' });
+  } catch (error) {
+    console.error('Delete task image error:', error);
+    res.status(500).json({ error: 'Зураг устгахад алдаа гарлаа.' });
+  }
+});
+
+module.exports = router;

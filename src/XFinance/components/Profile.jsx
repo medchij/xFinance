@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { BASE_URL } from "../../config";
 import { 
   Dropdown, 
@@ -35,6 +35,7 @@ import {
 } from "@fluentui/react-icons";
 import { useAppContext } from "./AppContext";
 import ConfirmationDialog from "./ConfirmationDialog";
+import StoryModal from "./StoryModal";
 
 const useStyles = makeStyles({
   container: {
@@ -77,7 +78,7 @@ const useStyles = makeStyles({
   },
 });
 
-const Profile = ({ isSidebarOpen }) => {
+const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStories, isActive = true }) => {
   const styles = useStyles();
   const {
     currentUser,
@@ -109,6 +110,39 @@ const Profile = ({ isSidebarOpen }) => {
   const [deleteKey, setDeleteKey] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(currentUser?.avatar_url);
+  
+  // Notes & Daily Tasks states
+  const [notes, setNotes] = useState([]);
+  const [newNote, setNewNote] = useState('');
+  const [dailyTasks, setDailyTasks] = useState([]);
+  const [newTask, setNewTask] = useState('');
+  const [loadingNotes, setLoadingNotes] = useState(false);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+  const [taskImage, setTaskImage] = useState(null);
+  const [taskImagePreview, setTaskImagePreview] = useState(null);
+  const [imagePosition, setImagePosition] = useState('contain');
+  const [storyEditMode, setStoryEditMode] = useState(false);
+  const [editingImagePosition, setEditingImagePosition] = useState('contain');
+  const [editingImageScale, setEditingImageScale] = useState(1);
+  const [editingImageOffset, setEditingImageOffset] = useState({ x: 0, y: 0 });
+  const [isPanningImage, setIsPanningImage] = useState(false);
+  const panStartRef = useRef({ x: 0, y: 0 });
+  const panOffsetStartRef = useRef({ x: 0, y: 0 });
+  const [editingTitleOffset, setEditingTitleOffset] = useState({ x: 0, y: 0 });
+  const [isPanningTitle, setIsPanningTitle] = useState(false);
+  const titlePanStartRef = useRef({ x: 0, y: 0 });
+  const titlePanOffsetStartRef = useRef({ x: 0, y: 0 });
+  const [editingTitleFontSize, setEditingTitleFontSize] = useState(17);
+  const [editingTitleColor, setEditingTitleColor] = useState('#ffffff');
+
+  // Update local avatar when currentUser changes
+  useEffect(() => {
+    setAvatarUrl(currentUser?.avatar_url);
+  }, [currentUser?.avatar_url]);
 
   useEffect(() => {
     if (currentUser) {
@@ -287,7 +321,6 @@ const Profile = ({ isSidebarOpen }) => {
     try {
       const token = localStorage.getItem('authToken');
       if (token) {
-        // Шууд POST API дуудах
         const response = await fetch(`${BASE_URL}/api/user-settings`, {
           method: 'POST',
           headers: {
@@ -298,7 +331,6 @@ const Profile = ({ isSidebarOpen }) => {
         });
 
         if (response.ok) {
-          // Амжилттай нэмэгдсэн бол local state шинэчлэх
           const newSettings = { ...settings, [newSetting.key]: newSetting.value };
           setSettings(newSettings);
           setOriginalSettings(newSettings);
@@ -399,17 +431,14 @@ const Profile = ({ isSidebarOpen }) => {
       if (response.ok) {
         const data = await response.json();
         showMessage('✅ Зураг амжилттай солигдлоо.');
+        // Update local avatar state
+        setAvatarUrl(data.avatar_url);
         // Update currentUser object to trigger re-render
         const updatedUser = { ...currentUser, avatar_url: data.avatar_url };
         // Update localStorage
         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
         // Emit custom event to update other components
         window.dispatchEvent(new CustomEvent('userUpdated', { detail: updatedUser }));
-        // Update avatar image src directly
-        const preview = document.getElementById('avatar-preview');
-        if (preview) {
-          preview.src = `${BASE_URL}${data.avatar_url}`;
-        }
       } else {
         const error = await response.json();
         showMessage(`⚠️ ${error.error || 'Зураг оруулахад алдаа гарлаа.'}`, 'error');
@@ -437,17 +466,14 @@ const Profile = ({ isSidebarOpen }) => {
 
       if (response.ok) {
         showMessage('✅ Зураг амжилттай устгагдлаа.');
+        // Update local avatar state
+        setAvatarUrl(null);
         // Update currentUser object to trigger re-render
         const updatedUser = { ...currentUser, avatar_url: null };
         // Update localStorage
         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
         // Emit custom event to update other components
         window.dispatchEvent(new CustomEvent('userUpdated', { detail: updatedUser }));
-        // Remove avatar preview
-        const preview = document.getElementById('avatar-preview');
-        if (preview) {
-          preview.style.display = 'none';
-        }
       } else {
         const error = await response.json();
         showMessage(`⚠️ ${error.error || 'Зураг устгахад алдаа гарлаа.'}`, 'error');
@@ -459,6 +485,459 @@ const Profile = ({ isSidebarOpen }) => {
       setUploadingAvatar(false);
     }
   };
+
+  // Fetch Notes
+  const fetchNotes = async () => {
+    setLoadingNotes(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${BASE_URL}/api/user-notes`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setNotes(data);
+      }
+    } catch (error) {
+      console.error('Fetch notes error:', error);
+    } finally {
+      setLoadingNotes(false);
+    }
+  };
+
+  // Add Note
+  const handleAddNote = async () => {
+    if (!newNote.trim()) return;
+    
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${BASE_URL}/api/user-notes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content: newNote }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setNotes([data, ...notes]);
+        setNewNote('');
+        showMessage('✅ Note нэмэгдлээ.');
+      }
+    } catch (error) {
+      console.error('Add note error:', error);
+      showMessage('❌ Note нэмэхэд алдаа гарлаа.', 'error');
+    }
+  };
+
+  // Delete Note
+  const handleDeleteNote = async (noteId) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${BASE_URL}/api/user-notes/${noteId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        setNotes(notes.filter(note => note.id !== noteId));
+        showMessage('✅ Note устгагдлаа.');
+      }
+    } catch (error) {
+      console.error('Delete note error:', error);
+      showMessage('❌ Note устгахад алдаа гарлаа.', 'error');
+    }
+  };
+
+  // Fetch Daily Tasks
+  const fetchDailyTasks = async () => {
+    setLoadingTasks(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const today = new Date().toISOString().split('T')[0];
+      const response = await fetch(`${BASE_URL}/api/daily-tasks?date=${today}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setDailyTasks(data);
+      }
+    } catch (error) {
+      console.error('Fetch tasks error:', error);
+    } finally {
+      setLoadingTasks(false);
+    }
+  };
+
+  // Add Daily Task
+  const handleAddTask = async () => {
+    if (!newTask.trim()) return;
+    
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${BASE_URL}/api/daily-tasks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ task: newTask, due_date: new Date().toISOString().split('T')[0] }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Upload image if selected
+        if (taskImage) {
+          const formData = new FormData();
+          formData.append('image', taskImage);
+          formData.append('imagePosition', imagePosition);
+          
+          const imageResponse = await fetch(`${BASE_URL}/api/daily-tasks/${data.id}/image`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+            body: formData,
+          });
+          
+          if (imageResponse.ok) {
+            const updatedTask = await imageResponse.json();
+            setDailyTasks([...dailyTasks, updatedTask]);
+          } else {
+            setDailyTasks([...dailyTasks, data]);
+          }
+        } else {
+          setDailyTasks([...dailyTasks, data]);
+        }
+        
+        setNewTask('');
+        setTaskImage(null);
+        setTaskImagePreview(null);
+        setImagePosition('contain');
+        showMessage('✅ Ажил нэмэгдлээ.');
+      }
+    } catch (error) {
+      console.error('Add task error:', error);
+      showMessage('❌ Ажил нэмэхэд алдаа гарлаа.', 'error');
+    }
+  };
+
+  // Handle task image selection
+  // Save image settings in story modal
+  const handleSaveImageSettings = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const currentTask = dailyTasks[currentStoryIndex];
+      
+      const response = await fetch(`${BASE_URL}/api/daily-tasks/${currentTask.id}/image/settings`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ 
+          image_position: editingImagePosition,
+          image_scale: editingImageScale,
+          title_offset_x: editingTitleOffset.x,
+          title_offset_y: editingTitleOffset.y,
+          title_font_size: editingTitleFontSize,
+          title_color: editingTitleColor,
+        }),
+      });
+
+      if (response.ok) {
+        const updatedTask = await response.json();
+        setDailyTasks(dailyTasks.map(task => 
+          task.id === currentTask.id ? updatedTask : task
+        ));
+        setStoryEditMode(false);
+        showMessage('✅ Зургийн тохиргоо хадгалагдлаа.');
+      }
+    } catch (error) {
+      console.error('Save image settings error:', error);
+      showMessage('❌ Тохиргоо хадгалахад алдаа гарлаа.', 'error');
+    }
+  };
+
+  const normalizeScale = (value) => {
+    const num = parseFloat(value);
+    return Number.isFinite(num) ? num : 1;
+  };
+
+  const adjustEditingScale = (delta) => {
+    setEditingImageScale((prev) => {
+      const current = normalizeScale(prev);
+      const next = parseFloat((current + delta).toFixed(2));
+      return Math.min(2, Math.max(0.5, next));
+    });
+  };
+
+  const resetImageOffset = () => setEditingImageOffset({ x: 0, y: 0 });
+
+  const beginImagePan = (clientX, clientY) => {
+    if (!storyEditMode) return;
+    panStartRef.current = { x: clientX, y: clientY };
+    panOffsetStartRef.current = { ...editingImageOffset };
+    setIsPanningImage(true);
+  };
+
+  const moveImagePan = (clientX, clientY) => {
+    if (!isPanningImage) return;
+    const dx = clientX - panStartRef.current.x;
+    const dy = clientY - panStartRef.current.y;
+    setEditingImageOffset({
+      x: panOffsetStartRef.current.x + dx,
+      y: panOffsetStartRef.current.y + dy,
+    });
+  };
+
+  const endImagePan = () => {
+    setIsPanningImage(false);
+  };
+
+  const resetTitleOffset = () => setEditingTitleOffset({ x: 0, y: 0 });
+
+  const beginTitlePan = (clientX, clientY) => {
+    if (!storyEditMode) return;
+    titlePanStartRef.current = { x: clientX, y: clientY };
+    titlePanOffsetStartRef.current = { ...editingTitleOffset };
+    setIsPanningTitle(true);
+  };
+
+  const moveTitlePan = (clientX, clientY) => {
+    if (!isPanningTitle) return;
+    const dx = clientX - titlePanStartRef.current.x;
+    const dy = clientY - titlePanStartRef.current.y;
+    setEditingTitleOffset({
+      x: titlePanOffsetStartRef.current.x + dx,
+      y: titlePanOffsetStartRef.current.y + dy,
+    });
+  };
+
+  const endTitlePan = () => {
+    setIsPanningTitle(false);
+  };
+
+  const handleImageWheel = (e) => {
+    if (!storyEditMode) return;
+    e.preventDefault();
+    const step = e.deltaY < 0 ? 0.05 : -0.05;
+    adjustEditingScale(step);
+  };
+
+  const handleTaskImageSelect = (event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        showMessage('❌ Зураг 5MB-аас бага байх ёстой.', 'error');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setTaskImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+      setTaskImage(file);
+    }
+  };
+
+  // Remove task image
+  const handleRemoveTaskImage = () => {
+    setTaskImage(null);
+    setTaskImagePreview(null);
+    setImagePosition('contain');
+  };
+
+  // Delete task image
+  const handleDeleteTaskImage = async (taskId) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${BASE_URL}/api/daily-tasks/${taskId}/image`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        setDailyTasks(dailyTasks.map(task => 
+          task.id === taskId ? { ...task, image_url: null } : task
+        ));
+        showMessage('✅ Зураг устгагдлаа.');
+      }
+    } catch (error) {
+      console.error('Delete task image error:', error);
+      showMessage('❌ Зураг устгахад алдаа гарлаа.', 'error');
+    }
+  };
+
+  // Toggle Task Completion
+  const handleToggleTask = async (taskId, completed) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${BASE_URL}/api/daily-tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ completed: !completed }),
+      });
+
+      if (response.ok) {
+        setDailyTasks(dailyTasks.map(task => 
+          task.id === taskId ? { ...task, completed: !completed } : task
+        ));
+      }
+    } catch (error) {
+      console.error('Toggle task error:', error);
+    }
+  };
+
+  // Delete Task
+  const handleDeleteTask = async (taskId) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${BASE_URL}/api/daily-tasks/${taskId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        setDailyTasks(dailyTasks.filter(task => task.id !== taskId));
+        showMessage('✅ Ажил устгагдлаа.');
+      }
+    } catch (error) {
+      console.error('Delete task error:', error);
+      showMessage('❌ Ажил устгахад алдаа гарлаа.', 'error');
+    }
+  };
+
+  // Story modal controls need to be declared before the modal JSX below
+  const handleCloseStoriesLocal = () => {
+    setCurrentStoryIndex(0);
+    setStoryEditMode(false);
+    if (onCloseStories) {
+      onCloseStories();
+    } else {
+      setShowStoryModal(false);
+    }
+  };
+
+  const handleTouchStart = (e) => {
+    setTouchStart(e.targetTouches[0].clientY);
+  };
+
+  const handleTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientY);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const minSwipeDistance = 50;
+
+    if (Math.abs(distance) > minSwipeDistance) {
+      if (distance > 0) {
+        // Swipe up - next story
+        if (currentStoryIndex < dailyTasks.length - 1) {
+          setCurrentStoryIndex(currentStoryIndex + 1);
+        } else {
+          handleCloseStoriesLocal();
+        }
+      } else {
+        // Swipe down - previous story
+        if (currentStoryIndex > 0) {
+          setCurrentStoryIndex(currentStoryIndex - 1);
+        }
+      }
+    }
+  };
+
+  // Load notes and tasks on mount (keep hooks before conditional returns)
+  useEffect(() => {
+    if (currentUser) {
+      fetchNotes();
+      fetchDailyTasks();
+    }
+  }, [currentUser]);
+
+  // Keyboard navigation for story modal
+  useEffect(() => {
+    if (!showStoryModal) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (currentStoryIndex < dailyTasks.length - 1) {
+          setCurrentStoryIndex(currentStoryIndex + 1);
+        }
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (currentStoryIndex > 0) {
+          setCurrentStoryIndex(currentStoryIndex - 1);
+        }
+      } else if (e.key === 'Escape') {
+        handleCloseStoriesLocal();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showStoryModal, currentStoryIndex, dailyTasks.length]);
+
+  const storyModal = (
+    <StoryModal
+      showStoryModal={showStoryModal}
+      onCloseStories={handleCloseStoriesLocal}
+      dailyTasks={dailyTasks}
+      currentStoryIndex={currentStoryIndex}
+      setCurrentStoryIndex={setCurrentStoryIndex}
+      loadingTasks={loadingTasks}
+      currentUser={currentUser}
+      avatarUrl={avatarUrl}
+      storyEditMode={storyEditMode}
+      setStoryEditMode={setStoryEditMode}
+      editingImagePosition={editingImagePosition}
+      setEditingImagePosition={setEditingImagePosition}
+      editingImageScale={editingImageScale}
+      setEditingImageScale={setEditingImageScale}
+      editingImageOffset={editingImageOffset}
+      editingTitleOffset={editingTitleOffset}
+      setEditingTitleOffset={setEditingTitleOffset}
+      editingTitleFontSize={editingTitleFontSize}
+      setEditingTitleFontSize={setEditingTitleFontSize}
+      editingTitleColor={editingTitleColor}
+      setEditingTitleColor={setEditingTitleColor}
+      handleSaveImageSettings={handleSaveImageSettings}
+      adjustEditingScale={adjustEditingScale}
+      resetImageOffset={resetImageOffset}
+      resetTitleOffset={resetTitleOffset}
+      normalizeScale={normalizeScale}
+      handleImageWheel={handleImageWheel}
+      beginImagePan={beginImagePan}
+      moveImagePan={moveImagePan}
+      endImagePan={endImagePan}
+      isPanningImage={isPanningImage}
+      beginTitlePan={beginTitlePan}
+      moveTitlePan={moveTitlePan}
+      endTitlePan={endTitlePan}
+      isPanningTitle={isPanningTitle}
+      handleTouchStart={handleTouchStart}
+      handleTouchMove={handleTouchMove}
+      handleTouchEnd={handleTouchEnd}
+    />
+  );
+
+  if (!isActive && showStoryModal) {
+    return storyModal;
+  }
+
+  if (!isActive) {
+    return null;
+  }
 
   const handleEditSetting = async (key, value) => {
     try {
@@ -544,36 +1023,72 @@ const Profile = ({ isSidebarOpen }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '16px' }}>
           {/* Avatar preview with camera button */}
           <div style={{ position: 'relative' }}>
-            <div style={{
-              width: '140px',
-              height: '140px',
-              borderRadius: '50%',
-              backgroundColor: tokens.colorBrandBackground,
-              color: tokens.colorNeutralForegroundOnBrand,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '56px',
-              fontWeight: tokens.fontWeightSemibold,
-              overflow: 'hidden',
-              border: `4px solid ${tokens.colorNeutralBackground1}`,
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-            }}>
-              {currentUser?.avatar_url ? (
-                <img 
-                  id="avatar-preview"
-                  src={`${BASE_URL}${currentUser.avatar_url}`} 
-                  alt="Avatar" 
-                  style={{ 
-                    width: '100%', 
-                    height: '100%', 
-                    objectFit: 'cover'
-                  }} 
-                />
-              ) : (
-                (currentUser?.name || currentUser?.username || 'Х').charAt(0).toUpperCase()
-              )}
+            {/* Story ring around avatar */}
+            <div 
+              onClick={() => setShowStoryModal(true)}
+              style={{
+                width: '152px',
+                height: '152px',
+                borderRadius: '50%',
+                background: 'transparent',
+                padding: 0,
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'transform 0.2s',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              <div style={{
+                width: '152px',
+                height: '152px',
+                borderRadius: '50%',
+                backgroundColor: 'transparent',
+                padding: 0,
+              }}>
+                <div style={{
+                  width: '152px',
+                  height: '152px',
+                  borderRadius: '50%',
+                  backgroundColor: tokens.colorBrandBackground,
+                  color: tokens.colorNeutralForegroundOnBrand,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '56px',
+                  fontWeight: tokens.fontWeightSemibold,
+                  overflow: 'hidden',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                }}>
+                  {avatarUrl ? (
+                    <img 
+                      src={`${BASE_URL}${avatarUrl}`} 
+                      alt="Avatar" 
+                      style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        objectFit: 'cover'
+                      }} 
+                    />
+                  ) : (
+                    (currentUser?.name || currentUser?.username || 'Х').charAt(0).toUpperCase()
+                  )}
+                </div>
+              </div>
             </div>
+            
+            {/* Story text below avatar */}
+            {dailyTasks.length > 0 && (
+              <div style={{
+                textAlign: 'center',
+                marginTop: '8px',
+                fontSize: '12px',
+                fontWeight: '600',
+                color: tokens.colorBrandForeground1,
+              }}>
+                Story үзэх
+              </div>
+            )}
             
             {/* Camera button with menu */}
             <Menu>
@@ -611,7 +1126,7 @@ const Profile = ({ isSidebarOpen }) => {
                   <MenuItem onClick={() => document.getElementById('avatar-upload').click()}>
                     📤 Зураг оруулах
                   </MenuItem>
-                  {currentUser?.avatar_url && (
+                  {avatarUrl && (
                     <MenuItem onClick={handleDeleteAvatar} style={{ color: '#d13438' }}>
                       🗑️ Устгах
                     </MenuItem>
@@ -661,7 +1176,322 @@ const Profile = ({ isSidebarOpen }) => {
           </div>
         </div>
       </div>
-      
+
+      {/* Daily Tasks/Story - Өдрийн ажлууд */}
+      <div className={styles.card} style={{ marginBottom: '24px' }}>
+        <div className={styles.header}>
+          <h2 className={styles.title}>✅ Өнөөдрийн ажлууд</h2>
+          <p style={{ margin: 0, fontSize: '12px', color: tokens.colorNeutralForeground3 }}>
+            {new Date().toLocaleDateString('mn-MN', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}
+          </p>
+        </div>
+        
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: taskImagePreview ? '12px' : '0' }}>
+            <Input
+              value={newTask}
+              onChange={(e) => setNewTask(e.target.value)}
+              placeholder="Өнөөдөр хийх ажил..."
+              style={{ flex: 1 }}
+              onKeyPress={(e) => e.key === 'Enter' && handleAddTask()}
+            />
+            <input
+              id="task-image-upload"
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleTaskImageSelect}
+            />
+            <Button 
+              appearance="subtle" 
+              icon={<CameraRegular />}
+              onClick={() => document.getElementById('task-image-upload').click()}
+              title="Зураг оруулах"
+            />
+            <Button 
+              appearance="primary" 
+              onClick={handleAddTask}
+              disabled={!newTask.trim() || loadingTasks}
+            >
+              ➕ Нэмэх
+            </Button>
+          </div>
+          
+          {taskImagePreview && (
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+              <div style={{ 
+                position: 'relative', 
+                display: 'inline-block',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                border: `1px solid ${tokens.colorNeutralStroke1}`
+              }}>
+                <img 
+                  src={taskImagePreview} 
+                  alt="Preview" 
+                  style={{ 
+                    width: '100px', 
+                    height: '100px', 
+                    objectFit: 'cover',
+                    display: 'block'
+                  }} 
+                />
+                <button
+                  onClick={handleRemoveTaskImage}
+                  style={{
+                    position: 'absolute',
+                    top: '4px',
+                    right: '4px',
+                    background: 'rgba(0,0,0,0.6)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '24px',
+                    height: '24px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '14px'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+              
+              {/* Image Position Selector */}
+              <div style={{ flex: 1 }}>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: '12px', 
+                  color: tokens.colorNeutralForeground3,
+                  marginBottom: '6px',
+                  fontWeight: 'bold'
+                }}>
+                  📐 Зургийн харагдалт:
+                </label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <Button
+                    size="small"
+                    appearance={imagePosition === 'contain' ? 'primary' : 'secondary'}
+                    onClick={() => setImagePosition('contain')}
+                    style={{ fontSize: '11px' }}
+                  >
+                    🖼️ Бүтэн
+                  </Button>
+                  <Button
+                    size="small"
+                    appearance={imagePosition === 'cover' ? 'primary' : 'secondary'}
+                    onClick={() => setImagePosition('cover')}
+                    style={{ fontSize: '11px' }}
+                  >
+                    ✂️ Дүүргэх
+                  </Button>
+                  <Button
+                    size="small"
+                    appearance={imagePosition === 'fill' ? 'primary' : 'secondary'}
+                    onClick={() => setImagePosition('fill')}
+                    style={{ fontSize: '11px' }}
+                  >
+                    ↔️ Сунгах
+                  </Button>
+                </div>
+                <p style={{ 
+                  fontSize: '10px', 
+                  color: tokens.colorNeutralForeground4,
+                  margin: '6px 0 0 0'
+                }}>
+                  {imagePosition === 'contain' && '✓ Зураг бүтэн харагдана'}
+                  {imagePosition === 'cover' && '✓ Зураг дэлгэцийг дүүргэнэ'}
+                  {imagePosition === 'fill' && '✓ Зураг таарч сунана'}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+          {loadingTasks ? (
+            <p style={{ textAlign: 'center', color: tokens.colorNeutralForeground3 }}>Уншиж байна...</p>
+          ) : dailyTasks.length === 0 ? (
+            <p style={{ textAlign: 'center', color: tokens.colorNeutralForeground3, padding: '20px' }}>
+              📋 Өнөөдрийн ажил алга байна. Эхлэе!
+            </p>
+          ) : (
+            <>
+              <div style={{ marginBottom: '12px', fontSize: '12px', color: tokens.colorNeutralForeground3 }}>
+                {dailyTasks.filter(t => t.completed).length} / {dailyTasks.length} дууссан
+              </div>
+              {dailyTasks.map((task) => (
+                <div 
+                  key={task.id} 
+                  style={{ 
+                    padding: '12px',
+                    marginBottom: '8px',
+                    backgroundColor: task.completed ? tokens.colorNeutralBackground2 : tokens.colorNeutralBackground1,
+                    borderRadius: '8px',
+                    border: `1px solid ${task.completed ? tokens.colorPaletteGreenBorder2 : tokens.colorNeutralStroke1}`,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    opacity: task.completed ? 0.7 : 1
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                    <Switch
+                      checked={task.completed}
+                      onChange={() => handleToggleTask(task.id, task.completed)}
+                    />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                      <span style={{ 
+                        fontSize: '14px',
+                        textDecoration: task.completed ? 'line-through' : 'none',
+                        flex: 1
+                      }}>
+                        {task.task}
+                      </span>
+                      {task.image_url && (
+                        <div style={{ position: 'relative', display: 'inline-block' }}>
+                          <img 
+                            src={`${BASE_URL}${task.image_url}`} 
+                            alt="Task" 
+                            style={{ 
+                              width: '50px', 
+                              height: '50px', 
+                              objectFit: 'cover',
+                              borderRadius: '6px',
+                              cursor: 'pointer'
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const modal = document.createElement('div');
+                              modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:10000;';
+                              modal.onclick = () => modal.remove();
+                              const img = document.createElement('img');
+                              img.src = `${BASE_URL}${task.image_url}`;
+                              img.style.cssText = 'max-width:90%;max-height:90%;border-radius:12px;';
+                              modal.appendChild(img);
+                              document.body.appendChild(modal);
+                            }}
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteTaskImage(task.id);
+                            }}
+                            style={{
+                              position: 'absolute',
+                              top: '-6px',
+                              right: '-6px',
+                              background: '#d13438',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: '20px',
+                              height: '20px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '12px',
+                              fontWeight: 'bold'
+                            }}
+                            title="Зураг устгах"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <Button 
+                    size="small" 
+                    appearance="subtle" 
+                    icon={<DeleteRegular />}
+                    onClick={() => handleDeleteTask(task.id)}
+                    style={{ color: '#d13438' }}
+                  />
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Notes - Instagram шиг */}
+      <div className={styles.card} style={{ marginBottom: '24px' }}>
+        <div className={styles.header}>
+          <h2 className={styles.title}>📝 Миний тэмдэглэл</h2>
+        </div>
+        
+        <div style={{ marginBottom: '16px', display: 'flex', gap: '8px' }}>
+          <Input
+            value={newNote}
+            onChange={(e) => setNewNote(e.target.value)}
+            placeholder="Юу бодож байна..."
+            style={{ flex: 1 }}
+            onKeyPress={(e) => e.key === 'Enter' && handleAddNote()}
+          />
+          <Button 
+            appearance="primary" 
+            onClick={handleAddNote}
+            disabled={!newNote.trim() || loadingNotes}
+          >
+            ➕ Нэмэх
+          </Button>
+        </div>
+
+        <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+          {loadingNotes ? (
+            <p style={{ textAlign: 'center', color: tokens.colorNeutralForeground3 }}>Уншиж байна...</p>
+          ) : notes.length === 0 ? (
+            <p style={{ textAlign: 'center', color: tokens.colorNeutralForeground3, padding: '20px' }}>
+              📭 Одоогоор тэмдэглэл алга байна.
+            </p>
+          ) : (
+            notes.map((note) => (
+              <div 
+                key={note.id} 
+                style={{ 
+                  padding: '12px',
+                  marginBottom: '8px',
+                  backgroundColor: tokens.colorNeutralBackground2,
+                  borderRadius: '8px',
+                  border: `1px solid ${tokens.colorNeutralStroke1}`,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start'
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: '0 0 4px 0', fontSize: '14px' }}>{note.content}</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: tokens.colorNeutralForeground3 }}>
+                    🕒 {new Date(note.created_at).toLocaleString('mn-MN', { 
+                      month: 'short', 
+                      day: 'numeric', 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}
+                  </p>
+                </div>
+                <Button 
+                  size="small" 
+                  appearance="subtle" 
+                  icon={<DeleteRegular />}
+                  onClick={() => handleDeleteNote(note.id)}
+                  style={{ color: '#d13438' }}
+                />
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
       {/* Компани сонгох хэсэг */}
       <div className={styles.card} style={{ marginTop: '32px' }}>
         <div className={styles.header}>
@@ -918,17 +1748,20 @@ const Profile = ({ isSidebarOpen }) => {
           </div>
         )}
 
-        {/* Системээс гарах */}
-        <div style={{ marginTop: "16px" }}>
-          <h3 style={{ marginBottom: "8px", fontSize: "16px" }}>🚪 Системээс гарах</h3>
-          <p style={{ marginBottom: "12px", color: tokens.colorNeutralForeground3, fontSize: "14px" }}>
-            Та системээс гарч, нэвтрэх хуудас руу шилжих болно.
-          </p>
-          <Button icon={<SignOut24Regular />} appearance="primary" onClick={logout}>
-            Системээс гарах
-          </Button>
         </div>
-      </div>
+        {/* Системээс гарах */}
+        <Button 
+          appearance="secondary" 
+          icon={<SignOut24Regular />} 
+          onClick={logout}
+          style={{ marginTop: '12px' }}
+        >
+          Системээс гарах
+        </Button>
+    
+
+      {/* Story Modal */}
+      {storyModal}
     </div>
   );
 };

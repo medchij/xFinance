@@ -25,7 +25,12 @@ const AuthenticatedApp = ({ title }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [activePage, setActivePage] = useState("Maincontent");
   const [isLogViewerOpen, setLogViewerOpen] = useState(false);
-  const { hasPermission, showMessage, currentUser } = useAppContext(); // currentUser нэмэв
+  const [showStoryModal, setShowStoryModal] = useState(false);
+  const { hasPermission, showMessage, currentUser } = useAppContext(); // currentUser नেमэв
+
+  const handleCloseStories = () => {
+    setShowStoryModal(false);
+  };
 
   // Activity tracking
   const { trackExcelAction } = useActivityTracking("AuthenticatedApp");
@@ -49,7 +54,6 @@ const AuthenticatedApp = ({ title }) => {
     CustomTools: { Component: CustomTools, props: {} },
     search: { Component: SearchAccount, props: {} },
     settings: { Component: SettingsPage, props: {} },
-    profile: { Component: Profile, props: {} },
     admin: { Component: AdminPage, props: {} },
     chat: { Component: ChatPage, props: {} },
   };
@@ -74,6 +78,7 @@ const AuthenticatedApp = ({ title }) => {
 
   const ActivePageComponent = pages[activePage]?.Component;
   const pageProps = pages[activePage]?.props || {};
+  const isProfileActive = activePage === "profile";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", paddingTop: "56px" }}>
@@ -86,6 +91,9 @@ const AuthenticatedApp = ({ title }) => {
         currentUser={currentUser}
         onNavigateToProfile={() => handlePageChange("profile")}
         isSidebarOpen={isSidebarOpen}
+        onOpenStories={() => {
+          setShowStoryModal(true);
+        }}
       />
       
       <div style={{ display: "flex", flex: 1 }}>
@@ -106,11 +114,17 @@ const AuthenticatedApp = ({ title }) => {
               backgroundColor: "#f3f4f6",
             }}
           >
-            {ActivePageComponent ? (
+            {!isProfileActive && ActivePageComponent ? (
               <ActivePageComponent {...pageProps} isSidebarOpen={isSidebarOpen} />
-            ) : (
-              <div>Хуудас олдсонгүй</div>
-            )}
+            ) : null}
+
+            <Profile
+              isSidebarOpen={isSidebarOpen}
+              showStoryModal={showStoryModal}
+              setShowStoryModal={setShowStoryModal}
+              onCloseStories={handleCloseStories}
+              isActive={isProfileActive}
+            />
           </div>
         </Suspense>
       </div>

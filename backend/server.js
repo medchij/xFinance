@@ -133,6 +133,12 @@ merchantCategoryRoute(app);
 const avatarRouter = require('./routes/avatar');
 app.use('/api/users', avatarRouter);
 
+const userNotesRouter = require('./routes/user-notes');
+app.use('/api/user-notes', userNotesRouter);
+
+const dailyTasksRouter = require('./routes/daily-tasks');
+app.use('/api/daily-tasks', dailyTasksRouter);
+
 // Export the app for Vercel
 module.exports = app;
 
