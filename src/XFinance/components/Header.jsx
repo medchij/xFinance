@@ -198,6 +198,9 @@ const Header = ({ title, logo, message, isPublic, onNavigateToLogin, currentUser
                 </MenuTrigger>
                 <MenuPopover>
                   <MenuList>
+                    <div style={{ padding: '8px 12px', fontSize: tokens.fontSizeBase300, fontWeight: tokens.fontWeightSemibold, color: tokens.colorNeutralForeground2 }}>
+                      Компани сонгох
+                    </div>
                     {companies.map((company) => (
                       <MenuItem
                         key={company.id}
@@ -231,6 +234,9 @@ const Header = ({ title, logo, message, isPublic, onNavigateToLogin, currentUser
                 </MenuTrigger>
                 <MenuPopover>
                   <MenuList>
+                    <div style={{ padding: '8px 12px', fontSize: tokens.fontSizeBase300, fontWeight: tokens.fontWeightSemibold, color: tokens.colorNeutralForeground2 }}>
+                      Ажил үүрэг сонгох
+                    </div>
                     {userRoles.map((role) => (
                       <MenuItem
                         key={role.id}
