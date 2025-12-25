@@ -260,7 +260,7 @@ const Header = ({ title, logo, message, isPublic, onNavigateToLogin, currentUser
                 >
                   {avatarUrl ? (
                     <img 
-                      src={`${BASE_URL}${avatarUrl}`} 
+                      src={avatarUrl.startsWith('data:') ? avatarUrl : `${BASE_URL}${avatarUrl}`} 
                       alt="Avatar" 
                       style={{ 
                         width: '100%', 

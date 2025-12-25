@@ -139,7 +139,7 @@ const StoryModal = ({
               border: '2px solid #fff',
             }}>
               {avatarUrl ? (
-                <img src={`${BASE_URL}${avatarUrl}`} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={avatarUrl.startsWith('data:') ? avatarUrl : `${BASE_URL}${avatarUrl}`} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 (currentUser?.name || currentUser?.username || 'Х').charAt(0).toUpperCase()
               )}

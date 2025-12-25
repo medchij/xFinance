@@ -402,12 +402,6 @@ const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStor
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
-      showMessage('⚠️ Зургийн хэмжээ 5MB-с бага байх ёстой.', 'error');
-      return;
-    }
-
     // Validate file type
     if (!file.type.startsWith('image/')) {
       showMessage('⚠️ Зөвхөн зураг файл оруулах боломжтой.', 'error');
@@ -416,37 +410,100 @@ const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStor
 
     setUploadingAvatar(true);
     try {
-      const token = localStorage.getItem('authToken');
-      const formData = new FormData();
-      formData.append('avatar', file);
+      // Resize and compress image using canvas
+      const img = new Image();
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        img.src = e.target.result;
+      };
+      
+      img.onload = async () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // Max dimensions
+          const MAX_WIDTH = 400;
+          const MAX_HEIGHT = 400;
+          let width = img.width;
+          let height = img.height;
+          
+          // Calculate new dimensions
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height = (height * MAX_WIDTH) / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width = (width * MAX_HEIGHT) / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Convert to base64 with compression
+          let quality = 0.8;
+          let base64String = canvas.toDataURL('image/jpeg', quality);
+          
+          // If still too large, reduce quality
+          while (base64String.length > 700000 && quality > 0.3) {
+            quality -= 0.1;
+            base64String = canvas.toDataURL('image/jpeg', quality);
+          }
+          
+          if (base64String.length > 700000) {
+            showMessage('⚠️ Зургийн хэмжээ хэтэрхий том байна. Өөр зураг сонгоно уу.', 'error');
+            setUploadingAvatar(false);
+            return;
+          }
+          
+          const token = localStorage.getItem('authToken');
+          const response = await fetch(`${BASE_URL}/api/users/${currentUser.id}/avatar`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ avatar: base64String }),
+          });
 
-      const response = await fetch(`${BASE_URL}/api/users/${currentUser.id}/avatar`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        showMessage('✅ Зураг амжилттай солигдлоо.');
-        // Update local avatar state
-        setAvatarUrl(data.avatar_url);
-        // Update currentUser object to trigger re-render
-        const updatedUser = { ...currentUser, avatar_url: data.avatar_url };
-        // Update localStorage
-        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-        // Emit custom event to update other components
-        window.dispatchEvent(new CustomEvent('userUpdated', { detail: updatedUser }));
-      } else {
-        const error = await response.json();
-        showMessage(`⚠️ ${error.error || 'Зураг оруулахад алдаа гарлаа.'}`, 'error');
-      }
+          if (response.ok) {
+            const data = await response.json();
+            showMessage('✅ Зураг амжилттай солигдлоо.');
+            // Update local avatar state
+            setAvatarUrl(data.avatar_url);
+            // Update currentUser object to trigger re-render
+            const updatedUser = { ...currentUser, avatar_url: data.avatar_url };
+            // Update localStorage
+            localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+            // Emit custom event to update other components
+            window.dispatchEvent(new CustomEvent('userUpdated', { detail: updatedUser }));
+          } else {
+            const error = await response.json();
+            showMessage(`⚠️ ${error.error || 'Зураг оруулахад алдаа гарлаа.'}`, 'error');
+          }
+        } catch (error) {
+          console.error('Avatar upload error:', error);
+          showMessage('❌ Сервертэй холбогдож чадсангүй.', 'error');
+        } finally {
+          setUploadingAvatar(false);
+        }
+      };
+      
+      img.onerror = () => {
+        showMessage('❌ Зураг уншихад алдаа гарлаа.', 'error');
+        setUploadingAvatar(false);
+      };
+      
+      reader.readAsDataURL(file);
     } catch (error) {
       console.error('Avatar upload error:', error);
-      showMessage('❌ Сервертэй холбогдож чадсангүй.', 'error');
-    } finally {
+      showMessage('❌ Зураг уншихад алдаа гарлаа.', 'error');
       setUploadingAvatar(false);
     }
   };
@@ -556,8 +613,7 @@ const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStor
     setLoadingTasks(true);
     try {
       const token = localStorage.getItem('authToken');
-      const today = new Date().toISOString().split('T')[0];
-      const response = await fetch(`${BASE_URL}/api/daily-tasks?date=${today}`, {
+      const response = await fetch(`${BASE_URL}/api/daily-tasks`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       if (response.ok) {
@@ -730,19 +786,79 @@ const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStor
 
   const handleTaskImageSelect = (event) => {
     const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        showMessage('❌ Зураг 5MB-аас бага байх ёстой.', 'error');
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      showMessage('⚠️ Зөвхөн зураг файл оруулах боломжтой.', 'error');
+      return;
+    }
+
+    // Resize and compress image using canvas
+    const img = new Image();
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      img.src = e.target.result;
+    };
+    
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // Max dimensions for task images
+      const MAX_WIDTH = 800;
+      const MAX_HEIGHT = 800;
+      let width = img.width;
+      let height = img.height;
+      
+      // Calculate new dimensions
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height = (height * MAX_WIDTH) / width;
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width = (width * MAX_HEIGHT) / height;
+          height = MAX_HEIGHT;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Convert to base64 with compression
+      let quality = 0.85;
+      let base64String = canvas.toDataURL('image/jpeg', quality);
+      
+      // If still too large, reduce quality
+      while (base64String.length > 1000000 && quality > 0.4) {
+        quality -= 0.1;
+        base64String = canvas.toDataURL('image/jpeg', quality);
+      }
+      
+      if (base64String.length > 1000000) {
+        showMessage('⚠️ Зургийн хэмжээ хэтэрхий том байна. Өөр зураг сонгоно уу.', 'error');
         return;
       }
       
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setTaskImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-      setTaskImage(file);
-    }
+      // Convert base64 to blob for FormData
+      fetch(base64String)
+        .then(res => res.blob())
+        .then(blob => {
+          const compressedFile = new File([blob], file.name, { type: 'image/jpeg' });
+          setTaskImage(compressedFile);
+          setTaskImagePreview(base64String);
+        });
+    };
+    
+    img.onerror = () => {
+      showMessage('❌ Зураг уншихад алдаа гарлаа.', 'error');
+    };
+    
+    reader.readAsDataURL(file);
   };
 
   // Remove task image
@@ -1062,7 +1178,7 @@ const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStor
                 }}>
                   {avatarUrl ? (
                     <img 
-                      src={`${BASE_URL}${avatarUrl}`} 
+                      src={avatarUrl.startsWith('data:') ? avatarUrl : `${BASE_URL}${avatarUrl}`} 
                       alt="Avatar" 
                       style={{ 
                         width: '100%', 
@@ -1171,24 +1287,16 @@ const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStor
               color: tokens.colorNeutralForeground3,
               lineHeight: '1.4'
             }}>
-              💡 JPG, PNG эсвэл GIF форматтай зураг оруулна уу. Хамгийн ихдээ 5MB.
+              💡 JPG, PNG эсвэл GIF форматтай зураг оруулна уу. Автоматаар 400x400 болгож багасгана.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Daily Tasks/Story - Өдрийн ажлууд */}
+      {/* Daily Tasks/Story - Миний ажлууд */}
       <div className={styles.card} style={{ marginBottom: '24px' }}>
         <div className={styles.header}>
-          <h2 className={styles.title}>✅ Өнөөдрийн ажлууд</h2>
-          <p style={{ margin: 0, fontSize: '12px', color: tokens.colorNeutralForeground3 }}>
-            {new Date().toLocaleDateString('mn-MN', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </p>
+          <h2 className={styles.title}>✅ Миний ажлууд</h2>
         </div>
         
         <div style={{ marginBottom: '16px' }}>
@@ -1320,7 +1428,7 @@ const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStor
             <p style={{ textAlign: 'center', color: tokens.colorNeutralForeground3 }}>Уншиж байна...</p>
           ) : dailyTasks.length === 0 ? (
             <p style={{ textAlign: 'center', color: tokens.colorNeutralForeground3, padding: '20px' }}>
-              📋 Өнөөдрийн ажил алга байна. Эхлэе!
+              📋 Ажил алга байна. Эхлэе!
             </p>
           ) : (
             <>

@@ -40,12 +40,22 @@ const upload = multer({
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id || req.user.userId;
-    const date = req.query.date || new Date().toISOString().split('T')[0];
+    const date = req.query.date;
     
-    const result = await pool.query(
-      'SELECT * FROM daily_tasks WHERE user_id = $1 AND due_date = $2 ORDER BY created_at ASC',
-      [userId, date]
-    );
+    let result;
+    if (date) {
+      // If date is provided, filter by date
+      result = await pool.query(
+        'SELECT * FROM daily_tasks WHERE user_id = $1 AND due_date = $2 ORDER BY created_at DESC',
+        [userId, date]
+      );
+    } else {
+      // If no date, return all tasks
+      result = await pool.query(
+        'SELECT * FROM daily_tasks WHERE user_id = $1 ORDER BY created_at DESC',
+        [userId]
+      );
+    }
     
     res.json(result.rows);
   } catch (error) {
