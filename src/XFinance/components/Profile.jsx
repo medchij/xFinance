@@ -132,12 +132,78 @@ const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStor
   const [isPanningImage, setIsPanningImage] = useState(false);
   const panStartRef = useRef({ x: 0, y: 0 });
   const panOffsetStartRef = useRef({ x: 0, y: 0 });
+  const panAnimationFrameRef = useRef(null);
   const [editingTitleOffset, setEditingTitleOffset] = useState({ x: 0, y: 0 });
   const [isPanningTitle, setIsPanningTitle] = useState(false);
   const titlePanStartRef = useRef({ x: 0, y: 0 });
   const titlePanOffsetStartRef = useRef({ x: 0, y: 0 });
+  const titlePanAnimationFrameRef = useRef(null);
   const [editingTitleFontSize, setEditingTitleFontSize] = useState(17);
   const [editingTitleColor, setEditingTitleColor] = useState('#ffffff');
+  const [editingTitleFontFamily, setEditingTitleFontFamily] = useState('Headline');
+  const [editingTitleText, setEditingTitleText] = useState('');
+  const [isEditingText, setIsEditingText] = useState(false);
+  const [editingNotes, setEditingNotes] = useState('');
+
+  // Load current task text when entering edit mode or changing story
+  useEffect(() => {
+    if (storyEditMode && dailyTasks[currentStoryIndex]) {
+      setEditingTitleText(dailyTasks[currentStoryIndex].task || '');
+      setEditingNotes(dailyTasks[currentStoryIndex].notes || '');
+      setEditingTitleFontSize(dailyTasks[currentStoryIndex].title_font_size || 17);
+      setEditingTitleColor(dailyTasks[currentStoryIndex].title_color || '#ffffff');
+      setEditingTitleFontFamily(dailyTasks[currentStoryIndex].title_font_family || 'Headline');
+      setEditingImagePosition(dailyTasks[currentStoryIndex].image_position || 'contain');
+      setEditingImageScale(normalizeScale(dailyTasks[currentStoryIndex].image_scale || 1));
+      setEditingImageOffset({
+        x: dailyTasks[currentStoryIndex].image_offset_x || 0,
+        y: dailyTasks[currentStoryIndex].image_offset_y || 0,
+      });
+      setEditingTitleOffset({
+        x: dailyTasks[currentStoryIndex].title_offset_x || 0,
+        y: dailyTasks[currentStoryIndex].title_offset_y || 0,
+      });
+    }
+  }, [storyEditMode, currentStoryIndex, dailyTasks]);
+
+  // Cleanup animation frames on unmount
+  useEffect(() => {
+    return () => {
+      if (panAnimationFrameRef.current) {
+        cancelAnimationFrame(panAnimationFrameRef.current);
+      }
+      if (titlePanAnimationFrameRef.current) {
+        cancelAnimationFrame(titlePanAnimationFrameRef.current);
+      }
+    };
+  }, []);
+
+  // Window-level event listeners to handle panning outside elements
+  useEffect(() => {
+    const handleWindowMouseMove = (e) => {
+      if (isPanningImage) {
+        moveImagePan(e.clientX, e.clientY);
+      }
+      if (isPanningTitle) {
+        moveTitlePan(e.clientX, e.clientY);
+      }
+    };
+
+    const handleWindowMouseUp = () => {
+      if (isPanningImage) endImagePan();
+      if (isPanningTitle) endTitlePan();
+    };
+
+    if (isPanningImage || isPanningTitle) {
+      window.addEventListener('mousemove', handleWindowMouseMove);
+      window.addEventListener('mouseup', handleWindowMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleWindowMouseMove);
+      window.removeEventListener('mouseup', handleWindowMouseUp);
+    };
+  }, [isPanningImage, isPanningTitle]);
 
   // Update local avatar when currentUser changes
   useEffect(() => {
@@ -639,41 +705,31 @@ const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStor
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ task: newTask, due_date: new Date().toISOString().split('T')[0] }),
+        body: JSON.stringify({ 
+          task: newTask, 
+          due_date: new Date().toISOString().split('T')[0],
+          image_url: taskImage || null,
+          image_position: imagePosition
+        }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        
-        // Upload image if selected
-        if (taskImage) {
-          const imageResponse = await fetch(`${BASE_URL}/api/daily-tasks/${data.id}/image`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
-              imageBase64: taskImage, 
-              imagePosition 
-            }),
-          });
-          
-          if (imageResponse.ok) {
-            const updatedTask = await imageResponse.json();
-            setDailyTasks([...dailyTasks, updatedTask]);
-          } else {
-            setDailyTasks([...dailyTasks, data]);
-          }
-        } else {
-          setDailyTasks([...dailyTasks, data]);
-        }
+        // Server already stores base64 if provided
+        setDailyTasks([...dailyTasks, data]);
         
         setNewTask('');
         setTaskImage(null);
         setTaskImagePreview(null);
         setImagePosition('contain');
         showMessage('✅ Ажил нэмэгдлээ.');
+      } else {
+        try {
+          const err = await response.json();
+          showMessage(`❌ Ажил үүсгэхэд алдаа: ${err.error || response.status}`, 'error');
+        } catch (_) {
+          showMessage(`❌ Ажил үүсгэхэд алдаа: ${response.status}`, 'error');
+        }
       }
     } catch (error) {
       console.error('Add task error:', error);
@@ -697,10 +753,15 @@ const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStor
         body: JSON.stringify({ 
           image_position: editingImagePosition,
           image_scale: editingImageScale,
+          image_offset_x: editingImageOffset.x,
+          image_offset_y: editingImageOffset.y,
           title_offset_x: editingTitleOffset.x,
           title_offset_y: editingTitleOffset.y,
           title_font_size: editingTitleFontSize,
           title_color: editingTitleColor,
+          title_font_family: editingTitleFontFamily,
+          task: editingTitleText,
+          notes: editingNotes,
         }),
       });
 
@@ -709,8 +770,11 @@ const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStor
         setDailyTasks(dailyTasks.map(task => 
           task.id === currentTask.id ? updatedTask : task
         ));
-        setStoryEditMode(false);
         showMessage('✅ Зургийн тохиргоо хадгалагдлаа.');
+        setStoryEditMode(false);
+      } else {
+        const err = await response.json();
+        showMessage(`❌ Хадгалахад алдаа: ${err.error || response.status}`, 'error');
       }
     } catch (error) {
       console.error('Save image settings error:', error);
@@ -741,17 +805,29 @@ const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStor
   };
 
   const moveImagePan = (clientX, clientY) => {
-    if (!isPanningImage) return;
-    const dx = clientX - panStartRef.current.x;
-    const dy = clientY - panStartRef.current.y;
-    setEditingImageOffset({
-      x: panOffsetStartRef.current.x + dx,
-      y: panOffsetStartRef.current.y + dy,
+    if (!isPanningImage || !panStartRef.current) return;
+    
+    // Use requestAnimationFrame for smooth performance like Instagram
+    if (panAnimationFrameRef.current) {
+      cancelAnimationFrame(panAnimationFrameRef.current);
+    }
+    
+    panAnimationFrameRef.current = requestAnimationFrame(() => {
+      const dx = clientX - panStartRef.current.x;
+      const dy = clientY - panStartRef.current.y;
+      setEditingImageOffset({
+        x: panOffsetStartRef.current.x + dx,
+        y: panOffsetStartRef.current.y + dy,
+      });
     });
   };
 
   const endImagePan = () => {
     setIsPanningImage(false);
+    if (panAnimationFrameRef.current) {
+      cancelAnimationFrame(panAnimationFrameRef.current);
+      panAnimationFrameRef.current = null;
+    }
   };
 
   const resetTitleOffset = () => setEditingTitleOffset({ x: 0, y: 0 });
@@ -764,17 +840,29 @@ const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStor
   };
 
   const moveTitlePan = (clientX, clientY) => {
-    if (!isPanningTitle) return;
-    const dx = clientX - titlePanStartRef.current.x;
-    const dy = clientY - titlePanStartRef.current.y;
-    setEditingTitleOffset({
-      x: titlePanOffsetStartRef.current.x + dx,
-      y: titlePanOffsetStartRef.current.y + dy,
+    if (!isPanningTitle || !titlePanStartRef.current) return;
+    
+    // Use requestAnimationFrame for smooth performance like Instagram
+    if (titlePanAnimationFrameRef.current) {
+      cancelAnimationFrame(titlePanAnimationFrameRef.current);
+    }
+    
+    titlePanAnimationFrameRef.current = requestAnimationFrame(() => {
+      const dx = clientX - titlePanStartRef.current.x;
+      const dy = clientY - titlePanStartRef.current.y;
+      setEditingTitleOffset({
+        x: titlePanOffsetStartRef.current.x + dx,
+        y: titlePanOffsetStartRef.current.y + dy,
+      });
     });
   };
 
   const endTitlePan = () => {
     setIsPanningTitle(false);
+    if (titlePanAnimationFrameRef.current) {
+      cancelAnimationFrame(titlePanAnimationFrameRef.current);
+      titlePanAnimationFrameRef.current = null;
+    }
   };
 
   const handleImageWheel = (e) => {
@@ -807,8 +895,8 @@ const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStor
       const ctx = canvas.getContext('2d');
       
       // Max dimensions for task images
-      const MAX_WIDTH = 800;
-      const MAX_HEIGHT = 800;
+      const MAX_WIDTH = 600;
+      const MAX_HEIGHT = 600;
       let width = img.width;
       let height = img.height;
       
@@ -830,16 +918,16 @@ const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStor
       ctx.drawImage(img, 0, 0, width, height);
       
       // Convert to base64 with compression
-      let quality = 0.85;
+      let quality = 0.75;
       let base64String = canvas.toDataURL('image/jpeg', quality);
       
       // If still too large, reduce quality
-      while (base64String.length > 1000000 && quality > 0.4) {
+      while (base64String.length > 800000 && quality > 0.3) {
         quality -= 0.1;
         base64String = canvas.toDataURL('image/jpeg', quality);
       }
       
-      if (base64String.length > 1000000) {
+      if (base64String.length > 800000) {
         showMessage('⚠️ Зургийн хэмжээ хэтэрхий том байна. Өөр зураг сонгоно уу.', 'error');
         return;
       }
@@ -1016,12 +1104,21 @@ const Profile = ({ isSidebarOpen, showStoryModal, setShowStoryModal, onCloseStor
       editingImageScale={editingImageScale}
       setEditingImageScale={setEditingImageScale}
       editingImageOffset={editingImageOffset}
+      setEditingImageOffset={setEditingImageOffset}
       editingTitleOffset={editingTitleOffset}
       setEditingTitleOffset={setEditingTitleOffset}
       editingTitleFontSize={editingTitleFontSize}
       setEditingTitleFontSize={setEditingTitleFontSize}
       editingTitleColor={editingTitleColor}
       setEditingTitleColor={setEditingTitleColor}
+      editingTitleFontFamily={editingTitleFontFamily}
+      setEditingTitleFontFamily={setEditingTitleFontFamily}
+      editingTitleText={editingTitleText}
+      setEditingTitleText={setEditingTitleText}
+      isEditingText={isEditingText}
+      setIsEditingText={setIsEditingText}
+      editingNotes={editingNotes}
+      setEditingNotes={setEditingNotes}
       handleSaveImageSettings={handleSaveImageSettings}
       adjustEditingScale={adjustEditingScale}
       resetImageOffset={resetImageOffset}

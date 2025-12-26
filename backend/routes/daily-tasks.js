@@ -43,6 +43,13 @@ router.post('/', authenticateToken, async (req, res) => {
     
     const dueDate = due_date || new Date().toISOString().split('T')[0];
     
+    // Debug log for image payload
+    if (image_url) {
+      console.log('[daily-tasks:create] image_url provided, length:', image_url.length);
+    } else {
+      console.log('[daily-tasks:create] no image_url provided');
+    }
+
     const result = await pool.query(
       'INSERT INTO daily_tasks (user_id, task, due_date, image_url, image_position) VALUES ($1, $2, $3, $4, $5) RETURNING *',
       [userId, task.trim(), dueDate, image_url || null, image_position || 'contain']
@@ -135,9 +142,9 @@ router.post('/:id/image', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Буруу зургийн формат.' });
     }
     
-    // Check size (approx 1MB for base64)
-    if (imageBase64.length > 1400000) {
-      return res.status(400).json({ error: 'Зургийн хэмжээ хэтэрхий том байна (max 1MB).' });
+    // Check size (approx 2MB for base64)
+    if (imageBase64.length > 2000000) {
+      return res.status(400).json({ error: 'Зургийн хэмжээ хэтэрхий том байна (max 2MB base64).' });
     }
     
     // Update task with base64 image
@@ -153,12 +160,12 @@ router.post('/:id/image', authenticateToken, async (req, res) => {
   }
 });
 
-// Update image settings (position, scale, title offset, text styling)
+// Update image settings (position, scale, title offset, text styling, notes)
 router.patch('/:id/image/settings', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id || req.user.userId;
     const taskId = req.params.id;
-    const { image_position, image_scale, title_offset_x, title_offset_y, title_font_size, title_color } = req.body;
+    const { image_position, image_scale, image_offset_x, image_offset_y, title_offset_x, title_offset_y, title_font_size, title_color, title_font_family, task, notes } = req.body;
   
     // Check if task belongs to user
     const checkResult = await pool.query(
@@ -170,24 +177,34 @@ router.patch('/:id/image/settings', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Ажил олдсонгүй эсвэл танд хандах эрх байхгүй.' });
     }
   
-    const offsetX = Number.isFinite(parseInt(title_offset_x)) ? parseInt(title_offset_x) : 0;
-    const offsetY = Number.isFinite(parseInt(title_offset_y)) ? parseInt(title_offset_y) : 0;
+    const imgOffsetX = Number.isFinite(parseInt(image_offset_x)) ? parseInt(image_offset_x) : 0;
+    const imgOffsetY = Number.isFinite(parseInt(image_offset_y)) ? parseInt(image_offset_y) : 0;
+    const titleOffsetX = Number.isFinite(parseInt(title_offset_x)) ? parseInt(title_offset_x) : 0;
+    const titleOffsetY = Number.isFinite(parseInt(title_offset_y)) ? parseInt(title_offset_y) : 0;
   
     const fontSize = Number.isFinite(parseInt(title_font_size)) ? parseInt(title_font_size) : 17;
     const color = title_color || '#ffffff';
+    const fontFamily = title_font_family || 'Headline';
   
     const result = await pool.query(
       `UPDATE daily_tasks 
-       SET image_position = $1, image_scale = $2, title_offset_x = $3, title_offset_y = $4, title_font_size = $5, title_color = $6
-       WHERE id = $7 AND user_id = $8 
+       SET image_position = $1, image_scale = $2, image_offset_x = $3, image_offset_y = $4, 
+           title_offset_x = $5, title_offset_y = $6, title_font_size = $7, title_color = $8, title_font_family = $9,
+           task = $10, notes = $11
+       WHERE id = $12 AND user_id = $13 
        RETURNING *`,
       [
         image_position || 'contain',
         image_scale || 1,
-        offsetX,
-        offsetY,
+        imgOffsetX,
+        imgOffsetY,
+        titleOffsetX,
+        titleOffsetY,
         fontSize,
         color,
+        fontFamily,
+        task || checkResult.rows[0].task,
+        notes || '',
         taskId,
         userId
       ]

@@ -21,8 +21,8 @@ const app = express();
 // Middleware
 app.use(requestLogger); // Logging middleware эхлээд
 app.use(cors()); 
-app.use(express.json({ limit: '1mb' })); // Increase limit for base64 images
-app.use(express.urlencoded({ limit: '1mb', extended: true })); 
+app.use(express.json({ limit: '2mb' })); // Increase limit for base64 images
+app.use(express.urlencoded({ limit: '2mb', extended: true })); 
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); 
